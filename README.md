@@ -230,7 +230,9 @@ O foro vem de `foro:` no `materia.yaml` — `civel`, `fazenda`, `familia`, `juiz
 
 **Marcador sem valor sai visível no papel**, como `{comarca}`, e não como espaço em branco: peça com buraco tem de parecer peça com buraco, e espaço em branco ninguém nota na revisão. O `build` também conta quantos ficaram.
 
-Sem `formulas.yaml`, o `build` **não falha** — peça tem de sair. Usa a semente do CLI e avisa, uma vez por execução, que o endereçamento não é o do escritório.
+Sem `formulas.yaml`, o `build` **não falha** — peça tem de sair. Usa a semente do CLI e avisa **na primeira peça costurada da matéria**, não a cada build: a informação não muda entre uma peça e a seguinte, e repetir ensina a pular a linha amarela — levando junto a próxima, que talvez importe.
+
+A condição é permanente, então ela vive no **gate**, que roda por matéria. O `build` guarda só o primeiro encontro, que é onde a informação é nova.
 
 ## Style card — como este escritório escreve
 

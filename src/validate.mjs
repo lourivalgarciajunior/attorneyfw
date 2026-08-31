@@ -17,6 +17,7 @@ import { ARQUIVO_MAPA } from './anonimizar.mjs';
 import { tipoDocumento } from './parte.mjs';
 import { achar } from './dados.mjs';
 import { rotulosMisturados } from './estilo.mjs';
+import { formulas } from './formulas.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -338,6 +339,17 @@ function validarMateria(m, { raiz, esc, ctx }) {
       erro(`docs/canon/partes/${p.arquivo}`,
         `documento diverge da carteira — aqui "${docLocal}", em partes/${p.refSlug}.md "${p.ref.documento}"`);
     }
+  }
+
+  // ---- formulas de peca
+  // A condicao e permanente e a informacao nao muda entre uma peca e a
+  // seguinte, entao o lugar dela e aqui: o gate roda por materia, e nao por
+  // entrega. O `build` avisa so na primeira peca costurada — repetir a cada
+  // build ensinava a pular a linha amarela, e a proxima sumia junto.
+  if (formulas(raiz).semente && es.some((x) => ESTADOS_ATIVOS.includes(x.estado))) {
+    // O `onde` do aviso e relativo a materia, e o arquivo esta na raiz da
+    // carteira: dizer "acme/formulas.yaml" mandaria o usuario ao caminho errado.
+    aviso('..', 'formulas.yaml na raiz ainda e a semente — o enderecamento que sai nao e o do escritorio');
   }
 
   // ---- o titulo promete o que a peca nao pede

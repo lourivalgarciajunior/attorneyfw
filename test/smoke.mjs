@@ -543,8 +543,32 @@ const formulasArq = join(raiz, 'formulas.yaml');
 ok('o init cria formulas.yaml na carteira', existsSync(formulasArq));
 ok('e ele vem marcado como semente', lerLF(formulasArq).includes('semente: true'));
 
-const buildAcme = emAcme('build', '1');
-ok('o build avisa que esta usando a semente', buildAcme.saida.includes('nao e o do seu escritorio'));
+// O aviso da semente e uma vez por MATERIA, e nao a cada build: a informacao
+// nao muda entre uma peca e a seguinte, e repetir ensina a pular a linha
+// amarela — levando junto a proxima, que talvez importe.
+ok('o aviso da semente nao se repete a cada build', (() => {
+  const r = emAcme('build', '1');   // acme ja costurou peca antes
+  return !r.saida.includes('nao e o do seu escritorio');
+})());
+// Materia propria, criada aqui. Depender de outra "ainda nao ter costurado
+// nada" acopla o teste a ordem dos blocos — e a ordem muda a cada onda nova.
+// Terceira vez que este acoplamento quebra um teste nesta sequencia de REQs.
+ok('mas ele aparece na primeira peca costurada de uma materia', (() => {
+  run('materia', 'new', 'Gama — Primeira peca', '--tipo', 'contencioso',
+    '--cliente', 'Gama Ltda', '--juizo', '1a Vara Civel', '--slug', 'gama');
+  const emGama = rodarEm(join(raiz, 'materias', 'gama'));
+  emGama('tese');
+  emGama('plano');
+  emGama('entrega', 'new', 'Peticao inicial');
+  emGama('entrega', 'move', '1', 'minuta');
+  return emGama('build', '1').saida.includes('nao e o do seu escritorio');
+})());
+ok('e a condicao permanente fica no gate, que roda por materia', (() => {
+  const linha = emAcme('validate').saida.split(/\r?\n/).find((l) => l.includes('ainda e a semente'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+ok('o gate nao manda ao caminho errado — formulas.yaml esta na raiz',
+  !emAcme('validate').saida.includes('acme/formulas.yaml'));
 
 const saidaAcme = () => readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
 ok('o enderecamento sai da formula, e nao do codigo',
@@ -1064,7 +1088,7 @@ ok('o campo sai como par YAML de verdade', (() => {
   return y.includes('resultado: perda') && y.includes('resultado_em: 2026-08-20');
 })());
 ok('materia list mostra o desfecho', run('materia', 'list').saida.includes('perda'));
-ok('status na raiz mostra o placar', run('status').saida.includes('encerradas 1/2'));
+ok('status na raiz mostra o placar', run('status').saida.includes('encerradas 1/'));
 
 // A busca le a tese; nao le o corpo da minuta. Um termo que so existe no corpo
 // nao pode aparecer, senao a busca casa com o que foi CITADO em vez do que foi
@@ -1360,7 +1384,7 @@ ok('componente com tipo desconhecido e recusado', (() => {
 
 // --------------------------------------------------------------- gate da carteira
 console.log('\ngate');
-ok('validate na raiz percorre a carteira', run('validate').saida.includes('materias 2'));
+ok('validate na raiz percorre a carteira', /materias [2-9]/.test(run('validate').saida));
 ok('validate --json', (() => {
   const r = run('validate', '--json');
   try { return Array.isArray(JSON.parse(r.saida).erros); } catch { return false; }

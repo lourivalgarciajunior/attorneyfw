@@ -7,6 +7,7 @@
  * com numero de processo digitado a mao e o erro que protocola no processo do
  * outro cliente.
  */
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   Erro, acharEscritorio, c, contextoPrazo, entregas, escrever, exigirMateria, hoje,
@@ -81,6 +82,21 @@ function renderizarTranscricoes(texto) {
       return [...linhas, '>', `> _(${id})_`].join('\n');
     },
   );
+}
+
+/**
+ * As pecas ja costuradas de uma materia.
+ *
+ * Fica de fora o que a `saida/` guarda e nao veio do `build`: o relatorio ao
+ * cliente e a copia anonimizada. Confundi-los com peca faria o aviso de semente
+ * calar numa materia que nunca costurou nada.
+ */
+export function pecasCosturadas(m) {
+  const dir = join(m.dir, 'saida');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((f) => f.endsWith('.md')
+    && !f.startsWith('relatorio-')
+    && !f.endsWith('-anonimizado.md'));
 }
 
 function embutirDiagramas(m, texto) {
@@ -184,6 +200,13 @@ export function build(args) {
   partes.push(preencher('{advogado}', campos));
   partes.push(preencher('OAB {oab}', campos));
 
+  // Antes de escrever: esta e a primeira peca costurada nesta materia?
+  //
+  // Nao vale conferir se a pasta `saida/` existe — o `materia new` ja a cria
+  // vazia, e a condicao seria falsa para sempre. O que distingue e nao haver
+  // ainda peca costurada la dentro.
+  const primeiraDaMateria = !pecasCosturadas(m).length;
+
   const alvo = join(m.dir, 'saida', `${e.fm.id || e.arquivo.replace('.md', '')}.md`);
   escrever(alvo, `${partes.join('\n')}\n`);
 
@@ -191,11 +214,17 @@ export function build(args) {
   console.log(`${c.green('entrega costurada')}  ${rel(raiz, alvo)}`);
   console.log(c.dim(`  ${e.topicos.length} ${m.voc.topico}s | ${total} palavras | estado ${e.estado}${p && !p.erro ? ` | prazo ${p.fim}` : ''}`));
   if (diagramas.length) console.log(c.dim(`  ${diagramas.length} diagrama(s): ${diagramas.join(', ')}`));
-  // Uma vez por execucao: quem nao sabe que esta usando a semente acha que a
-  // peca ja sai com a cara do escritorio.
-  if (semente) {
+  // Uma vez por materia, e nao a cada peca.
+  //
+  // A primeira versao avisava em todo `build`, e a informacao nao muda entre uma
+  // peca e a seguinte: o que se ganha repetindo e o usuario aprendendo a pular a
+  // linha amarela — e a proxima, que talvez importe, some junto.
+  //
+  // A condicao permanente vive no gate, que roda por materia. Aqui fica so o
+  // primeiro encontro, que e onde a informacao e nova.
+  if (semente && primeiraDaMateria) {
     console.log(`  ${c.yellow('formulas')}  usando a ${origem} — o enderecamento nao e o do seu escritorio`);
-    console.log(c.dim('    substitua formulas.yaml pelas formulas das suas pecas'));
+    console.log(c.dim('    substitua formulas.yaml pelas formulas das suas pecas; o gate lembra'));
   }
   // Marcador sem valor sai visivel no papel de proposito; aqui ele e contado,
   // para nao depender de alguem reparar.

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.1 — 2026-08-31
+
+### Mudado
+
+- **O aviso de que as formulas ainda sao a semente passou a sair uma vez por
+  materia**, na primeira peca costurada — e nao a cada `build`.
+
+  A informacao nao muda entre uma peca e a seguinte. O que se ganhava repetindo
+  era o usuario aprendendo a pular a linha amarela do `build`, e a proxima
+  linha amarela — que talvez importasse — sumiria junto.
+
+  A condicao e permanente, entao ela ficou onde condicao permanente pertence:
+  **no gate**, que roda por materia. O `build` mantem so o primeiro encontro,
+  que e onde a informacao e nova, e aponta para o gate.
+
+- O aviso do gate nao diz mais `<materia>/formulas.yaml`: o arquivo esta na raiz
+  da carteira, e o caminho mandava ao lugar errado.
+
 ## 0.5.0 — 2026-08-31
 
 Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes

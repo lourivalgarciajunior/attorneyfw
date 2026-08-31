@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-tres-defeitos-do-extrator-de-citacao-e-a-guarda-fora-de-ordem-no-comparador-de-itens.md
 adr: docs/adr/ADR-2026-08-31-entre-calar-e-inventar-o-comparador-cala-e-o-extrator-de-citacao-se-mede-contra-as-formas-reais-do-arquivo.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-entre-calar-e-inventar-o-comparador-cala-e-o-extrat
 
 # Roadmap: O extrator medido contra o arquivo real, em tres ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -30,14 +30,14 @@ Nenhum modulo novo: as duas correcoes moram onde o codigo ja esta.
 
 ## Acceptance Criteria
 
-- [ ] As tres ondas concluidas, cada uma com `npm run check` verde
-- [ ] Nenhuma correcao afrouxa nada — todas apertam
-- [ ] Nenhum dado de cliente entra no repositorio; so numero de lei e de artigo
-- [ ] As formas curtas de hoje nao regridem
-- [ ] Nenhuma regra de gate nova
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` com a versao alinhada ao CLI
+- [x] As tres ondas concluidas, cada uma com `npm run check` verde
+- [x] Nenhuma correcao afrouxa nada — todas apertam
+- [x] Nenhum dado de cliente entra no repositorio; so numero de lei e de artigo
+- [x] As formas curtas de hoje nao regridem
+- [x] Nenhuma regra de gate nova
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` com a versao alinhada ao CLI
 
 ---
 
@@ -156,7 +156,7 @@ No corpus: de 9 achados de item (1 ementa + 6 titulos + 2 reais) para os 2 reais
 
 ### ML-3B — Plugin e publicacao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. `plugin.json` para `0.10.0` — versao nunca publicada antes.
@@ -165,4 +165,10 @@ No corpus: de 9 achados de item (1 ementa + 6 titulos + 2 reais) para os 2 reais
 3. Publicar e conferir o cache com `diff -r`.
 
 **Aceite:** `claude plugin validate .` passa; `diff -r` do cache sai limpo.
+
+Medido contra `main` em `9905865` (0.9.0): **395 -> 402 asserts**, 30 modulos e
+nenhum novo, 16 regras de lint (nenhuma nova — as correcoes apertam codigo, e nao
+doutrina). No corpus: de 9 achados de item para os 2 reais, e o fundamento de uma
+peca inteira deixou de sair mutilado.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

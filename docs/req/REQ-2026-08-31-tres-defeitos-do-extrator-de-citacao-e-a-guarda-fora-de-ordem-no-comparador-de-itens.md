@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-entre-calar-e-inventar-o-comparador-cala-e-o-extrator-de-citacao-se-mede-contra-as-formas-reais-do-arquivo"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-o-extrator-medido-contra-o-arquivo-real-em-tres-ond
 
 # REQ: Tres defeitos do extrator de citacao, e a guarda fora de ordem no comparador de itens
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -20,7 +20,7 @@ checagens.
 ADR: `docs/adr/ADR-2026-08-31-o-texto-do-topico-se-confere-contra-o-proprio-contrato.md`
 — onde a regra do silencio foi escrita, e que dois destes defeitos violavam.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-o-extrator-medido-contra-o-arquivo-real-em-tres-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-o-extrator-medido-contra-o-arquivo-real-em-tres-ondas.md`
 
 ## Motivation
 
@@ -83,15 +83,15 @@ buraco na sequencia roda **antes** dela.
 
 ## Acceptance criteria
 
-- [ ] `Art. 1.048, II, do CPC` devolve **uma** chave, `cpc#1048`.
-- [ ] `art. 1.015, II, do CPC` devolve `cpc#1015`; `art. 1.022 do CPC`, `cpc#1022`.
-- [ ] `art. 373 do CPC` e `art. 5º da CF` continuam iguais — teste de regressao.
-- [ ] `Lei nº 10.741 de 01 de Outubro de 2003` devolve `estatuto-do-idoso`, e nao um ano 2001.
-- [ ] `Lei nº 9.279, de 14 de maio de 1996` devolve `lei-9279-1996`.
-- [ ] `Lei 6.830/80` continua devolvendo `lef` — a forma com barra nao regride.
-- [ ] Sigla fora da tabela continua nao virando citacao.
-- [ ] Sequencia numerada de prosa (ementa) **nao** produz "falta o item N".
-- [ ] Lista de inventario homogenea continua produzindo os tres achados de antes.
-- [ ] O corpus de formas roda como teste, e so tem numero de lei e de artigo.
-- [ ] `npm run check` verde: 16 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `Art. 1.048, II, do CPC` devolve **uma** chave, `cpc#1048`.
+- [x] `art. 1.015, II, do CPC` devolve `cpc#1015`; `art. 1.022 do CPC`, `cpc#1022`.
+- [x] `art. 373 do CPC` e `art. 5º da CF` continuam iguais — teste de regressao.
+- [x] `Lei nº 10.741 de 01 de Outubro de 2003` devolve `estatuto-do-idoso`, e nao um ano 2001.
+- [x] `Lei nº 9.279, de 14 de maio de 1996` devolve `lei-9279-1996`.
+- [x] `Lei 6.830/80` continua devolvendo `lef` — a forma com barra nao regride.
+- [x] Sigla fora da tabela continua nao virando citacao.
+- [x] Sequencia numerada de prosa (ementa) **nao** produz "falta o item N".
+- [x] Lista de inventario homogenea continua produzindo os tres achados de antes.
+- [x] O corpus de formas roda como teste, e so tem numero de lei e de artigo.
+- [x] `npm run check` verde: 16 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

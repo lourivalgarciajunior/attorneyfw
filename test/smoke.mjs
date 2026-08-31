@@ -9,7 +9,9 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { contarPrazo, diasUteisAte, feriadosNacionais } from '../src/core.mjs';
+import { contarPrazo, diasUteisAte, feriadosNacionais, topicosDe } from '../src/core.mjs';
+import { citacoesDe, cobre, rotuloDe } from '../src/citacao.mjs';
+import { conferirTopicos } from '../src/conferir.mjs';
 
 const CLI = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'attorneyfw.mjs');
 const raiz = mkdtempSync(join(tmpdir(), 'attorneyfw-'));
@@ -882,16 +884,208 @@ ok('soma que nao fecha e apontada', (() => {
   return r.saida.includes('soma x total') && r.saida.includes('160,00');
 })());
 
-ok('peca sem divergencia passa limpa', (() => {
-  writeFileSync(entPath, ent.replace('texto '.repeat(200),
-    'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), totalizando R$ 150,00 (cento e cinquenta reais).'), 'utf8');
+// Limpa nas CINCO, e nao so nas quatro numericas: a prosa tambem honra o
+// contrato do topico — invoca o fundamento declarado e menciona o documento.
+const PROSA_LIMPA = 'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), '
+  + 'totalizando R$ 150,00 (cento e cinquenta reais). O onus de provar o fato '
+  + 'constitutivo e da autora, na forma do art. 373 do CPC, e a Fatura contestada '
+  + 'juntada aos autos nao demonstra a existencia de contrato escrito algum entre '
+  + 'as partes destes autos.';
+
+ok('peca que honra o contrato passa limpa nas cinco', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), PROSA_LIMPA), 'utf8');
   emAcme('build', '1');
   const r = emAcme('conferir', '1');
   return r.codigo === 0 && r.saida.includes('Nenhuma divergencia');
 })());
 
+ok('a recusa sai impressa mesmo sem achado nenhum',
+  emAcme('conferir', '1').saida.includes('esta em vigor'));
+
+ok('fundamento declarado e nao invocado sai no conferir', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    PROSA_LIMPA.replace('art. 373 do CPC', 'art. 300 do CPC')), 'utf8');
+  const r = emAcme('conferir', '1');
+  return r.codigo === 1 && r.saida.includes('texto x contrato do topico')
+    && r.saida.includes('art. 300 do CPC') && r.saida.includes('art. 373 CPC');
+})());
+
+// O contrato e removido do papel de proposito. Se a quinta lesse o `saida/`,
+// ela nao teria com o que comparar — e passaria verde sempre.
+ok('a quinta le a entrega na origem, e nao o papel do build', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return !md.includes('fundamento:');
+})());
+
 writeFileSync(entPath, ent, 'utf8');
 emAcme('build', '1');
+
+// --------------------------------------------- texto do topico x contrato
+console.log('\ncitacao e contrato de topico');
+
+const chaves = (t) => citacoesDe(t).map((x) => x.chave).sort().join(' ');
+
+ok('apelido e forma por extenso dao a mesma chave', [
+  ['art. 373 do CPC', 'artigo 373 do Codigo de Processo Civil'],
+  ['art. 5 da CF', 'art. 5 da Constituicao Federal'],
+  ['art. 927 do CC', 'art. 927 do Codigo Civil'],
+  ['art. 6 do CDC', 'art. 6 do Codigo de Defesa do Consumidor'],
+  ['art. 174 do CTN', 'art. 174 do Codigo Tributario Nacional'],
+  ['art. 818 da CLT', 'art. 818 da Consolidacao das Leis do Trabalho'],
+].every(([sigla, extenso]) => chaves(sigla) === chaves(extenso) && chaves(sigla) !== ''));
+
+ok('apelido e numero da lei dao a mesma chave',
+  chaves('art. 38 da LEF') === chaves('art. 38 da Lei 6.830/80'));
+
+ok('lei fora da tabela, mas com numero, e reconhecida',
+  chaves('art. 5 da Lei 9.999/99') === 'lei-9999-1999#5');
+
+ok('inciso, paragrafo e alinea sao descartados',
+  chaves('art. 373, II, do CPC') === 'cpc#373'
+  && chaves('art. 373, § 1o, do CPC') === 'cpc#373'
+  && chaves('art. 100, IV, alinea b, da CF') === 'cf#100');
+
+ok('artigos em serie viram uma chave cada', chaves('arts. 303 e 304 do CPC') === 'cpc#303 cpc#304');
+
+ok('sumula, vinculante, tema e precedente sao reconhecidos',
+  chaves('Sumula 7 do STJ') === 'sumula:stj#7'
+  && chaves('Sumula Vinculante 28') === 'sv#28'
+  && chaves('SV 28') === 'sv#28'
+  && chaves('Tema 69 do STF') === 'tema:stf#69'
+  && chaves('REsp 1.221.170') === 'resp#1221170');
+
+// O par so vale se a ferramenta calar no que nao reconhece: um fundamento
+// "conferido" errado e pior que um fundamento nao conferido.
+ok('sigla fora da tabela nao vira citacao', chaves('conforme o XYZ e o parecer da ABC/DF') === '');
+
+// A ancora e a lei, e o olhar vai para tras — entao o casamento nao pode
+// atravessar a fronteira da frase e colar o artigo de uma no codigo da outra.
+ok('o artigo de uma frase nao cola na lei da frase seguinte',
+  chaves('art. 5 do CC. O CPC preve outra coisa') === 'cc#5 cpc');
+
+ok('lei declarada sem artigo cobre qualquer artigo dela',
+  cobre(citacoesDe('Lei 9.610/98')[0], citacoesDe('art. 5 da Lei 9.610/98')[0])
+  && !cobre(citacoesDe('art. 5 da Lei 9.610/98')[0], citacoesDe('Lei 9.610/98')[0]));
+
+ok('rotuloDe devolve a forma legivel',
+  rotuloDe('cpc#373') === 'art. 373 do CPC' && rotuloDe('sv#28') === 'Sumula Vinculante 28');
+
+// --- o comparador
+const PROSA = 'A prova do fato constitutivo do direito incumbe a autora, e dela '
+  + 'ela nao se desincumbiu em momento algum ao longo de toda a instrucao '
+  + 'processual, o que basta para a improcedencia integral do pedido formulado '
+  + 'na inicial pela parte adversa nestes autos.';
+
+const topico = (campos, texto) => topicosDe(['```topico', ...campos, '```', '', texto, ''].join('\n'));
+const tipos = (achados) => achados.map((a) => a.tipo).sort().join(' ');
+
+ok('citacao no texto que o contrato nao declara vira par', (() => {
+  const [a] = conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 300 do CPC]'],
+    `${PROSA} Aplica-se o art. 373, II, do CPC.`,
+  ));
+  return a.tipo === 'citacao-fora-do-contrato'
+    && a.esquerda.valor === 'art. 373 do CPC' && a.direita.valor === 'art. 300 do CPC';
+})());
+
+ok('inciso no texto e artigo no contrato nao sao divergencia',
+  conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 373 do CPC]'],
+    `${PROSA} Aplica-se o art. 373, II, do CPC.`,
+  )).length === 0);
+
+ok('fundamento declarado e nao invocado vira par', (() => {
+  const [a] = conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 373 do CPC]'], PROSA,
+  ));
+  return a.tipo === 'fundamento-nao-usado' && a.esquerda.valor === 'art. 373 do CPC';
+})());
+
+// Declaracao que o extrator nao entende nao e comparada em direcao nenhuma.
+ok('fundamento em forma nao reconhecida nao vira par',
+  conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [doutrina de Nelson Nery]'], PROSA,
+  )).length === 0);
+
+ok('documento declarado e nunca mencionado vira par', (() => {
+  const a = conferirTopicos(
+    topico(['id: 1.1', 'sustenta: o pagamento', 'documentos: [D3]'], PROSA),
+    [{ id: 'D3', nome: 'recibo de quitacao', apelidos: [] }],
+  );
+  return tipos(a) === 'documento-nao-citado';
+})());
+
+ok('documento mencionado pelo nome do canon nao vira par',
+  conferirTopicos(
+    topico(['id: 1.1', 'sustenta: o pagamento', 'documentos: [D3]'],
+      `${PROSA} Junta-se o recibo de quitacao.`),
+    [{ id: 'D3', nome: 'recibo de quitacao', apelidos: [] }],
+  ).length === 0);
+
+ok('contrato declarado e prosa vazia vira achado proprio', (() => {
+  const [a] = conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 373 do CPC]'], 'Nada ainda.',
+  ));
+  return a.tipo === 'topico-sem-texto' && a.esquerda.valor === 'onus da prova';
+})());
+
+// Sem texto nao ha o que comparar: os outros quatro calam, senao um topico
+// vazio sairia com um aviso por fundamento declarado.
+ok('topico sem texto produz um achado so',
+  conferirTopicos(topico(
+    ['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 373 do CPC, art. 300 do CPC]'], '',
+  )).length === 1);
+
+ok('o comparador nao corrige nem completa o contrato', (() => {
+  const t = topico(['id: 1.1', 'sustenta: onus da prova', 'fundamento: [art. 300 do CPC]'],
+    `${PROSA} Aplica-se o art. 373, II, do CPC.`);
+  conferirTopicos(t);
+  return JSON.stringify(t[0].fundamento) === JSON.stringify(['art. 300 do CPC']);
+})());
+
+// --- o gate
+// Materia propria, criada aqui: os tres casos mexem no estado da entrega, e
+// pendurar isso na fixture de outro bloco ja quebrou teste tres vezes nesta
+// sequencia de REQs.
+run('materia', 'new', 'Delta — Gate do contrato', '--tipo', 'contencioso',
+  '--cliente', 'Delta Ltda', '--juizo', '1a Vara Civel', '--slug', 'delta');
+const delta = join(raiz, 'materias', 'delta');
+const emDelta = rodarEm(delta);
+emDelta('tese');
+emDelta('plano');
+emDelta('entrega', 'new', 'Peticao inicial');
+emDelta('entrega', 'move', '1', 'minuta');
+const dPath = (estado) => join(delta, 'entregas', estado, 'ent-01-peticao-inicial.md');
+const escreveDelta = (estado, fundamento, texto) => {
+  const p = dPath(estado);
+  writeFileSync(p, lerLF(p)
+    .replace('sustenta:', 'sustenta: a cobranca e inexigivel')
+    .replace('fundamento: []', `fundamento: [${fundamento}]`)
+    .replace('risco:', 'risco: o banco vai alegar contrato verbal')
+    .replace('resposta:', 'resposta: contrato bancario exige forma escrita')
+    .replace('<!-- o texto entra aqui, logo abaixo do contrato -->', texto), 'utf8');
+};
+
+// Aviso, e nao violacao: citar o dispositivo da outra parte para refuta-lo e o
+// caso legitimo de todo dia. O gate so reprova o que nao tem excecao.
+const PROSA_CITANDO = `${PROSA} Aplica-se ao caso o art. 373, II, do CPC.`;
+
+ok('citacao fora do contrato e aviso, e nao violacao', (() => {
+  escreveDelta('minuta', 'art. 300 do CPC', PROSA_CITANDO);
+  const r = emDelta('validate');
+  return r.saida.includes('nao declara') && !violacoes(r).some((l) => l.includes('nao declara'));
+})());
+
+ok('em pesquisa o contrato ainda esta sendo levantado, e nada e conferido', (() => {
+  emDelta('entrega', 'move', '1', 'pesquisa');
+  writeFileSync(dPath('pesquisa'), lerLF(dPath('pesquisa')).replace(PROSA_CITANDO, ''), 'utf8');
+  return !emDelta('validate').saida.includes('prosa vazia');
+})());
+
+ok('topico sem texto em revisao e violacao', (() => {
+  emDelta('entrega', 'move', '1', 'revisao');
+  return violacoes(emDelta('validate')).some((l) => l.includes('prosa vazia'));
+})());
 
 // ------------------------------------------------------- dado pessoal na peca
 console.log('\ndado pessoal');

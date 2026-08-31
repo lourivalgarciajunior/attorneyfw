@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.6.0 — 2026-08-31
+
+### Acrescentado
+
+- **A quinta conferencia: o texto do topico contra o contrato dele.**
+
+  O contrato de topico declara `fundamento: [...]` desde a 0.1.0 — uma lista
+  branca de citacoes. Ate a 0.5.1 ela estava escrita, estava parseada, e
+  **nenhuma linha de codigo a comparava com o que a prosa cita**. Um topico
+  podia declarar `fundamento: [art. 300 do CPC]`, citar no texto o art. 373, II,
+  e a Sumula 7 do STJ, e passar no gate inteiro.
+
+  Nao e estilo. O dispositivo que entra na peca sem passar pelo contrato e
+  exatamente o que ninguem conferiu: nao passou pelo agente de fundamento, nao
+  foi distinguido, nao teve vigencia checada. Das oito pecas reais lidas neste
+  dia, tres tinham erro de fundamento, e os tres entraram no texto sem contrato.
+
+  Quatro comparacoes saem como **aviso**, com os dois lados a vista: citacao no
+  texto que o contrato nao declara, fundamento declarado que a prosa nao invoca,
+  documento declarado que o texto nao menciona. Aviso porque a excecao legitima
+  e diaria — citar o dispositivo da outra parte para refuta-lo e o caso de todo
+  dia, e o gate desta ferramenta so reprova o que nao tem excecao.
+
+  A quinta, **topico com contrato e prosa vazia**, reprova em `revisao` e
+  `entregue`. Essa nao tem excecao, e ate hoje se escondia: o gate contava
+  palavras da entrega inteira, e um topico vazio ficava atras de outro bem
+  escrito. Em `backlog` e `pesquisa` nada roda — la o contrato ainda esta sendo
+  levantado, de proposito.
+
+- **`src/citacao.mjs`**, o extrator normalizado. Tabela declarada de doze leis,
+  em que apelido, nome por extenso e numero apontam para a mesma chave: `art. 38
+  da LEF` e `art. 38 da Lei 6.830/80` sao o mesmo fundamento. Reconhece tambem
+  sumula, sumula vinculante, tema e precedente por numero de recurso.
+
+  A comparacao e **por artigo**: inciso, paragrafo e alinea sao lidos e
+  descartados, por decisao. Distinguir incisos multiplicaria o aviso por cada
+  refinamento de escrita, e aviso que dispara sempre e aviso que ninguem le.
+
+  Sigla fora da tabela **nao vira citacao**. Silencio, e nao palpite — a mesma
+  disciplina do extenso, que devolve `null` diante de palavra desconhecida.
+
+### Mudado
+
+- `attorneyfw conferir` passou a imprimir, **com achado ou sem achado**, o que
+  ele nao conferiu: se o dispositivo existe, se esta em vigor, se foi superado,
+  e se sustenta o que o topico afirma. Relatorio que so lista o que achou e lido
+  como se tivesse achado tudo, e aqui o que falta e justamente a parte que exige
+  advogado.
+
+- A quinta conferencia **nao roda sobre o markdown do `build`**, e as outras
+  quatro continuam rodando. O `build` remove o contrato de topico de proposito;
+  sem contrato nao ha com o que comparar o texto. Ela le a entrega na origem.
+
+- Regra 13 do lint: reprova o build se a recusa acima sumir de `bin`, `README`,
+  `src/citacao.mjs` ou `src/conferir.mjs`.
+
+### O que continua sem ser conferido, e por decisao
+
+Existencia, vigencia, superacao e pertinencia do dispositivo. As quatro sao
+leitura, e ficam com o agente de fundamento. Uma ferramenta que dissesse "esse
+artigo nao sustenta isso" estaria opinando sobre merito com cara de gate — e
+gate em que se pode discordar e gate que se aprende a ignorar.
+
 ## 0.5.1 — 2026-08-31
 
 ### Mudado

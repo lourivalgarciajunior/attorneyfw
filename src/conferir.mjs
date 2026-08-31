@@ -35,6 +35,7 @@ import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel } 
 import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
+import { citacoesDe, cobre } from './citacao.mjs';
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
@@ -338,6 +339,103 @@ function confereTranscricoes(texto, documentos) {
   return out;
 }
 
+// ------------------------------------------ texto do topico x contrato dele
+
+/**
+ * A quinta conferencia.
+ *
+ * As quatro primeiras comparam a peca com ela mesma e com a ficha do documento.
+ * Esta compara o texto do topico com o **contrato** declarado logo acima dele —
+ * e por isso e a unica que nao roda sobre o markdown do `build`: o contrato e
+ * removido de proposito antes de a peca sair.
+ *
+ * Cinco comparacoes:
+ *
+ * 1. citacao no texto que o contrato nao declara;
+ * 2. fundamento declarado que a prosa nao invoca;
+ * 3. documento declarado que o texto nao menciona;
+ * 4. contrato preenchido e prosa vazia;
+ * 5. e o caso em que nao ha o que comparar — que sai calado.
+ *
+ * O que ela **nao** confere e o mesmo que o extrator recusa: existencia,
+ * vigencia, superacao e pertinencia do dispositivo. As quatro sao leitura, e
+ * ficam com o agente de fundamento.
+ */
+const MIN_PALAVRAS_TOPICO = 25;
+
+export function conferirTopicos(topicos, documentos = []) {
+  const out = [];
+  const porId = new Map(documentos.map((d) => [String(d.id || '').toLowerCase(), d]));
+
+  for (const t of topicos || []) {
+    const quem = String(t.id || '?');
+    const declaradas = lista(t.fundamento)
+      .map((f) => ({ texto: f, cits: citacoesDe(f) }));
+    const todas = declaradas.flatMap((d) => d.cits);
+    const resumo = lista(t.fundamento).join('; ') || '(nada)';
+
+    // Contrato cheio e prosa vazia e uma promessa com nada atras dela. O gate
+    // contava palavras da entrega inteira, e um topico vazio se escondia atras
+    // de outro bem escrito.
+    if ((t.palavras || 0) < MIN_PALAVRAS_TOPICO) {
+      if (String(t.sustenta || '').trim() || todas.length) {
+        out.push({
+          tipo: 'topico-sem-texto', topico: quem,
+          esquerda: { rotulo: 'o contrato sustenta', valor: String(t.sustenta || '(preenchido)').trim() },
+          direita: { rotulo: 'o texto do topico tem', valor: `${t.palavras || 0} palavra(s)` },
+          trecho: 'contrato declarado e prosa vazia',
+        });
+      }
+      continue; // sem texto nao ha o que comparar: as outras quatro calam
+    }
+
+    const noTexto = citacoesDe(t.texto);
+    const leisDeclaradas = new Set(todas.map((c) => c.lei || c.chave));
+
+    for (const cit of noTexto) {
+      if (todas.some((d) => cobre(d, cit))) continue;
+      // Mencao a lei sem artigo so vira achado quando a lei inteira esta fora do
+      // contrato. "A Lei 9.610/98 protege..." depois de a lei ja ter sido
+      // declarada com artigo e mencao de passagem — e aviso que dispara sempre e
+      // aviso que ninguem le.
+      if (cit.tipo === 'lei' && leisDeclaradas.has(cit.chave)) continue;
+      out.push({
+        tipo: 'citacao-fora-do-contrato', topico: quem,
+        esquerda: { rotulo: 'o texto cita', valor: cit.rotulo },
+        direita: { rotulo: 'o fundamento declara', valor: resumo },
+        trecho: 'citacao que o contrato do topico nao declara',
+      });
+    }
+
+    for (const d of declaradas) {
+      // Declaracao que o extrator nao reconhece nao e comparada em direcao
+      // nenhuma. Silencio, e nao palpite.
+      if (!d.cits.length) continue;
+      if (d.cits.some((dc) => noTexto.some((ct) => cobre(dc, ct) || cobre(ct, dc)))) continue;
+      out.push({
+        tipo: 'fundamento-nao-usado', topico: quem,
+        esquerda: { rotulo: 'o fundamento declara', valor: d.texto },
+        direita: { rotulo: 'a prosa do topico', valor: 'nao o invoca' },
+        trecho: 'fundamento declarado e nao usado no texto',
+      });
+    }
+
+    const alvo = sa(t.texto);
+    for (const id of lista(t.documentos)) {
+      const d = porId.get(String(id).toLowerCase());
+      const apelidos = [id, ...(d ? [d.nome, ...(d.apelidos || [])] : [])].filter(Boolean);
+      if (apelidos.some((a) => alvo.includes(sa(a)))) continue;
+      out.push({
+        tipo: 'documento-nao-citado', topico: quem,
+        esquerda: { rotulo: 'o contrato declara', valor: `documentos: [${id}]` },
+        direita: { rotulo: 'a prosa do topico', valor: 'nao o menciona' },
+        trecho: 'documento declarado e nunca mencionado no texto',
+      });
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- comando
 
 export function conferirTexto(texto, documentos = []) {
@@ -354,7 +452,20 @@ const ROTULO = {
   soma: 'soma x total',
   item: 'item x pedido',
   transcricao: 'transcricao x ficha do documento',
+  'citacao-fora-do-contrato': 'texto x contrato do topico',
+  'fundamento-nao-usado': 'texto x contrato do topico',
+  'documento-nao-citado': 'texto x contrato do topico',
+  'topico-sem-texto': 'texto x contrato do topico',
 };
+
+// A recusa vai impressa em toda conferencia, com achado ou sem achado. Relatorio
+// que so lista o que achou e lido como se tivesse achado tudo — e aqui o que
+// falta e justamente a parte que exige advogado.
+const NAO_CONFERIDO = [
+  '  Nao foi conferido: se o dispositivo existe, se esta em vigor, se foi',
+  '  superado, nem se sustenta o que o topico afirma. Isso e leitura, e nao',
+  '  comparacao. Tambem nao confere numero dentro de imagem anexada.',
+];
 
 export function conferir(args) {
   const m = exigirMateria(args);
@@ -369,33 +480,42 @@ export function conferir(args) {
   if (!existsSync(fonte)) build({ ...args, _: [String(e.numero)] });
   const texto = readFileSync(fonte, 'utf8');
 
-  const achados = conferirTexto(texto, canon(m, raiz).documentos.map((d) => ({
-    id: d.id, valores: lista(d.fm.valores),
-  })));
+  const docs = canon(m, raiz).documentos;
+  const achados = [
+    ...conferirTexto(texto, docs.map((d) => ({ id: d.id, valores: lista(d.fm.valores) }))),
+    // A quinta nao roda sobre o papel: o `build` remove o contrato de topico de
+    // proposito, e sem contrato nao ha com o que comparar o texto. Ela le a
+    // entrega na origem, onde os dois ainda estao lado a lado.
+    ...conferirTopicos(e.topicos, docs.map((d) => ({ id: d.id, nome: d.nome, apelidos: d.apelidos }))),
+  ];
 
   if (args.json) {
     console.log(JSON.stringify({
       arquivo: rel(raiz, fonte), achados, corrigiu: false,
       nota: 'divergencia sai como par; a ferramenta nao sabe qual lado esta certo',
+      naoConferido: ['existencia', 'vigencia', 'superacao', 'pertinencia do dispositivo'],
     }, null, 2));
     return achados.length ? 1 : 0;
   }
 
-  console.log(c.b(`conferencia numerica — ${rel(raiz, fonte)}`));
+  console.log(c.b(`conferencia — ${rel(raiz, fonte)}`));
   if (!achados.length) {
-    console.log(c.green('\n  Nenhuma divergencia nas tres verificacoes.'));
-    console.log(c.dim('  Extenso, soma, item e transcricao. Nao confere numero dentro de imagem anexada.'));
+    console.log(c.green('\n  Nenhuma divergencia nas cinco conferencias.'));
+    console.log(c.dim('  Extenso, soma, item, transcricao e texto x contrato do topico.\n'));
+    for (const l of NAO_CONFERIDO) console.log(c.dim(l));
     return 0;
   }
 
   console.log(c.dim(`${achados.length} divergencia(s) — nada foi corrigido\n`));
   for (const a of achados) {
-    console.log(`  ${c.yellow(ROTULO[a.tipo])}  ${c.dim(a.trecho)}`);
+    const onde = a.topico ? c.dim(` [${m.voc.topico} ${a.topico}]`) : '';
+    console.log(`  ${c.yellow(ROTULO[a.tipo])}${onde}  ${c.dim(a.trecho)}`);
     console.log(`    ${a.esquerda.rotulo.padEnd(22)} ${c.b(a.esquerda.valor)}`);
     console.log(`    ${a.direita.rotulo.padEnd(22)} ${c.b(a.direita.valor)}`);
     console.log('');
   }
   console.log(c.dim('  Os dois lados estao a vista de proposito: a ferramenta nao sabe qual'));
-  console.log(c.dim('  esta certo. Escolher qual prevalece e de quem assina.'));
+  console.log(c.dim('  esta certo. Escolher qual prevalece e de quem assina.\n'));
+  for (const l of NAO_CONFERIDO) console.log(c.dim(l));
   return 1;
 }

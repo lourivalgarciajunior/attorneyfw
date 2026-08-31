@@ -431,13 +431,13 @@ O `destilar` lê, das matérias indicadas, o que cada documento do canon prova, 
 
 O `aplicar` cria `docs/checklist-<tipo>.md` com itens **pendentes**, para confirmar ou descartar um a um. Nada é dado por provado nem por fundamentado porque o modelo disse — a tese e o gate continuam cobrando exatamente o que cobram hoje.
 
-## Conferência numérica
+## Conferência
 
 ```bash
 attorneyfw conferir 1
 ```
 
-Três comparações mecânicas sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
+Cinco comparações mecânicas. As quatro primeiras rodam sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
 
 | Verificação | O que compara |
 |---|---|
@@ -469,7 +469,41 @@ A ficha do documento registra, em `valores:`, os números que ele contém — co
 
 O `build` transforma o bloco em citação recuada, assinada com o id — a assinatura fica **visível**, e não em comentário, porque comentário é removido antes de a peça sair. O gate reprova transcrição sem origem declarada, ou com origem que o canon não conhece.
 
-Fora do alcance, e declarado: número dentro de imagem anexada.
+### Texto do tópico contra o contrato dele
+
+A quinta é de outra natureza, e é a única que **não roda sobre o papel**: o `build` remove o contrato de tópico de propósito, e sem contrato não há com o que comparar o texto. Ela lê a entrega na origem, onde contrato e prosa ainda estão lado a lado.
+
+O contrato declara `fundamento: [...]` desde a 0.1.0 — uma **lista branca de citações**. Até a 0.5.1 ela estava escrita, estava parseada, e nenhuma linha de código a comparava com o que a prosa cita. Um tópico podia declarar `fundamento: [art. 300 do CPC]`, citar no texto o art. 373, II, e a Súmula 7 do STJ, e passar no gate inteiro.
+
+Isso não é estilo. O dispositivo que entra na peça sem passar pelo contrato é exatamente o que ninguém conferiu: não passou pelo agente de fundamento, não foi distinguido, não teve vigência checada. Das oito peças reais lidas em 2026-08-31, **três** tinham erro de fundamento — e os três eram dispositivos que entraram no texto sem contrato.
+
+| Comparação | Sai como |
+|---|---|
+| citação no texto que o contrato não declara | aviso, com os dois lados |
+| fundamento declarado que a prosa não invoca | aviso, com os dois lados |
+| documento declarado que o texto não menciona | aviso, com os dois lados |
+| contrato preenchido e prosa vazia | **erro** em `revisao` e `entregue` |
+
+Quatro são aviso porque a exceção legítima é diária: citar o dispositivo da outra parte para refutá-lo, invocar o artigo do próprio ato processual. O gate desta ferramenta só reprova o que não tem exceção — e é por isso que o que ele reprova é levado a sério.
+
+O tópico vazio reprova porque não tem exceção. O gate contava palavras da **entrega inteira**, e um tópico vazio se escondia atrás de outro bem escrito. Em `backlog` e `pesquisa` nada roda: lá o contrato ainda está sendo levantado, de propósito.
+
+**A comparação é por artigo.** `art. 373, II` e `art. 373` são o mesmo fundamento — por decisão, não por limitação. Distinguir incisos multiplicaria o aviso por cada refinamento de escrita, e aviso que dispara sempre é aviso que ninguém lê. `art. 38 da LEF` e `art. 38 da Lei 6.830/80` também são o mesmo, pela tabela declarada de leis.
+
+**Sigla fora da tabela não vira citação.** Silêncio, e não palpite — a mesma disciplina do extenso, que devolve `null` diante de palavra desconhecida. Um fundamento "conferido" errado é pior que um fundamento não conferido.
+
+### O que a conferência não confere
+
+Fora do alcance, e declarado: número dentro de imagem anexada. E, no fundamento:
+
+- **não verifica se o dispositivo existe**;
+- **não verifica se está em vigor**;
+- **não verifica se foi superado**, revogado ou distinguido;
+- **não julga se ele sustenta** o que o tópico afirma.
+
+As quatro são leitura, e ficam com o agente de fundamento. Uma ferramenta que dissesse "esse artigo não sustenta isso" estaria opinando sobre mérito com cara de gate — e gate em que se pode discordar é gate que se aprende a ignorar.
+
+A recusa sai impressa em toda conferência, **com achado ou sem achado**: relatório que só lista o que achou é lido como se tivesse achado tudo.
 
 ## Dado pessoal na peça
 

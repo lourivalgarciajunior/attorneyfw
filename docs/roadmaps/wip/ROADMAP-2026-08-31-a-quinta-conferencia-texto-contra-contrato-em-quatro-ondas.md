@@ -160,7 +160,7 @@ da nada. Cada teste cria a propria fixture.
 
 ### ML-4A — README, AJUDA e a regra de lint
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `bin/attorneyfw.mjs`, `tools/lint.mjs`
 **Acoes:**
 1. README: a quinta conferencia, as cinco comparacoes e os quatro limites.

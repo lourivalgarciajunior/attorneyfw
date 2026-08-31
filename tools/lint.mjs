@@ -152,6 +152,19 @@ const [a, b] = [chaves('contencioso'), chaves('consultivo')];
 for (const k of a) if (!b.has(k)) falha('vocabulario', `consultivo nao tem a chave "${k}" que contencioso tem`);
 for (const k of b) if (!a.has(k)) falha('vocabulario', `contencioso nao tem a chave "${k}" que consultivo tem`);
 
+// 13. A recusa em conferir o fundamento e uma decisao, e nao um vazio de
+//     implementacao. Se ela sumir do texto, some junto a razao de nao a
+//     reintroduzir — e a proxima pessoa implementa "confere se o artigo existe"
+//     achando que faltava, e a ferramenta passa a opinar sobre merito com cara
+//     de gate.
+for (const arq of ['bin/attorneyfw.mjs', 'README.md', 'src/citacao.mjs', 'src/conferir.mjs']) {
+  const t = semAcento(arq === 'README.md' ? readme : arq === 'bin/attorneyfw.mjs' ? bin : ler(...arq.split('/')));
+  const nega = /nao (?:verifica|confere|julga)|nao foi conferido/.test(t);
+  if (!(nega && /em vigor/.test(t) && /supera/.test(t) && /sustenta/.test(t))) {
+    falha('recusa-fundamento', `${arq} nao declara que a conferencia nao verifica existencia, vigencia, superacao nem pertinencia`);
+  }
+}
+
 console.log(`attorneyfw ${pkg.version} | ${srcs.length} modulos | ${templates.length} templates | vocabulario ${a.size} chaves`);
 if (!existsSync(join(RAIZ, 'test', 'smoke.mjs'))) falha('teste', 'test/smoke.mjs sumiu');
 for (const e of erros) console.log(`  ERRO   ${e}`);

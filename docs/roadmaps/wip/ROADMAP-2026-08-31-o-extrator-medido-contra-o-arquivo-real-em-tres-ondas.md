@@ -47,7 +47,7 @@ Nenhum modulo novo: as duas correcoes moram onde o codigo ja esta.
 
 ### ML-1A — `art. 1.048` e um artigo, e nao dois
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/citacao.mjs`
 **Acoes:**
 1. No tokenizer de `artigosDe`, reconhecer o numero com separador de milhar como
@@ -59,9 +59,15 @@ Nenhum modulo novo: as duas correcoes moram onde o codigo ja esta.
 `art. 373 do CPC` e `art. 5º da CF` nao mudam.
 **Validacao:** `npm run check`
 
+**Raio maior que o medido na REQ.** Com a correcao, a peca de divorcio passou de
+`art. 1 | 571 | 583 | 694 | 710 do CC` para `art. 1571 | 1583 | 1694 | 1710` — os
+artigos certos da dissolucao, da guarda e dos alimentos. O fundamento inteiro
+daquela peca estava sendo mutilado, e a REQ contou 6 ocorrencias no corpus quando
+so o divorcio tinha 4.
+
 ### ML-1B — Lei com data por extenso
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/citacao.mjs`, `src/conferir.mjs`
 **Acoes:**
 1. Mover `MESES` de `src/conferir.mjs` para `src/citacao.mjs`, exportada;
@@ -77,7 +83,7 @@ continua `lef`.
 
 ### ML-1C — O corpus de formas como teste
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Tabela `forma -> chave esperada`, com as formas reais colhidas nas nove pecas.

@@ -35,7 +35,7 @@ import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel, s
 import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
-import { citacoesDe, cobre } from './citacao.mjs';
+import { MESES, citacoesDe, cobre } from './citacao.mjs';
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
@@ -456,9 +456,6 @@ export function conferirTopicos(topicos, documentos = []) {
  * casamento por proximidade, nao ha "o marco mais parecido", e ela **nunca infere
  * que dois fatos sao o mesmo fato**.
  */
-const MESES = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho',
-  'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-
 const RE_DATA_NUM = /\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b/g;
 const RE_DATA_EXT = new RegExp(`\\b(\\d{1,2})\\s+de\\s+(${MESES.map((x) => x.replace('c', '[cç]')).join('|')})\\s+de\\s+(\\d{4})\\b`, 'gi');
 const RE_ISO = /\b(\d{4})-(\d{2})-(\d{2})\b/g;

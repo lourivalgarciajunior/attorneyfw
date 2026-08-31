@@ -175,7 +175,7 @@ da nada. Cada teste cria a propria fixture.
 
 ### ML-4B — CHANGELOG, versao e plugin
 
-**Status:** ⬜ Pendente
+**Status:** 🔄 Em andamento
 **Files affected:** `CHANGELOG.md`, `package.json`, `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. CHANGELOG 0.6.0 — o que passou a ser conferido, e o que continua sem ser.

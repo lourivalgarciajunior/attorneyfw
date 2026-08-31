@@ -150,6 +150,18 @@ function validarMateria(m, { raiz, esc, ctx }) {
     const p = prazoDe(e, ctx);
     if (p?.erro) erro(onde, `prazo mal declarado — ${p.erro}`);
     if (p && !p.erro) {
+      // Prazo em dias corridos declarado como processual e, quase sempre, prazo
+      // material que ninguem marcou: a unidade foi trocada e o regime ficou
+      // para tras. O termo inicial sai errado e a data devolvida vem depois da
+      // correta — errar prazo para mais e a direcao que perde caso.
+      if (p.contagem === 'corridos' && p.regime === 'processual') {
+        aviso(onde, 'prazo em dias corridos com regime processual — se e prazo do CTN, rode: attorneyfw prazo set --material');
+      }
+      // A divergencia adotada e a data mais curta, mas quem le a agenda precisa
+      // saber que existe leitura em que o prazo vai adiante.
+      if (p.divergencia) {
+        aviso(onde, `art. 210, par. unico, do CTN tem duas leituras aqui — adotado o vencimento em ${p.fim}; pela outra seria ${p.fimAlternativo}`);
+      }
       const entregueEm = String(e.fm.entregue_em || '').trim();
       if (e.estado === 'entregue') {
         if (!entregueEm) erro(onde, 'entregue sem entregue_em — sem data nao ha como provar tempestividade');

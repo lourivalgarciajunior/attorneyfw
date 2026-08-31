@@ -63,7 +63,7 @@ function statusMateria(m, raiz) {
       const p = prazoDe(e, ctx);
       const prazo = !p ? '' : p.erro ? c.yellow('  prazo mal declarado')
         : p.vencido && estado !== 'entregue' ? c.red(`  VENCIDO ${p.fim}`)
-          : `  ${p.fim}${estado === 'entregue' ? '' : ` (${p.restam}d)`}${p.fatal ? c.red(' FATAL') : ''}`;
+          : `  ${p.fim}${estado === 'entregue' ? '' : ` (${p.restam}d)`}${p.regime === 'material' ? c.cyan(' CTN') : ''}${p.fatal ? c.red(' FATAL') : ''}`;
       console.log(`  ${String(e.numero).padStart(2, '0')} ${(e.fm.titulo || e.arquivo).padEnd(38)} ${String(e.topicos.length).padStart(2)} ${m.voc.topico}s ${String(e.palavras).padStart(5)} pal${prazo}`);
     }
   }
@@ -148,7 +148,10 @@ export function context(args) {
   out.push('\n## Kanban de entregas');
   for (const e of es) {
     const p = prazoDe(e, ctx);
-    const prazo = p && !p.erro ? ` — prazo ${p.fim}${e.estado === 'entregue' ? '' : ` (${p.restam}d uteis)`}${p.fatal ? ' FATAL' : ''}` : '';
+    const prazo = p && !p.erro
+      ? ` — prazo ${p.fim} [${p.regime}]${e.estado === 'entregue' ? '' : ` (${p.restam}d uteis)`}${p.fatal ? ' FATAL' : ''}`
+        + (p.divergencia ? ` (art. 210 par. unico tem outra leitura: ${p.fimAlternativo})` : '')
+      : '';
     out.push(`- [${e.estado}] ${String(e.numero).padStart(2, '0')} ${e.fm.titulo || e.arquivo} — ${e.topicos.length} ${m.voc.topico}s, ${e.palavras} palavras${prazo}`);
   }
   out.push(`\nArquivos: ${es.map((x) => rel(m.dir, x.caminho)).join(', ') || '(nenhum)'}`);

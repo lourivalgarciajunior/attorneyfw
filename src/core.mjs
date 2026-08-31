@@ -324,7 +324,13 @@ export function contarPrazo({
   const n = Number(dias);
   if (!Number.isInteger(n) || n < 1) throw new Erro(`Prazo em dias invalido: "${dias}".`);
   if (!REGIMES.includes(regime)) throw new Erro(`Regime "${regime}" nao existe. Use: ${REGIMES.join(', ')}`);
-  const util = fabricaUtil(fer, recesso);
+  // O recesso do art. 220 do CPC suspende o prazo PROCESSUAL, e so ele. Prazo
+  // tributario corre entre 20/12 e 20/01 como em qualquer outro dia. Aplicar o
+  // recesso ao regime material empurrava o vencimento em quase um mes — e para
+  // frente, que e a direcao que faz o advogado acreditar em folga que nao tem.
+  // Encontrado rodando o CLI de ponta a ponta: o teste unitario passava
+  // `recesso: false` a mao e nunca exercitou este caminho.
+  const util = fabricaUtil(fer, regime === 'material' ? false : recesso);
 
   /** Do termo inicial ate o vencimento, prorrogando o que cair sem expediente. */
   const correr = (partida) => {

@@ -38,7 +38,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw entrega retitle <e> "T"    troca o titulo, arquivo e frontmatter juntos
   attorneyfw topico add <entrega>       novo contrato de topico ou clausula
   attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento
-  attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos] [--fatal]
+  attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos]
+                            [--material] [--fatal]
   attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
   attorneyfw brief <entrega> [--topico N]  o pacote de quem redige
   attorneyfw status                     kanban da materia, ou a carteira na raiz
@@ -49,6 +50,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
 
 estados: backlog pesquisa minuta revisao entregue bloqueado abandonado
 --materia <slug> roda o comando numa materia sem entrar na pasta dela
+
+regimes de prazo: processual (CPC) e material (art. 210 do CTN, --material)
 
 A contagem de prazo e CONFERENCIA, nao a contagem oficial: feriado do foro e
 suspensao de expediente entram a mao em docs/feriados.md. O prazo que vale e o

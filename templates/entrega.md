@@ -7,6 +7,7 @@ estado: backlog
 prazo_intimacao: {{prazo_intimacao}}
 prazo_dias: {{prazo_dias}}
 prazo_contagem: {{prazo_contagem}}
+prazo_regime: {{prazo_regime}}
 prazo_fatal: false
 entregue_em:
 criado: {{data}}

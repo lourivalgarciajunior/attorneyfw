@@ -72,33 +72,33 @@ ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-t
 
 ### ML-2A — `prazo set --material` e a agenda
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/prazo.mjs`, `bin/attorneyfw.mjs`, `templates/entrega.md`, `src/novo.mjs`
 **Aceite:**
-- [ ] `--material` grava `prazo_regime: material`
-- [ ] A agenda marca o regime e mostra a data alternativa quando ha divergencia
-- [ ] Entrega nova nasce com `prazo_regime` no frontmatter
+- [x] `--material` grava `prazo_regime: material`
+- [x] A agenda marca o regime e mostra a data alternativa quando ha divergencia
+- [x] Entrega nova nasce com `prazo_regime` no frontmatter
 
 ### ML-2B — Gate, status e context
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/validate.mjs`, `src/status.mjs`
 **Aceite:**
-- [ ] Gate avisa em `corridos` + `processual` — quase sempre material mal declarado
-- [ ] Gate recusa `prazo_regime` fora do vocabulario
-- [ ] Divergencia aparece no `status` e no `context`
+- [x] Gate avisa em `corridos` + `processual` — quase sempre material mal declarado
+- [x] Gate recusa `prazo_regime` fora do vocabulario
+- [x] Divergencia aparece no `status` e no `context`
 
 ## Wave 3 — Provas e publicacao
 
 ### ML-3A — Smoke
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Aceite:**
-- [ ] Caso com divergencia: 26.12.2025 + 30 dias material → `fim` 2026-01-26, `fimAlternativo` 2026-01-27
-- [ ] Caso sem divergencia: 19.01.2026 + 30 dias material → `fim` 2026-02-19, sem alternativa
-- [ ] Regressao: os casos processuais da 0.1.0 passam sem alteracao
-- [ ] Fluxo de ponta a ponta pelo CLI, com `--material`
+- [x] Caso com divergencia: 26.12.2025 + 30 dias material → `fim` 2026-01-26, `fimAlternativo` 2026-01-27
+- [x] Caso sem divergencia: 19.01.2026 + 30 dias material → `fim` 2026-02-19, sem alternativa
+- [x] Regressao: os casos processuais da 0.1.0 passam sem alteracao
+- [x] Fluxo de ponta a ponta pelo CLI, com `--material`
 
 ### ML-3B — Documentacao e release
 

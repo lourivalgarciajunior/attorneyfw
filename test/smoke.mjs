@@ -884,12 +884,37 @@ ok('soma que nao fecha e apontada', (() => {
   return r.saida.includes('soma x total') && r.saida.includes('160,00');
 })());
 
-ok('peca sem divergencia passa limpa', (() => {
-  writeFileSync(entPath, ent.replace('texto '.repeat(200),
-    'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), totalizando R$ 150,00 (cento e cinquenta reais).'), 'utf8');
+// Limpa nas CINCO, e nao so nas quatro numericas: a prosa tambem honra o
+// contrato do topico — invoca o fundamento declarado e menciona o documento.
+const PROSA_LIMPA = 'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), '
+  + 'totalizando R$ 150,00 (cento e cinquenta reais). O onus de provar o fato '
+  + 'constitutivo e da autora, na forma do art. 373 do CPC, e a Fatura contestada '
+  + 'juntada aos autos nao demonstra a existencia de contrato escrito algum entre '
+  + 'as partes destes autos.';
+
+ok('peca que honra o contrato passa limpa nas cinco', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), PROSA_LIMPA), 'utf8');
   emAcme('build', '1');
   const r = emAcme('conferir', '1');
   return r.codigo === 0 && r.saida.includes('Nenhuma divergencia');
+})());
+
+ok('a recusa sai impressa mesmo sem achado nenhum',
+  emAcme('conferir', '1').saida.includes('esta em vigor'));
+
+ok('fundamento declarado e nao invocado sai no conferir', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    PROSA_LIMPA.replace('art. 373 do CPC', 'art. 300 do CPC')), 'utf8');
+  const r = emAcme('conferir', '1');
+  return r.codigo === 1 && r.saida.includes('texto x contrato do topico')
+    && r.saida.includes('art. 300 do CPC') && r.saida.includes('art. 373 CPC');
+})());
+
+// O contrato e removido do papel de proposito. Se a quinta lesse o `saida/`,
+// ela nao teria com o que comparar — e passaria verde sempre.
+ok('a quinta le a entrega na origem, e nao o papel do build', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return !md.includes('fundamento:');
 })());
 
 writeFileSync(entPath, ent, 'utf8');

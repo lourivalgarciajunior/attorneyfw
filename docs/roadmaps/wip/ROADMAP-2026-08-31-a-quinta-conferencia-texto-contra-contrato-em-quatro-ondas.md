@@ -114,7 +114,7 @@ texto contra `art. 373` no contrato nao produz achado.
 
 ### ML-2A — `attorneyfw conferir` mostra a quinta
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`, `test/smoke.mjs`
 **Acoes:**
 1. Ler a entrega **na origem** (`e.topicos`), e nao o markdown do `saida/` — o

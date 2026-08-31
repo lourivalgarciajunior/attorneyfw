@@ -452,7 +452,20 @@ const ROTULO = {
   soma: 'soma x total',
   item: 'item x pedido',
   transcricao: 'transcricao x ficha do documento',
+  'citacao-fora-do-contrato': 'texto x contrato do topico',
+  'fundamento-nao-usado': 'texto x contrato do topico',
+  'documento-nao-citado': 'texto x contrato do topico',
+  'topico-sem-texto': 'texto x contrato do topico',
 };
+
+// A recusa vai impressa em toda conferencia, com achado ou sem achado. Relatorio
+// que so lista o que achou e lido como se tivesse achado tudo — e aqui o que
+// falta e justamente a parte que exige advogado.
+const NAO_CONFERIDO = [
+  '  Nao foi conferido: se o dispositivo existe, se esta em vigor, se foi',
+  '  superado, nem se sustenta o que o topico afirma. Isso e leitura, e nao',
+  '  comparacao. Tambem nao confere numero dentro de imagem anexada.',
+];
 
 export function conferir(args) {
   const m = exigirMateria(args);
@@ -467,33 +480,42 @@ export function conferir(args) {
   if (!existsSync(fonte)) build({ ...args, _: [String(e.numero)] });
   const texto = readFileSync(fonte, 'utf8');
 
-  const achados = conferirTexto(texto, canon(m, raiz).documentos.map((d) => ({
-    id: d.id, valores: lista(d.fm.valores),
-  })));
+  const docs = canon(m, raiz).documentos;
+  const achados = [
+    ...conferirTexto(texto, docs.map((d) => ({ id: d.id, valores: lista(d.fm.valores) }))),
+    // A quinta nao roda sobre o papel: o `build` remove o contrato de topico de
+    // proposito, e sem contrato nao ha com o que comparar o texto. Ela le a
+    // entrega na origem, onde os dois ainda estao lado a lado.
+    ...conferirTopicos(e.topicos, docs.map((d) => ({ id: d.id, nome: d.nome, apelidos: d.apelidos }))),
+  ];
 
   if (args.json) {
     console.log(JSON.stringify({
       arquivo: rel(raiz, fonte), achados, corrigiu: false,
       nota: 'divergencia sai como par; a ferramenta nao sabe qual lado esta certo',
+      naoConferido: ['existencia', 'vigencia', 'superacao', 'pertinencia do dispositivo'],
     }, null, 2));
     return achados.length ? 1 : 0;
   }
 
-  console.log(c.b(`conferencia numerica — ${rel(raiz, fonte)}`));
+  console.log(c.b(`conferencia — ${rel(raiz, fonte)}`));
   if (!achados.length) {
-    console.log(c.green('\n  Nenhuma divergencia nas tres verificacoes.'));
-    console.log(c.dim('  Extenso, soma, item e transcricao. Nao confere numero dentro de imagem anexada.'));
+    console.log(c.green('\n  Nenhuma divergencia nas cinco conferencias.'));
+    console.log(c.dim('  Extenso, soma, item, transcricao e texto x contrato do topico.\n'));
+    for (const l of NAO_CONFERIDO) console.log(c.dim(l));
     return 0;
   }
 
   console.log(c.dim(`${achados.length} divergencia(s) — nada foi corrigido\n`));
   for (const a of achados) {
-    console.log(`  ${c.yellow(ROTULO[a.tipo])}  ${c.dim(a.trecho)}`);
+    const onde = a.topico ? c.dim(` [${m.voc.topico} ${a.topico}]`) : '';
+    console.log(`  ${c.yellow(ROTULO[a.tipo])}${onde}  ${c.dim(a.trecho)}`);
     console.log(`    ${a.esquerda.rotulo.padEnd(22)} ${c.b(a.esquerda.valor)}`);
     console.log(`    ${a.direita.rotulo.padEnd(22)} ${c.b(a.direita.valor)}`);
     console.log('');
   }
   console.log(c.dim('  Os dois lados estao a vista de proposito: a ferramenta nao sabe qual'));
-  console.log(c.dim('  esta certo. Escolher qual prevalece e de quem assina.'));
+  console.log(c.dim('  esta certo. Escolher qual prevalece e de quem assina.\n'));
+  for (const l of NAO_CONFERIDO) console.log(c.dim(l));
   return 1;
 }

@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-conferir-peca-do-arquivo-roda-so-o-que-nao-precisa-de-declaracao-e-diz-em-voz-alta-o-que-nao-rodou"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-conferir-arquivo-em-duas-ondas"
 
 # REQ: `conferir --arquivo` sobre peça do arquivo do escritório
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -19,7 +19,7 @@ nao rodam, e por que o fundamento invocado nao entra.
 ADR: `docs/adr/ADR-2026-08-31-importar-assiste-e-nao-preenche-tudo-entra-pendente-e-o-que-nao-e-mecanico-e-recusado-em-voz-alta.md`
 — o `lerTexto` reusado, e a disciplina de declarar o que nao se alcancou.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-conferir-arquivo-em-duas-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-conferir-arquivo-em-duas-ondas.md`
 
 ## Motivation
 
@@ -79,15 +79,15 @@ que o arquivo nao alcanca.
 
 ## Acceptance criteria
 
-- [ ] `conferir --arquivo peca.docx` roda fora de carteira, sem erro de "nao achei escritorio".
-- [ ] Roda extenso, soma e item; **nao** roda transcricao, contrato nem continuidade.
-- [ ] O relatorio diz "tres das seis" e **nomeia as tres que nao rodaram**, com o que cada uma precisaria.
-- [ ] Peca sem divergencia sai com 0 e **nao** diz "nenhuma divergencia nas seis".
-- [ ] Peca com extenso divergente sai com 1 e mostra o par.
-- [ ] Dois arquivos numa chamada produzem dois relatorios, e nenhum achado que compare um com o outro.
-- [ ] `--json` traz `modo: "arquivo"` e as duas listas de conferencias.
-- [ ] `.txt` e `.md` funcionam pelo mesmo `lerTexto`.
-- [ ] Arquivo inexistente falha com mensagem clara, e nao com stack.
-- [ ] O modo de materia continua idêntico — teste de regressao.
-- [ ] `npm run check` verde: 17 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `conferir --arquivo peca.docx` roda fora de carteira, sem erro de "nao achei escritorio".
+- [x] Roda extenso, soma e item; **nao** roda transcricao, contrato nem continuidade.
+- [x] O relatorio diz "tres das seis" e **nomeia as tres que nao rodaram**, com o que cada uma precisaria.
+- [x] Peca sem divergencia sai com 0 e **nao** diz "nenhuma divergencia nas seis".
+- [x] Peca com extenso divergente sai com 1 e mostra o par.
+- [x] Dois arquivos numa chamada produzem dois relatorios, e nenhum achado que compare um com o outro.
+- [x] `--json` traz `modo: "arquivo"` e as duas listas de conferencias.
+- [x] `.txt` e `.md` funcionam pelo mesmo `lerTexto`.
+- [x] Arquivo inexistente falha com mensagem clara, e nao com stack.
+- [x] O modo de materia continua idêntico — teste de regressao.
+- [x] `npm run check` verde: 17 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

@@ -24,7 +24,23 @@ Consulta a tribunal, download de intimacao, peticionamento, controle de horas,
 financeiro, CRM, terceiro tipo de materia, banco de dados. Esta no escopo
 negativo da REQ — nao invente por conta.
 
-## Ultimo trabalho fechado — 0.10.0, o extrator medido contra o arquivo real
+## Ultimo trabalho fechado — 0.11.0, `conferir --arquivo`
+
+Peca do arquivo do escritorio passa por conferencia sem virar materia. Rodam
+**tres das seis** — as que comparam a peca com ela mesma. As outras tres
+comparam contra algo declarado, e peca de arquivo nao declara nada.
+
+**A regra que nao pode ser desfeita:** o relatorio nunca afirma as seis. O modo
+de materia diz "nenhuma divergencia nas seis conferencias"; dizer isso depois de
+rodar tres faz quem le entender "peca conferida" e protocolar. **Meia
+conferencia apresentada como conferencia e pior que nenhuma.** Regra 17 do lint
+reprova o build se "tres das seis" ou "nao e peca conferida" sumirem de
+`README.md` ou `src/conferir.mjs`.
+
+O rodape nomeia as tres ausentes **e o que cada uma precisaria** — e isso e um
+caminho para a materia, e nao um muro.
+
+## Trabalho anterior — 0.10.0, o extrator medido contra o arquivo real
 
 Varredura contra as nove pecas reais de um escritorio achou tres defeitos no
 extrator de citacao e uma guarda fora de ordem no comparador de itens. **Tudo

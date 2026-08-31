@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-conferir-arquivo-sobre-peca-do-arquivo-do-escritorio.md
 adr: docs/adr/ADR-2026-08-31-conferir-peca-do-arquivo-roda-so-o-que-nao-precisa-de-declaracao-e-diz-em-voz-alta-o-que-nao-rodou.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-conferir-peca-do-arquivo-roda-so-o-que-nao-precisa-
 
 # Roadmap: `conferir --arquivo`, em duas ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -31,16 +31,16 @@ Ha uma dependencia de import que vale registrar: `conferir.mjs` passa a importar
 
 ## Acceptance Criteria
 
-- [ ] As duas ondas concluidas, cada uma com `npm run check` verde
-- [ ] O modo arquivo nunca diz "seis conferencias"
-- [ ] O relatorio nomeia as tres que nao rodaram e o que cada uma precisaria
-- [ ] Nao cria materia, nao escreve, nao altera o arquivo lido
-- [ ] Nao compara um arquivo com o outro
-- [ ] Nao lista o fundamento invocado
-- [ ] O modo de materia sai identico ao de hoje
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` com a versao alinhada ao CLI
+- [x] As duas ondas concluidas, cada uma com `npm run check` verde
+- [x] O modo arquivo nunca diz "seis conferencias"
+- [x] O relatorio nomeia as tres que nao rodaram e o que cada uma precisaria
+- [x] Nao cria materia, nao escreve, nao altera o arquivo lido
+- [x] Nao compara um arquivo com o outro
+- [x] Nao lista o fundamento invocado
+- [x] O modo de materia sai identico ao de hoje
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` com a versao alinhada ao CLI
 
 ---
 
@@ -105,7 +105,7 @@ o rodape nomeia as tres ausentes com achado e sem achado.
 
 ### ML-2A — README, AJUDA, lint e CHANGELOG
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `bin/attorneyfw.mjs`, `tools/lint.mjs`, `CHANGELOG.md`, `package.json`
 **Acoes:**
 1. README: o modo arquivo, a tabela das tres que rodam e das tres que nao, e por
@@ -121,7 +121,7 @@ backup **fora do git**.
 
 ### ML-2B — Plugin e publicacao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. `plugin.json` para `0.11.0` — versao nunca publicada antes.
@@ -131,4 +131,18 @@ backup **fora do git**.
 3. Publicar e conferir o cache com `diff -r`.
 
 **Aceite:** `claude plugin validate .` passa; `diff -r` do cache sai limpo.
+
+Medido contra `main` em `ffbf9e8` (0.10.0): **402 -> 410 asserts**, 16 -> 17
+regras de lint, 30 modulos e nenhum novo.
+
+**Conferido sobre peca real** antes de fechar: rodou sobre o divorcio da pasta do
+escritorio, achou os dois pares de R$ 108.084,82 contra o extenso, e declarou as
+tres ausentes.
+
+**Duas correcoes que so a execucao mostrou.** `--arquivo <caminho>` deixa o
+caminho em `args.arquivo`, e nao em `args._` — a primeira versao recusava todo
+caminho com o proprio texto de uso. E um teste meu exigia que a saida nunca
+contivesse "seis conferencias", quando o cabecalho certo diz "tres das seis": a
+asserção estava errada, e nao o codigo. Passou a proibir a forma de afirmacao.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

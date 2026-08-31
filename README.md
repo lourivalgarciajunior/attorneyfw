@@ -217,6 +217,42 @@ Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém
 
 O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
 
+## Visual law
+
+Três diagramas, e só três:
+
+```bash
+attorneyfw diagrama linha-do-tempo --salvar
+attorneyfw diagrama partes
+attorneyfw diagrama fato-prova
+```
+
+| Diagrama | Fonte | O que mostra |
+|---|---|---|
+| `linha-do-tempo` | cronologia × canon de documentos | fato, data, e o documento que o prova |
+| `partes` | canon de partes | quem é quem, e o papel de cada um |
+| `fato-prova` | tese × contratos de tópico | cada `F` ligado ao `D` que o paga |
+
+**Diagrama é projeção de dado estruturado, nunca de texto livre.** O caminho óbvio — pedir ao modelo que desenhe lendo a minuta — funciona na demonstração e falha na terceira versão da peça: corrige-se uma data no corpo e a figura fica com a antiga. Divergência é pior que ausência, porque a figura tem autoridade visual e é a contraparte quem acha a contradição. Aqui a figura não pode divergir da peça, porque as duas leem o mesmo lugar.
+
+Se o dado não está no canon, não entra na figura. Quem quiser um marco na linha do tempo acrescenta o fato à cronologia — que é onde ele deveria estar de qualquer modo, e onde o gate já o cobra.
+
+**Marco sem documento sai visivelmente marcado como não provado**, em vermelho tracejado. Não é enfeite: é a mesma exigência que o gate faz ao texto, aplicada à figura. Sair igual aos outros seria a figura mentindo com mais autoridade que o parágrafo.
+
+Na peça, a figura entra onde o tópico pedir — num bloco cercado, o mesmo idioma do contrato de tópico:
+
+````markdown
+```diagrama
+linha-do-tempo
+```
+````
+
+Bloco, e não comentário HTML: comentário nesta ferramenta já quer dizer nota de trabalho, e é removido justamente para não vazar para a peça. Marcar diagrama assim pediria uma figura que desaparece antes do `build` ver.
+
+O `build` troca a marca pelo bloco Mermaid. A fonte é texto — entra no diff, na revisão e no versionamento como qualquer outra parte da peça. Se o diagrama não puder ser gerado, o `build` **não para**: deixa um aviso no lugar da figura e segue, porque falta de figura não pode impedir um protocolo.
+
+O `docx` renderiza com o [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) quando ele está no PATH (`npm i -g @mermaid-js/mermaid-cli`); sem ele, insere um aviso e **a peça sai assim mesmo**. E continua lendo o markdown que o `build` gerou — não consulta canon nem cronologia.
+
 ## Correção monetária
 
 ```bash

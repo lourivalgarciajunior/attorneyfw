@@ -13,6 +13,7 @@ import {
   lerEscritorio, lista, palavras, pedidos as pedidosDa, prazoDe, rel, textoDe,
 } from './core.mjs';
 import { alvosDe } from './entrega.mjs';
+import { gerarDiagrama } from './diagrama.mjs';
 
 /**
  * O texto final de uma entrega: os topicos costurados, ou o corpo limpo.
@@ -34,6 +35,49 @@ export function textoFinal(e) {
 
 const ROMANOS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
 const romano = (n) => ROMANOS[n - 1] || String(n);
+
+/**
+ * A marca do diagrama no corpo do topico:
+ *
+ *     ```diagrama
+ *     linha-do-tempo
+ *     ```
+ *
+ * Bloco cercado, e nao comentario HTML. Comentario nesta ferramenta ja quer
+ * dizer outra coisa — nota de trabalho, que o `textoDe` remove justamente para
+ * nao vazar para a peca. Marcar diagrama assim seria pedir uma figura que
+ * desaparece antes do `build` ver, em silencio. Descoberto no smoke.
+ */
+const MARCA_DIAGRAMA = /^```diagrama[ \t]*\n[ \t]*([a-z-]+)[ \t]*\n```[ \t]*$/gm;
+
+/**
+ * Troca cada marca de diagrama pelo bloco Mermaid correspondente.
+ *
+ * A marca e explicita de proposito: a peca decide onde a figura entra, e o
+ * `build` nao adivinha. Diagrama que se insere sozinho aparece no lugar errado
+ * na primeira peca que nao o queria.
+ *
+ * Se o diagrama nao puder ser gerado — cronologia vazia, canon sem partes —, o
+ * `build` **nao para**. Deixa um aviso visivel no lugar da figura e segue: falta
+ * de figura nao pode impedir um protocolo, e o aviso no corpo e mais dificil de
+ * ignorar do que uma linha no terminal.
+ */
+function embutirDiagramas(m, texto) {
+  const diagramas = [];
+  const avisos = [];
+  const saida = texto.replace(MARCA_DIAGRAMA, (_, tipo) => {
+    try {
+      const { mermaid, avisos: av } = gerarDiagrama(m, tipo);
+      diagramas.push(tipo);
+      avisos.push(...av.map((a) => `${tipo}: ${a}`));
+      return `\`\`\`mermaid\n${mermaid}\n\`\`\``;
+    } catch (err) {
+      avisos.push(`${tipo}: ${err.message.split('\n')[0]}`);
+      return `> **[DIAGRAMA "${tipo}" NAO GERADO — ${err.message.split('\n')[0]}]**`;
+    }
+  });
+  return { texto: saida, diagramas, avisos };
+}
 
 export function build(args) {
   const m = exigirMateria(args);
@@ -71,7 +115,8 @@ export function build(args) {
   partes.push('');
 
   // ---- topicos
-  const texto = textoFinal(e);
+  const bruto = textoFinal(e);
+  const { texto, diagramas, avisos } = embutirDiagramas(m, bruto);
   partes.push(texto || `> _[entrega ainda sem redacao — ${e.topicos.length} ${m.voc.topico}s planejados]_`);
 
   // ---- pedidos
@@ -108,6 +153,10 @@ export function build(args) {
   const total = palavras(texto);
   console.log(`${c.green('entrega costurada')}  ${rel(raiz, alvo)}`);
   console.log(c.dim(`  ${e.topicos.length} ${m.voc.topico}s | ${total} palavras | estado ${e.estado}${p && !p.erro ? ` | prazo ${p.fim}` : ''}`));
+  if (diagramas.length) console.log(c.dim(`  ${diagramas.length} diagrama(s): ${diagramas.join(', ')}`));
+  // O aviso do diagrama vai para o terminal E para o corpo da peca. A figura
+  // mostra o marco como nao provado; quem monta precisa saber disso antes.
+  for (const a of avisos) console.log(`  ${c.yellow('diagrama')}  ${a}`);
   const semTexto = e.topicos.filter((t) => !t.texto).length;
   if (semTexto) console.log(`  ${c.yellow(`${semTexto} ${m.voc.topico}(s) sem redacao`)} — o arquivo saiu incompleto`);
   if (e.estado !== 'revisao' && e.estado !== 'entregue') {

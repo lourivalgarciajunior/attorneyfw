@@ -18,6 +18,7 @@ import { build } from '../src/build.mjs';
 import { docx } from '../src/docx.mjs';
 import { atualizar, indiceLista } from '../src/atualizar.mjs';
 import { buscar } from '../src/buscar.mjs';
+import { diagrama } from '../src/diagrama.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -52,6 +53,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw status                     kanban da materia, ou a carteira na raiz
   attorneyfw context                    dump da governanca para LLM
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
+  attorneyfw diagrama <tipo> [--salvar] linha-do-tempo | partes | fato-prova
+                            projecao do canon; na peca, <!-- diagrama: tipo -->
   attorneyfw build <entrega>            costura a entrega em markdown
   attorneyfw docx <entrega>             a versao de protocolo (pede o pacote docx)
   attorneyfw indice [atualizar [serie]] series de indice da carteira
@@ -142,6 +145,7 @@ try {
     }
     case 'atualizar': atualizar(args); break;
     case 'buscar': buscar(args); break;
+    case 'diagrama': diagrama(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

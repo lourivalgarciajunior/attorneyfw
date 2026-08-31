@@ -162,25 +162,35 @@ ter um lugar so, com o motivo escrito ao lado.
 
 ### ML-3A — Os tres geradores de Mermaid
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/diagrama.mjs` (novo), `bin/attorneyfw.mjs`
 **Aceite:**
-- [ ] `linha-do-tempo` a partir de cronologia × canon de documentos
-- [ ] `partes` a partir do canon de partes
-- [ ] `fato-prova` ligando cada `F` ao `D` que o paga
-- [ ] Marco ou fato sem documento sai **visivelmente marcado** como nao provado
-- [ ] Nenhum diagrama aceita texto livre como fonte
+- [x] `linha-do-tempo` a partir de cronologia × canon de documentos
+- [x] `partes` a partir do canon de partes
+- [x] `fato-prova` ligando cada `F` ao `D` que o paga
+- [x] Marco ou fato sem documento sai **visivelmente marcado** como nao provado
+- [x] Nenhum diagrama aceita texto livre como fonte
 
 ### ML-3B — `build` embute, `docx` degrada
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/build.mjs`, `src/docx.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] `build` embute os blocos Mermaid pedidos pela entrega
-- [ ] `docx` sem renderizador insere aviso e **a peca sai**
-- [ ] `docx` continua lendo o markdown do `build`, sem consultar canon
+- [x] `build` embute os blocos Mermaid pedidos pela entrega
+- [x] `docx` sem renderizador insere aviso e **a peca sai**
+- [x] `docx` continua lendo o markdown do `build`, sem consultar canon
 
 ---
+
+**Medido ao fim da onda:** 17 asserts novos, dogfood com cronologia real de tres
+marcos — um deles sem documento, saindo marcado.
+
+**Defeito de desenho encontrado rodando:** a marca do diagrama tinha sido
+desenhada como comentario HTML, e comentario nesta ferramenta ja quer dizer nota
+de trabalho — o `textoDe` o remove para nao vazar para a peca. A marca sumia
+antes de o `build` ve-la, **em silencio**. Trocada por bloco cercado
+```` ```diagrama ````, que e o idioma que o contrato de topico ja usa, e fixada
+por um teste que exige que o comentario continue nao servindo de marca.
 
 ## Wave 4 — Item 7: custas processuais
 

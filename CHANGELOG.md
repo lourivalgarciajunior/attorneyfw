@@ -101,6 +101,44 @@ viraram trabalho.
 - Materia criada por versao anterior **nao precisa de migracao**: o gravador de
   campo YAML acrescenta a chave que faltar, e campo ausente le como "em curso".
 
+### Adicionado — visual law
+
+- **`attorneyfw diagrama <linha-do-tempo|partes|fato-prova>`**, com `--salvar`.
+  Tres geradores, e so tres. A linha do tempo sai da cronologia cruzada com o
+  canon de documentos; o organograma, do canon de partes; o mapa fato→prova
+  liga cada pendencia numerada ao lastro que o contrato de topico declarou.
+
+- **Na peca, a figura entra onde o topico pedir**, por bloco cercado
+  ```` ```diagrama ```` — o mesmo idioma do contrato de topico. O `build` troca
+  a marca pelo bloco Mermaid; o `docx` renderiza com o mermaid-cli quando ele
+  esta no PATH e, sem ele, insere um aviso.
+
+### Decidido
+
+- **Diagrama e projecao de dado estruturado, nunca de texto livre.** Pedir ao
+  modelo que desenhe lendo a minuta funciona na demonstracao e falha na terceira
+  versao da peca: corrige-se uma data no corpo e a figura fica com a antiga.
+  Divergencia e pior que ausencia, porque a figura tem autoridade visual e e a
+  contraparte quem acha a contradicao. Aqui as duas leem o mesmo lugar.
+
+- **Marco sem documento sai visivelmente marcado como nao provado**, tracejado e
+  em vermelho, com aviso no terminal e no corpo da peca. E a mesma exigencia que
+  o gate faz ao texto, aplicada a figura: sair igual aos outros seria a figura
+  mentindo com mais autoridade que o paragrafo.
+
+- **A marca do diagrama e bloco cercado, e nao comentario HTML.** Comentario
+  nesta ferramenta ja quer dizer nota de trabalho, e o `textoDe` o remove
+  justamente para nao vazar para a peca — a marca em comentario pediria uma
+  figura que desaparece antes do `build` ver, em silencio. Descoberto no smoke,
+  e agora ha um teste que fixa o comportamento.
+
+- **Falta de figura nao impede protocolo.** Diagrama que nao pode ser gerado
+  deixa aviso no lugar e o `build` segue. Exportador de imagem ausente nao pode
+  travar uma peca.
+
+- O `docx` continua lendo o markdown que o `build` gerou, com figura ou sem —
+  a regra que existe desde a 0.1.0 vale sem excecao para os diagramas.
+
 ### Mudado
 
 - A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser

@@ -331,6 +331,85 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// ------------------------------------------------------------------ diagramas
+console.log('\nvisual law');
+
+ok('diagrama inexistente e recusado', emAcme('diagrama', 'zebra').codigo === 1);
+ok('linha do tempo sem cronologia preenchida e recusada com instrucao', (() => {
+  const r = emAcme('diagrama', 'linha-do-tempo');
+  return r.codigo === 1 && r.saida.includes('cronologia');
+})());
+
+// A cronologia e a fonte. D1 esta no canon; D9 nao, e o marco sem documento
+// tem de sair marcado — figura que esconde o nao provado mente com mais
+// autoridade que o paragrafo.
+const cronoArq = join(acme, 'docs', 'canon', 'cronologia.md');
+writeFileSync(cronoArq, lerLF(cronoArq).replace(
+  '|  |  |  |  |',
+  ['| 2024-03-14 | Cobranca indevida na fatura | D1 | autos |',
+   '| 2024-04-02 | Reclamacao no SAC | D9 | autos |',
+   '| 2024-05-10 | Negativacao | | autos |'].join('\n'),
+), 'utf8');
+
+const lt = emAcme('diagrama', 'linha-do-tempo');
+ok('linha do tempo sai em mermaid', lt.saida.includes('```mermaid') && lt.saida.includes('flowchart TD'));
+ok('marco provado carrega o documento', lt.saida.includes('Cobranca indevida') && lt.saida.includes('<i>D1</i>'));
+ok('marco sem documento sai marcado', lt.saida.includes('NAO PROVADO'));
+ok('documento fora do canon nao passa por provado', lt.saida.includes('fora do canon'));
+ok('a saida avisa quantos sairao nao provados', lt.saida.includes('nao provado'));
+ok('a ordem da cronologia vira a ordem do grafo', lt.saida.includes('M0 --> M1'));
+
+// Leitura por NOME de coluna, nao por posicao: escritorio troca a ordem sem avisar.
+ok('tabela lida por nome de coluna', (() => {
+  writeFileSync(cronoArq, lerLF(cronoArq)
+    .replace('| Data | Fato | Documento | Fonte |', '| Fonte | Documento | Fato | Data |')
+    .replace('| 2024-03-14 | Cobranca indevida na fatura | D1 | autos |',
+      '| autos | D1 | Cobranca indevida na fatura | 2024-03-14 |'), 'utf8');
+  const r = emAcme('diagrama', 'linha-do-tempo');
+  return r.saida.includes('2024-03-14') && r.saida.includes('<i>D1</i>');
+})());
+
+ok('organograma de partes sai do canon', (() => {
+  const r = emAcme('diagrama', 'partes');
+  return r.saida.includes('Acme Ltda') && r.saida.includes('autor');
+})());
+ok('fato-prova liga F ao D que o paga', (() => {
+  const r = emAcme('diagrama', 'fato-prova');
+  return r.saida.includes('F1') && r.saida.includes('D1') && r.saida.includes('Fatura contestada');
+})());
+ok('--salvar grava a fonte em texto, versionavel', (() => {
+  emAcme('diagrama', 'partes', '--salvar');
+  return existsSync(join(acme, 'docs', 'diagramas', 'partes.mmd'));
+})());
+
+// O build embute onde a peca pedir, e nao adivinha.
+writeFileSync(entPath, ent.replace('texto '.repeat(200),
+  ['```diagrama', 'linha-do-tempo', '```', '', 'texto '.repeat(50)].join('\n')), 'utf8');
+const comFig = emAcme('build', '1');
+ok('build embute o diagrama pedido', comFig.saida.includes('1 diagrama'));
+ok('o mermaid entra no markdown da saida',
+  readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8').includes('```mermaid'));
+
+// Falta de figura nao pode impedir protocolo.
+writeFileSync(entPath, ent.replace('texto '.repeat(200), ['```diagrama', 'zebra', '```'].join('\n')), 'utf8');
+const semFig = emAcme('build', '1');
+ok('diagrama que falha nao derruba o build', semFig.codigo === 0);
+ok('a peca sai com aviso no lugar da figura',
+  readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8').includes('NAO GERADO'));
+
+// Comentario HTML nesta ferramenta ja quer dizer nota de trabalho, e o
+// `textoDe` o remove antes de a peca sair. Usa-lo de marca pediria uma figura
+// que desaparece antes de o build ver, em silencio.
+ok('comentario HTML nao serve de marca — ele e nota de trabalho', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), '<!-- diagrama: linha-do-tempo -->'), 'utf8');
+  const r = emAcme('build', '1');
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return r.codigo === 0 && !md.includes('mermaid') && !md.includes('diagrama:');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
 // ------------------------------------------------------- memoria da carteira
 console.log('\nmemoria da carteira');
 

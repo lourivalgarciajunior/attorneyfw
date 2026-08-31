@@ -49,7 +49,7 @@ reavaliado.
 
 ### ML-1A — Uma funcao so monta a linha
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/prazo.mjs`
 **Acoes:**
 1. Extrair de `prazoLista` a montagem de cada linha para uma funcao que devolve
@@ -64,7 +64,7 @@ mudanca, comparado byte a byte contra a saida capturada antes.
 
 ### ML-1B — O payload
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/prazo.mjs`, `bin/attorneyfw.mjs`
 **Acoes:**
 1. `--json` emite `{ versao, hoje, ressalva, janela, materias, vencidos, prazos[] }`
@@ -80,7 +80,7 @@ vazia devolve `prazos: []`.
 
 ### ML-1C — Testes do contrato
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Contrato: campos obrigatorios presentes, `versao` presente, `ressalva` igual a

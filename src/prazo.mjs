@@ -78,6 +78,79 @@ function explicarDivergencia(p) {
 export { explicarDivergencia };
 
 /**
+ * A linha da agenda, em pedacos.
+ *
+ * Existe uma funcao so porque a linha sai em dois lugares: colorida no terminal
+ * e limpa dentro do `--json`. Montar cada uma por conta criaria duas maneiras de
+ * apresentar a mesma coisa, e uma delas ficaria para tras — que e exatamente o
+ * que o hook do plugin ja dizia querer evitar quando reemitia a saida do CLI em
+ * vez de reformata-la.
+ *
+ * Os pedacos carregam o nome da cor, e nao a sequencia ANSI: quem quer cor pinta,
+ * quem quer texto junta. Nenhum consumidor precisa tirar cor com regex.
+ */
+function pedacos(l) {
+  const onde = `${l.m.slug}/${String(l.e.numero).padStart(2, '0')}`;
+  const titulo = l.e.fm.titulo || l.e.arquivo;
+  if (l.erro) {
+    return [
+      { t: '  ' }, { t: '???       ', cor: 'yellow' }, { t: ' ' },
+      { t: onde.padEnd(28) }, { t: ' ' }, { t: titulo }, { t: '  ' },
+      { t: l.erro, cor: 'yellow' },
+    ];
+  }
+  const { fim, restam, fatal, vencido, regime } = l.p;
+  const rotulo = vencido
+    ? { t: `VENCIDO ${String(-restam).padStart(2)}d`, cor: 'red' }
+    : restam <= 2 ? { t: `${String(restam).padStart(2)}d uteis`, cor: 'red' }
+      : restam <= 5 ? { t: `${String(restam).padStart(2)}d uteis`, cor: 'yellow' }
+        : { t: `${String(restam).padStart(2)}d uteis`, cor: 'dim' };
+  return [
+    { t: '  ' }, { t: fim }, { t: '  ' }, rotulo, { t: '  ' },
+    { t: onde.padEnd(28) }, { t: ' ' }, { t: titulo.padEnd(38) }, { t: ' ' },
+    { t: l.e.estado, cor: 'dim' },
+    // O regime so aparece quando nao e o padrao: coluna que repete "processual"
+    // em toda linha vira ruido e para de ser lida.
+    ...(regime === 'material' ? [{ t: '  CTN', cor: 'cyan' }] : []),
+    ...(fatal ? [{ t: '  FATAL', cor: 'red' }] : []),
+  ];
+}
+
+const emTexto = (ps) => ps.map((p) => p.t).join('');
+const emCor = (ps) => ps.map((p) => (p.cor ? c[p.cor](p.t) : p.t)).join('');
+
+const notaDivergencia = (p) => `${' '.repeat(14)}outra leitura do art. 210, par. unico: vence ${p.fimAlternativo} — adotada a mais curta`;
+
+/** Uma entrada da agenda, na forma que o `--json` publica. Ver ADR. */
+function entrada(l) {
+  const base = {
+    materia: l.m.slug,
+    entrega: l.e.numero,
+    titulo: l.e.fm.titulo || l.e.arquivo,
+    estado: l.e.estado,
+    linha: emTexto(pedacos(l)),
+  };
+  if (l.erro) {
+    return {
+      ...base, erro: l.erro,
+      intimacao: null, dias: null, contagem: null, regime: null,
+      inicio: null, fim: null, restam: null, vencido: null, fatal: null,
+      divergencia: null,
+    };
+  }
+  const p = l.p;
+  return {
+    ...base, erro: null,
+    intimacao: p.intimacao, dias: p.dias, contagem: p.contagem, regime: p.regime,
+    inicio: p.inicio, fim: p.fim, restam: p.restam,
+    vencido: Boolean(p.vencido), fatal: Boolean(p.fatal),
+    divergencia: p.divergencia
+      ? { adotada: p.fim, alternativa: p.fimAlternativo, nota: notaDivergencia(p) }
+      : null,
+  };
+}
+
+/**
  * A agenda. Dentro de uma materia mostra a dela; na raiz da carteira, a de
  * todas — que e o unico jeito de ver que dois prazos fatais caem no mesmo dia.
  */
@@ -100,41 +173,44 @@ export function prazoLista(args) {
     }
   }
 
-  if (!linhas.length) {
-    console.log(c.dim(daqui.length ? 'nenhum prazo em aberto.' : 'nenhuma materia na carteira.'));
-    return 0;
-  }
-
   linhas.sort((a, b) => {
     if (a.erro) return -1;
     if (b.erro) return 1;
     return a.p.fim.localeCompare(b.p.fim);
   });
+  const vencidos = linhas.filter((l) => l.p && l.p.vencido).length;
+
+  // O payload existe porque o hook do plugin decidia "ha prazo vencido?" lendo a
+  // palavra VENCIDO na saida. Reescrever aquele rotulo desligaria o unico alarme
+  // do plugin sem que nada falhasse. Aqui o sinal e campo, e nao texto.
+  //
+  // A ressalva vai DENTRO do payload, e nao no rodape: programa nao le rodape, e
+  // um numero de conferencia que viaja sozinho chega ao consumidor com cara de
+  // contagem oficial.
+  if (args.json) {
+    console.log(JSON.stringify({
+      versao: 1,
+      hoje: ctx.hoje,
+      ressalva: AVISO,
+      janela,
+      materias: daqui.length,
+      vencidos,
+      prazos: linhas.map(entrada),
+    }, null, 2));
+    return vencidos ? 1 : 0;
+  }
+
+  if (!linhas.length) {
+    console.log(c.dim(daqui.length ? 'nenhum prazo em aberto.' : 'nenhuma materia na carteira.'));
+    return 0;
+  }
 
   console.log(c.b(`agenda de prazos${daqui.length > 1 ? ` — ${daqui.length} materias` : ''}`));
   console.log(c.dim(`hoje ${ctx.hoje} | ${AVISO}\n`));
 
-  let vencidos = 0;
   for (const l of linhas) {
-    const onde = `${l.m.slug}/${String(l.e.numero).padStart(2, '0')}`;
-    if (l.erro) {
-      console.log(`  ${c.yellow('???       ')} ${onde.padEnd(28)} ${l.e.fm.titulo || l.e.arquivo}  ${c.yellow(l.erro)}`);
-      continue;
-    }
-    const { fim, restam, fatal, vencido, regime } = l.p;
-    if (vencido) vencidos++;
-    const rotulo = vencido
-      ? c.red(`VENCIDO ${String(-restam).padStart(2)}d`)
-      : restam <= 2 ? c.red(`${String(restam).padStart(2)}d uteis`)
-        : restam <= 5 ? c.yellow(`${String(restam).padStart(2)}d uteis`)
-          : c.dim(`${String(restam).padStart(2)}d uteis`);
-    // O regime so aparece quando nao e o padrao: coluna que repete "processual"
-    // em toda linha vira ruido e para de ser lida.
-    const marca = regime === 'material' ? c.cyan('  CTN') : '';
-    console.log(`  ${fim}  ${rotulo}  ${onde.padEnd(28)} ${(l.e.fm.titulo || l.e.arquivo).padEnd(38)} ${c.dim(l.e.estado)}${marca}${fatal ? c.red('  FATAL') : ''}`);
-    if (l.p.divergencia) {
-      console.log(c.dim(`${' '.repeat(14)}outra leitura do art. 210, par. unico: vence ${l.p.fimAlternativo} — adotada a mais curta`));
-    }
+    console.log(emCor(pedacos(l)));
+    if (l.p && l.p.divergencia) console.log(c.dim(notaDivergencia(l.p)));
   }
 
   if (vencidos) {

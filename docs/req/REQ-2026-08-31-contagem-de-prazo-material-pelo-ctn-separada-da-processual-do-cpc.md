@@ -1,5 +1,5 @@
 ---
-status: Open
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-termo-inicial-sai-declarada"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-contagem-de-prazo-material-pelo-ctn-separada-da-pro
 
 # REQ: Contagem de prazo material pelo CTN, separada da processual do CPC
 
-> Date: 2026-08-31 | Status: Open
+> Date: 2026-08-31 | Status: Done
 
 ## Motivation
 
@@ -28,18 +28,18 @@ numero errado na tela vence documentacao.
 
 ## Acceptance Criteria
 
-- [ ] `contarPrazo` aceita `regime: 'processual' | 'material'`
-- [ ] Regime `material` implementa o art. 210, *caput*, do CTN: exclui o dia do inicio, conta continuo a partir do dia seguinte (util ou nao), inclui o do vencimento
-- [ ] Vencimento em dia sem expediente normal prorroga para o seguinte, nos dois regimes
-- [ ] Quando as duas leituras do paragrafo unico divergem, `prazoDe` devolve `fim`, `fimAlternativo` e `divergencia`, com `fim` recebendo a data **mais curta**
-- [ ] Campo `prazo_regime` no frontmatter da entrega, com `--material` no `attorneyfw prazo set`
-- [ ] `prazo`, `status`, `context` e `validate` mostram o regime e a divergencia quando houver
-- [ ] Gate avisa quando ha `prazo_contagem: corridos` com `prazo_regime: processual` — combinacao que quase sempre e prazo material mal declarado
-- [ ] Smoke cobre o caso medido: fato em 26.12.2025, 30 dias material, `fim` 2026-01-26 e `fimAlternativo` 2026-01-27
-- [ ] Smoke cobre o caso sem divergencia: fato em 19.01.2026, 30 dias material, `fim` 2026-02-19 (quarta-feira de cinzas prorrogada) e sem `fimAlternativo`
-- [ ] `npm run check` verde; CI verde em Linux e Windows
-- [ ] Skill `attorneyfw-prazo` e agente `adv-modestino` atualizados no `plugin-skill`, com a armadilha substituida pela regra nova
-- [ ] CHANGELOG e README refletindo a 0.2.0
+- [x] `contarPrazo` aceita `regime: 'processual' | 'material'`
+- [x] Regime `material` implementa o art. 210, *caput*, do CTN: exclui o dia do inicio, conta continuo a partir do dia seguinte (util ou nao), inclui o do vencimento
+- [x] Vencimento em dia sem expediente normal prorroga para o seguinte, nos dois regimes
+- [x] Quando as duas leituras do paragrafo unico divergem, `prazoDe` devolve `fim`, `fimAlternativo` e `divergencia`, com `fim` recebendo a data **mais curta**
+- [x] Campo `prazo_regime` no frontmatter da entrega, com `--material` no `attorneyfw prazo set`
+- [x] `prazo`, `status`, `context` e `validate` mostram o regime e a divergencia quando houver
+- [x] Gate avisa quando ha `prazo_contagem: corridos` com `prazo_regime: processual` — combinacao que quase sempre e prazo material mal declarado
+- [x] Smoke cobre o caso medido: fato em 26.12.2025, 30 dias material, `fim` 2026-01-26 e `fimAlternativo` 2026-01-27
+- [x] Smoke cobre o caso sem divergencia: fato em 19.01.2026, 30 dias material, `fim` 2026-02-19 (quarta-feira de cinzas prorrogada) e sem `fimAlternativo`
+- [x] `npm run check` verde; CI verde em Linux e Windows
+- [x] Skill `attorneyfw-prazo` e agente `adv-modestino` atualizados no `plugin-skill`, com a armadilha substituida pela regra nova
+- [x] CHANGELOG e README refletindo a 0.2.0
 
 ## Escopo negativo
 
@@ -69,4 +69,4 @@ ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-t
 
 ## Linked Roadmap
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-contagem-de-prazo-material-pelo-ctn-separada-da-processual-do-cpc.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-contagem-de-prazo-material-pelo-ctn-separada-da-processual-do-cpc.md`

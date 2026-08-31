@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ESTADOS_ATIVOS, acharEscritorio, acharMateria, artefatos, c, canon, contextoPrazo,
-  entregas, estrategia, exigirMateria, lerEscritorio, lista, materias,
-  pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel,
+  ESTADOS_ATIVOS, RESULTADOS, acharEscritorio, acharMateria, artefatos, c, canon,
+  contextoPrazo, entregas, estrategia, exigirMateria, lerEscritorio, lista, materias,
+  pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel, valor,
 } from './core.mjs';
+import { rotuloResultado } from './init.mjs';
 
 export function status(args) {
   const raiz = acharEscritorio();
@@ -37,10 +38,22 @@ function statusCarteira(raiz) {
           : prox.restam <= 5 ? c.yellow(`${prox.fim} ${String(prox.restam).padStart(2)}d`)
             : c.dim(`${prox.fim} ${String(prox.restam).padStart(2)}d`);
     const est = estrategia(m) ? 'ok' : c.red('SEM');
-    console.log(`  ${marca}  ${m.slug.padEnd(30)} ${c.dim(m.tipo.padEnd(12))} ${String(abertas.length).padStart(2)} aberta(s) / ${String(es.length).padStart(2)}  ${m.voc.artefato} ${est}`);
+    console.log(`  ${marca}  ${m.slug.padEnd(30)} ${c.dim(m.tipo.padEnd(12))} ${String(abertas.length).padStart(2)} aberta(s) / ${String(es.length).padStart(2)}  ${m.voc.artefato} ${est}${m.resultado ? `  ${rotuloResultado(m)}` : ''}`);
   }
+
+  // O placar da carteira. Existe para a pergunta que o escritorio fez — que a
+  // base responda "ja perdemos isto antes?" sem depender da memoria de ninguem.
+  const fechadas = todas.filter((m) => m.fechada);
+  if (fechadas.length) {
+    const conta = {};
+    for (const m of fechadas) conta[m.resultado] = (conta[m.resultado] || 0) + 1;
+    const placar = RESULTADOS.filter((r) => conta[r]).map((r) => `${conta[r]} ${r}`).join(' · ');
+    console.log(c.dim(`\n  encerradas ${fechadas.length}/${todas.length}: ${placar}`));
+  }
+
   console.log(c.dim('\n  detalhe de uma materia: cd materias/<slug> && attorneyfw status'));
   console.log(c.dim('  agenda completa: attorneyfw prazo'));
+  console.log(c.dim('  a memoria da carteira: attorneyfw buscar <termo>'));
 }
 
 function statusMateria(m, raiz) {
@@ -107,6 +120,26 @@ export function context(args) {
   out.push(`Tipo ${m.tipo} | cliente ${m.cfg.cliente} (${m.cfg.papel}) | adverso ${m.cfg.adverso}`);
   out.push(`Processo ${m.cfg.processo || '(sem numero)'} | juizo ${m.cfg.juizo} | rito ${m.cfg.rito || '-'} | valor ${m.cfg.valor_causa || '-'}`);
   out.push(`Assina ${esc.advogado} — OAB ${esc.oab}${String(m.cfg.sigilo || '').toLowerCase() === 'true' ? ' | SEGREDO DE JUSTICA' : ''}`);
+  out.push(
+    `Pedido ${valor(m.cfg.valor_pedido) || '(nao declarado)'} | desfecho `
+    + (m.resultado
+      ? `${m.resultado} em ${valor(m.cfg.resultado_em) || '?'}${valor(m.cfg.resultado_valor) ? `, ${valor(m.cfg.resultado_valor)}` : ''}`
+        + `${valor(m.cfg.resultado_nota) ? ` — ${valor(m.cfg.resultado_nota)}` : ''}`
+      : 'em curso'),
+  );
+
+  // A memoria institucional entra no contexto sem ninguem pedir: quem redige
+  // aqui precisa saber que uma materia irma com a mesma tese terminou em perda,
+  // e essa e informacao que so aparece se for empurrada.
+  const irmas = materias(raiz).filter((x) => x.slug !== m.slug && x.fechada);
+  if (irmas.length) {
+    out.push('\n## Materias ja encerradas na carteira');
+    out.push('Consulte antes de repetir tese: `attorneyfw buscar <termo>`.');
+    for (const x of irmas) {
+      out.push(`- ${x.slug} (${x.tipo}) — ${x.resultado} em ${valor(x.cfg.resultado_em) || '?'}`
+        + `${valor(x.cfg.resultado_nota) ? `: ${valor(x.cfg.resultado_nota)}` : ''}`);
+    }
+  }
 
   const est = estrategia(m);
   if (est) out.push(`\n## ${m.voc.artefato} (${est.arquivo})\n${est.corpo.trim()}`);

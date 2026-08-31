@@ -331,6 +331,54 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// ------------------------------------------------------- memoria da carteira
+console.log('\nmemoria da carteira');
+
+ok('resultado fora do vocabulario e recusado', emAcme('materia', 'fechar', 'quase').codigo === 1);
+ok('materia fechar grava o desfecho',
+  emAcme('materia', 'fechar', 'perda', '--em', '2026-08-20', '--valor', '0',
+    '--nota', 'improcedencia mantida em segundo grau').codigo === 0);
+
+// `resultado:ganho` sem espaco nao e YAML: e string solta. O gravador reescreve
+// a chave inteira, e nao so o valor, exatamente para nao produzir isso.
+ok('o campo sai como par YAML de verdade', (() => {
+  const y = lerLF(acme, 'materia.yaml');
+  return y.includes('resultado: perda') && y.includes('resultado_em: 2026-08-20');
+})());
+ok('materia list mostra o desfecho', run('materia', 'list').saida.includes('perda'));
+ok('status na raiz mostra o placar', run('status').saida.includes('encerradas 1/2'));
+
+// A busca le a tese; nao le o corpo da minuta. Um termo que so existe no corpo
+// nao pode aparecer, senao a busca casa com o que foi CITADO em vez do que foi
+// SUSTENTADO — e ruido treina a ignorar o resultado.
+writeFileSync(join(acme, 'docs', 'tese', teseArq),
+  lerLF(acme, 'docs', 'tese', teseArq).replace('## Fundamento', '## Fundamento\n\nSumula zebrafundamento do STJ.'), 'utf8');
+writeFileSync(entPath, ent.replace('texto '.repeat(200), 'zebraminuta '.repeat(50)), 'utf8');
+
+ok('buscar acha na tese', run('buscar', 'zebrafundamento').saida.includes('acme'));
+ok('buscar devolve materia com desfecho', run('buscar', 'zebrafundamento').saida.includes('perda'));
+ok('buscar nao le corpo de minuta', (() => {
+  const r = run('buscar', 'zebraminuta');
+  return !r.saida.includes('acme') && r.saida.includes('nada');
+})());
+ok('buscar diz o que varreu', run('buscar', 'zebraminuta').saida.includes('corpo de minuta'));
+ok('buscar filtra por resultado',
+  run('buscar', 'zebrafundamento', '--resultado', 'ganho').saida.includes('0 de'));
+ok('buscar avisa quando a tese ja foi perdida',
+  run('buscar', 'zebrafundamento').saida.includes('terminaram em perda'));
+ok('buscar --json declara o que nao varre', (() => {
+  const r = run('buscar', 'zebrafundamento', '--json');
+  try { return JSON.parse(r.saida).naoVarrido.includes('minuta'); } catch { return false; }
+})());
+ok('buscar sem termo e recusado', run('buscar').codigo === 1);
+
+// Materia irma encerrada tem de chegar a quem redige sem ninguem pedir.
+ok('context empurra as materias ja encerradas',
+  emBeta('context').saida.includes('Materias ja encerradas') && emBeta('context').saida.includes('acme'));
+ok('context traz o desfecho da propria materia', emBeta('context').saida.includes('desfecho em curso'));
+
+writeFileSync(entPath, ent, 'utf8');
+
 // ------------------------------------------------------------------- dinheiro
 console.log('\ncorrecao monetaria');
 

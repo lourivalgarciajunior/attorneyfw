@@ -6,9 +6,10 @@
  * contra-argumento previsto, peca que saiu sem registro de quando saiu.
  */
 import {
-  ESTADOS_ATIVOS, acharEscritorio, acharMateria, artefatos, c, canon, contextoPrazo,
-  entregas, estrategia, exigirMateria, lerEscritorio, linhasDoPlano, lista, materias,
-  nomesDoCanon, pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel, slug,
+  ESTADOS_ATIVOS, RESULTADOS, acharEscritorio, acharMateria, artefatos, c, canon,
+  contextoPrazo, dataValida, diasCorridosAte, entregas, estrategia, exigirMateria,
+  lerEscritorio, linhasDoPlano, lista, materias, nomesDoCanon,
+  pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel, slug, valor,
 } from './core.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
@@ -278,6 +279,25 @@ function validarMateria(m, { raiz, esc, ctx }) {
   // ---- sigilo
   if (String(m.cfg.sigilo || '').toLowerCase() === 'true') {
     aviso('materia.yaml', 'materia em segredo de justica — confira antes de gerar saida ou compartilhar contexto');
+  }
+
+  // ---- desfecho
+  // Aviso, e nao violacao: nem todo desfecho chega em noventa dias, e reprovar
+  // o gate por causa de um processo que so demora transformaria a regra em
+  // ruido. Mas materia inteira entregue e sem resultado e experiencia que a
+  // carteira perdeu — e era esse o problema que o registro veio resolver.
+  if (!m.resultado) {
+    const ativas = es.filter((e) => ESTADOS_ATIVOS.includes(e.estado));
+    const todasEntregues = ativas.length > 0 && ativas.every((e) => e.estado === 'entregue');
+    if (todasEntregues) {
+      const datas = ativas.map((e) => valor(e.fm.entregue_em)).filter(dataValida).sort();
+      const ultima = datas[datas.length - 1];
+      if (ultima && diasCorridosAte(ultima, ctx.hoje) > 90) {
+        aviso('materia.yaml', `tudo entregue desde ${ultima} e sem resultado — attorneyfw materia fechar <resultado>`);
+      }
+    }
+  } else if (!RESULTADOS.includes(m.resultado)) {
+    erro('materia.yaml', `resultado "${m.resultado}" fora do vocabulario (${RESULTADOS.join(', ')})`);
   }
 
   return { erros, avisos, entregas: es.length, topicos: es.reduce((a, x) => a + x.topicos.length, 0) };

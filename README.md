@@ -76,6 +76,13 @@ attorneyfw docx 1                     # a versao de protocolo
 attorneyfw entrega move 1 entregue
 ```
 
+Ao encerrar, e depois:
+
+```bash
+attorneyfw materia fechar perda --em 2027-03-11 --nota "improcedencia mantida em 2o grau"
+attorneyfw buscar "art. 31 simples nacional"
+```
+
 Dinheiro, na raiz da carteira:
 
 ```bash
@@ -185,6 +192,30 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 ```
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
+
+## A memória do escritório
+
+A carteira sempre foi a base de casos — uma pasta por matéria, com decisão, tese, fatos, provas e cronologia, em texto e versionada. Faltavam duas coisas para que ela respondesse perguntas.
+
+**O desfecho.** A última entrega em `entregue` registra que a peça saiu, não o que aconteceu depois. Sem isso a base responde "já fizemos" e não responde "já perdemos" — que é a pergunta que evita repetir uma causa perdida em vez de propor acordo.
+
+```bash
+attorneyfw materia fechar ganho_parcial --valor 20000 --nota "danos morais reduzidos de 50k"
+```
+
+O vocabulário é fechado — `ganho`, `ganho_parcial`, `perda`, `acordo`, `extinto` — porque o valor da base está em conseguir **contar**, e campo livre não responde "quantas vezes já perdemos esta tese?". O que não couber vai em `--nota`, que fica ao lado. Matéria sem resultado está em curso; desfecho não se infere de kanban cheio.
+
+**A busca.** `grep` acha uma palavra. Não responde *"que matérias enfrentaram esta tese, e como terminaram?"* — pergunta que cruza tese, fundamento e desfecho, e que ninguém faz com três greps encadeados no meio de um dia de trabalho.
+
+```bash
+attorneyfw buscar "indeferimento da opcao" --resultado perda
+```
+
+Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia e título de entrega — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
+
+Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém pedir. Quem redige precisa saber que uma matéria irmã com a mesma tese terminou em perda, e essa é informação que só aparece se for empurrada.
+
+O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
 
 ## Correção monetária
 

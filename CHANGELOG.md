@@ -56,6 +56,51 @@ viraram trabalho.
   Ponto flutuante em dinheiro acumula residuo, e residuo em peca vira
   impugnacao.
 
+### Adicionado — a carteira como memoria institucional
+
+- **`attorneyfw materia fechar <resultado>`**, com `--valor`, `--nota` e `--em`.
+  A carteira ja guardava tudo menos o que aconteceu no fim: a ultima entrega em
+  `entregue` diz que a peca saiu, e nao que se ganhou. Sem o desfecho, a base
+  responde "ja fizemos" e nao responde "ja perdemos" — que e a pergunta que
+  evita repetir uma causa perdida em vez de propor acordo.
+
+- **`attorneyfw buscar <termo>`**, com `--tipo`, `--resultado` e `--json`. Ha
+  grep, e grep acha uma palavra; nao responde *"que materias enfrentaram esta
+  tese, e como terminaram?"*. Devolve **materia**, nao linha solta — com tipo,
+  desfecho, nota e onde bateu.
+
+- Materias ja encerradas entram no `attorneyfw context` **sem ninguem pedir**.
+  Quem redige precisa saber que uma materia irma com a mesma tese terminou em
+  perda, e isso so aparece se for empurrado.
+
+- `materia list` e `status` na raiz mostram o desfecho, e o `status` fecha com o
+  placar da carteira. `materia list` tambem passou a mostrar pasta sem
+  `materia.yaml`, que some do gate e do prazo e precisava aparecer em algum lugar.
+
+### Decidido
+
+- **Vocabulario de resultado fechado** — `ganho`, `ganho_parcial`, `perda`,
+  `acordo`, `extinto`. O valor da base esta em conseguir contar, e campo livre
+  nao responde "quantas vezes ja perdemos esta tese?". O que nao couber vai em
+  `resultado_nota`, que existe ao lado justamente para isso.
+
+- **A busca nao le corpo de minuta.** Minuta contem citacao e transcricao, e
+  busca por termo juridico casaria com o que foi *citado* em vez do que foi
+  *sustentado*. Ruido treina a ignorar o resultado, e resultado ignorado e pior
+  que nenhum. O que ela varre — tese ou mapa, DEC, cronologia, titulo de entrega
+  — sai declarado na propria saida.
+
+- **Nao se modela processo judicial.** Sem instancias, recursos, sucumbencia ou
+  transito em julgado: a materia tem desfecho, data e valor. Acompanhamento
+  processual e do sistema do tribunal, que e a fonte.
+
+- **O gate avisa, e nao reprova**, em materia toda entregue ha mais de noventa
+  dias sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa
+  de um processo que so demora transformaria a regra em ruido.
+
+- Materia criada por versao anterior **nao precisa de migracao**: o gravador de
+  campo YAML acrescenta a chave que faltar, e campo ausente le como "em curso".
+
 ### Mudado
 
 - A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser

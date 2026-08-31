@@ -116,33 +116,44 @@ e quem pegou foi o smoke, na primeira asserção que roda o CLI.
 
 ### ML-2A — Resultado no `materia.yaml`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `templates/materia.yaml`, `src/core.mjs`, `src/init.mjs`
 **Aceite:**
-- [ ] `valor_pedido`, `resultado`, `resultado_em`, `resultado_valor`, `resultado_nota`
-- [ ] `resultado` restrito a `ganho|ganho_parcial|perda|acordo|extinto` ou vazio
-- [ ] Materia antiga sem os campos continua carregando — sem migracao forcada
+- [x] `valor_pedido`, `resultado`, `resultado_em`, `resultado_valor`, `resultado_nota`
+- [x] `resultado` restrito a `ganho|ganho_parcial|perda|acordo|extinto` ou vazio
+- [x] Materia antiga sem os campos continua carregando — sem migracao forcada
 
 ### ML-2B — `materia fechar` e o aviso do gate
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/init.mjs`, `src/validate.mjs`, `bin/attorneyfw.mjs`
 **Aceite:**
-- [ ] `materia fechar --resultado <r> [--valor V] [--nota "..."]`
-- [ ] Resultado fora do vocabulario vira erro legivel
-- [ ] `validate` **avisa** (nao viola) em materia toda entregue ha 90+ dias sem resultado
+- [x] `materia fechar --resultado <r> [--valor V] [--nota "..."]`
+- [x] Resultado fora do vocabulario vira erro legivel
+- [x] `validate` **avisa** (nao viola) em materia toda entregue ha 90+ dias sem resultado
 
 ### ML-2C — `attorneyfw buscar`
 
-**Status:** ⬜ Pendente
-**Files affected:** `src/buscar.mjs` (novo), `bin/attorneyfw.mjs`, `src/status.mjs`
+**Status:** ✅ Concluído
+**Files affected:** `src/buscar.mjs` (novo), `bin/attorneyfw.mjs`, `src/status.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Devolve **materias** com tipo, estado, resultado e trecho — nao linhas soltas
-- [ ] Varre tese, mapa, DEC e titulos de entrega; **nao** varre corpo de minuta
-- [ ] `--tipo` e `--resultado` filtram
-- [ ] `materia list`, `status` na raiz e `context` mostram o resultado
+- [x] Devolve **materias** com tipo, estado, resultado e trecho — nao linhas soltas
+- [x] Varre tese, mapa, DEC e titulos de entrega; **nao** varre corpo de minuta
+- [x] `--tipo` e `--resultado` filtram
+- [x] `materia list`, `status` na raiz e `context` mostram o resultado
 
 ---
+
+
+**Medido ao fim da onda:** 15 asserts novos. Os dois que mais importam sao
+negativos — `buscar` nao pode achar termo que so existe no corpo da minuta, e
+`resultado: perda` tem de sair com espaco, porque `resultado:perda` nao e um par
+YAML e sim uma string solta.
+
+**Decisao autonoma:** `gravarCampoYaml` foi extraido para o `core.mjs` em vez de
+duplicar no `init.mjs` a substituicao que o `entrega.mjs` ja fazia. As duas
+armadilhas — `[ 	]*` em vez de `\s*`, e reescrever a chave inteira — passaram a
+ter um lugar so, com o motivo escrito ao lado.
 
 ## Wave 3 — Item 5: visual law
 

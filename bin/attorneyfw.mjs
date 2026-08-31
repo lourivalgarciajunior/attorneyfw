@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { Erro, c } from '../src/core.mjs';
-import { init, materiaNew, materiaList } from '../src/init.mjs';
+import { init, materiaNew, materiaList, materiaFechar } from '../src/init.mjs';
 import { dec, estrategiaNew, plano, entregaNew } from '../src/novo.mjs';
 import { entregaMove, entregaRenumber, entregaRetitle } from '../src/entrega.mjs';
 import { topicoAdd } from '../src/topico.mjs';
@@ -17,6 +17,7 @@ import { validate } from '../src/validate.mjs';
 import { build } from '../src/build.mjs';
 import { docx } from '../src/docx.mjs';
 import { atualizar, indiceLista } from '../src/atualizar.mjs';
+import { buscar } from '../src/buscar.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -28,7 +29,9 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
 
   attorneyfw init "Escritorio"          cria a carteira
   attorneyfw materia new "Cliente — X"  nova materia (--tipo contencioso|consultivo)
-  attorneyfw materia list               as materias da carteira
+  attorneyfw materia list               as materias da carteira, com o desfecho
+  attorneyfw materia fechar <resultado> ganho|ganho_parcial|perda|acordo|extinto
+                            [--valor V] [--nota "..."] [--em AAAA-MM-DD]
   attorneyfw dec "Decisao"              decisao de estrategia da materia
   attorneyfw tese ["Titulo"]            contencioso: fatos F1..Fn e pedidos P1..Pn
   attorneyfw mapa ["Titulo"]            consultivo: riscos R1..Rn
@@ -44,6 +47,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
                             [--material] [--fatal]
   attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
   attorneyfw brief <entrega> [--topico N]  o pacote de quem redige
+  attorneyfw buscar <termo>             a memoria da carteira — que materias ja
+                            enfrentaram isto, e como terminaram [--tipo] [--resultado]
   attorneyfw status                     kanban da materia, ou a carteira na raiz
   attorneyfw context                    dump da governanca para LLM
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
@@ -89,7 +94,8 @@ try {
       const sub = args._.shift();
       if (sub === 'new') materiaNew(args);
       else if (sub === 'list') materiaList(args);
-      else throw new Erro('Uso: attorneyfw materia new|list');
+      else if (sub === 'fechar') materiaFechar(args);
+      else throw new Erro('Uso: attorneyfw materia new|list|fechar');
       break;
     }
     case 'dec': dec(args); break;
@@ -135,6 +141,7 @@ try {
       break;
     }
     case 'atualizar': atualizar(args); break;
+    case 'buscar': buscar(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

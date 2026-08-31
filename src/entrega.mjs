@@ -60,7 +60,13 @@ export function entregaMove(args) {
     // que e truthy — o carimbo era pulado em toda entrega recem-criada.
     if (destino === 'entregue' && !valor(alvo.fm.entregue_em)) {
       const raw = readFileSync(r.caminho, 'utf8');
-      writeFileSync(r.caminho, raw.replace(/^(entregue_em:[ \t]*).*$/m, `$1${carimbo}`), 'utf8');
+      // Reescreve a chave inteira, e nao so o valor: o template traz
+      // `entregue_em:` sem espaco, e preservar o que veio produzia
+      // `entregue_em:2026-02-19`. O `yamlRaso` daqui e leniente e lia assim
+      // mesmo, mas em YAML de verdade isso e uma string solta, nao um par
+      // chave-valor — e o arquivo da entrega e material que outra ferramenta
+      // pode abrir. Encontrado conferindo um caso real.
+      writeFileSync(r.caminho, raw.replace(/^entregue_em:.*$/m, `entregue_em: ${carimbo}`), 'utf8');
     }
     console.log(`${c.cyan(r.de)} -> ${c.green(r.para)}  ${rel(raiz, r.caminho)}`);
   }

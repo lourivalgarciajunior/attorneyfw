@@ -257,6 +257,15 @@ ok('reabrir entregue sem --forcar e recusado', (() => {
   return r;
 })());
 
+ok('entregue_em sai como YAML valido, com espaco', (() => {
+  emAcme('entrega', 'move', '1', 'entregue', '--em', HOJE);
+  const t = readFileSync(join(acme, 'entregas', 'entregue', 'ent-01-peticao-inicial.md'), 'utf8');
+  emAcme('entrega', 'move', '1', 'revisao', '--forcar');
+  // `entregue_em:2026-02-19` sem espaco nao e par chave-valor em YAML de
+  // verdade, e o arquivo da entrega e material que outra ferramenta pode abrir.
+  return t.includes(`entregue_em: ${HOJE}`);
+})());
+
 // ------------------------------------------------------ leitura, saida e kanban
 console.log('\nleitura e saida');
 ok('brief monta o pacote do topico', emAcme('brief', '1').saida.includes('BRIEFING DE TOPICO'));

@@ -147,7 +147,7 @@ declarado no contrato nao aparece na lista; documento ja no canon nao aparece.
 
 ### ML-3A — README, AJUDA e a regra de lint
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `bin/attorneyfw.mjs`, `tools/lint.mjs`
 **Acoes:**
 1. README: o que o briefing passou a carregar, o piso, a caixa alta que ficou de

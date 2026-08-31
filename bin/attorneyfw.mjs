@@ -66,7 +66,9 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos]
                             [--material] [--fatal]
   attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
-  attorneyfw brief <entrega> [--topico N]  o pacote de quem redige
+  attorneyfw brief <entrega> [--topico N]  o pacote de quem redige — leva a voz
+                            do escritorio e o que falta do checklist do tipo de acao,
+                            as duas como observacao, e nenhuma como instrucao
   attorneyfw buscar <termo>             a memoria da carteira — que materias ja
                             enfrentaram isto, e como terminaram [--tipo] [--resultado]
   attorneyfw status                     kanban da materia, ou a carteira na raiz

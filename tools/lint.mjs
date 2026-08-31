@@ -165,6 +165,19 @@ for (const arq of ['bin/attorneyfw.mjs', 'README.md', 'src/citacao.mjs', 'src/co
   }
 }
 
+// 14. O card entrou no briefing, que e um pacote de instrucoes. A frase que
+//     separa descricao de prescricao e a unica coisa que segura essa decisao:
+//     sem ela escrita, a proxima pessoa move a secao de voz para dentro de
+//     `## Instrucoes` — mais acionavel, e desfaz o ADR da 0.5.0 em uma linha.
+for (const arq of ['README.md', 'src/brief.mjs', 'src/estilo.mjs']) {
+  const t = semAcento(arq === 'README.md' ? readme : ler(...arq.split('/')));
+  const descreve = /descreve, e nao prescreve|nao prescreve/.test(t);
+  const semGate = /nao ha gate de aderencia|nenhum gate cobra aderencia|nao se reprova/.test(t);
+  if (!(descreve && semGate)) {
+    falha('recusa-estilo', `${arq} nao declara que o card descreve e que nenhum gate cobra aderencia a voz`);
+  }
+}
+
 console.log(`attorneyfw ${pkg.version} | ${srcs.length} modulos | ${templates.length} templates | vocabulario ${a.size} chaves`);
 if (!existsSync(join(RAIZ, 'test', 'smoke.mjs'))) falha('teste', 'test/smoke.mjs sumiu');
 for (const e of erros) console.log(`  ERRO   ${e}`);

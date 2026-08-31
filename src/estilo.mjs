@@ -18,6 +18,10 @@
  * unico gate que o card habilita cobra **consistencia interna** — peca que usa
  * dois rotulos para a mesma parte —, que se verifica dentro da peca e nao
  * depende de o card estar certo.
+ *
+ * **Nenhum gate cobra aderencia a voz**, aqui nem em lugar nenhum: estilo nao se
+ * reprova. Desde a 0.7.0 o card chega ao briefing de quem escreve, e chega la
+ * como observacao — fora da secao de instrucoes, e com o `n` em cada linha.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

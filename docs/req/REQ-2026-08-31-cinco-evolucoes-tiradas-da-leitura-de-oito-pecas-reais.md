@@ -1,5 +1,5 @@
 ---
-status: Open
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-anonimizacao-e-um-mapa-aplicado-de-uma-vez-nunca-uma-varredura"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-cinco-evolucoes-tiradas-do-corpus-em-cinco-ondas"
 
 # REQ: Cinco evolucoes tiradas da leitura de oito pecas reais
 
-> Date: 2026-08-31 | Status: Open
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -24,7 +24,7 @@ ADR: `docs/adr/ADR-2026-08-31-o-canon-sobe-para-a-carteira-parte-recorrente-tem-
 ADR: `docs/adr/ADR-2026-08-31-modelo-por-tipo-de-acao-sai-do-arquivo-do-escritorio-nunca-de-conhecimento-generico.md`
 — onda 4: modelo destilado do arquivo, nunca gerado do nada.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-cinco-evolucoes-tiradas-do-corpus-em-cinco-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-cinco-evolucoes-tiradas-do-corpus-em-cinco-ondas.md`
 
 ## Motivation
 
@@ -50,67 +50,67 @@ processo e alcanca quem nao e parte de nada.
 
 ### Onda 1 — anonimizacao por mapa
 
-- [ ] `templates/anonimizacao.yaml` com pares `real: ficticio` e a explicacao do porque do mapa
-- [ ] `attorneyfw anonimizar [entrega]` aplica **todos** os pares sobre **todo** o texto, numa passada
-- [ ] Par que nao pode ser aplicado **falha e nao grava nada** — nunca meia substituicao no disco
-- [ ] `--reverter` desfaz, usando o mesmo mapa
-- [ ] `attorneyfw dados [entrega]` detecta CPF, CNPJ, RG, e-mail, telefone e cartao, e **nao substitui nada**
-- [ ] A saida da deteccao declara que reconhece **formato, e nao pessoa** — nome proprio nao se detecta
-- [ ] O gate **avisa** (nao viola) quando ha dado com formato reconhecivel fora do mapa
-- [ ] `anonimizacao.yaml` no `.gitignore` do CLI — e a chave que desfaz tudo de uma vez
-- [ ] Smoke cobre: aplicacao total, recusa de aplicacao parcial, ida e volta, e a deteccao sem substituicao
+- [x] `templates/anonimizacao.yaml` com pares `real: ficticio` e a explicacao do porque do mapa
+- [x] `attorneyfw anonimizar [entrega]` aplica **todos** os pares sobre **todo** o texto, numa passada
+- [x] Par que nao pode ser aplicado **falha e nao grava nada** — nunca meia substituicao no disco
+- [x] `--reverter` desfaz, usando o mesmo mapa
+- [x] `attorneyfw dados [entrega]` detecta CPF, CNPJ, RG, e-mail, telefone e cartao, e **nao substitui nada**
+- [x] A saida da deteccao declara que reconhece **formato, e nao pessoa** — nome proprio nao se detecta
+- [x] O gate **avisa** (nao viola) quando ha dado com formato reconhecivel fora do mapa
+- [x] `anonimizacao.yaml` no `.gitignore` do CLI — e a chave que desfaz tudo de uma vez
+- [x] Smoke cobre: aplicacao total, recusa de aplicacao parcial, ida e volta, e a deteccao sem substituicao
 
 ### Onda 2 — conferencia numerica
 
-- [ ] `attorneyfw conferir <entrega>` roda sobre o markdown que o `build` gerou
-- [ ] Confere **extenso x algarismo** em `R$ N,NN (por extenso)`
-- [ ] Confere **soma** quando a peca declara total a partir de parcelas
-- [ ] Confere **item alegado x item pedido** em lista enumerada
-- [ ] Aponta item faltante na sequencia, item malformado, e item no pedido ausente dos fatos
-- [ ] O valor do item e capturado **inteiro** e classificado depois — capturar so o que tem a forma esperada faz item malformado virar "indice faltante", que e outro defeito e outra correcao
-- [ ] Divergencia sai **sempre como par**, com os dois lados a vista — nunca "valor incorreto"
-- [ ] **Nao corrige nada automaticamente**, em nenhuma das tres verificacoes
-- [ ] `--json`
-- [ ] Smoke reproduz os tres casos do corpus, com os numeros conferidos a mao
+- [x] `attorneyfw conferir <entrega>` roda sobre o markdown que o `build` gerou
+- [x] Confere **extenso x algarismo** em `R$ N,NN (por extenso)`
+- [x] Confere **soma** quando a peca declara total a partir de parcelas
+- [x] Confere **item alegado x item pedido** em lista enumerada
+- [x] Aponta item faltante na sequencia, item malformado, e item no pedido ausente dos fatos
+- [x] O valor do item e capturado **inteiro** e classificado depois — capturar so o que tem a forma esperada faz item malformado virar "indice faltante", que e outro defeito e outra correcao
+- [x] Divergencia sai **sempre como par**, com os dois lados a vista — nunca "valor incorreto"
+- [x] **Nao corrige nada automaticamente**, em nenhuma das tres verificacoes
+- [x] `--json`
+- [x] Smoke reproduz os tres casos do corpus, com os numeros conferidos a mao
 
 ### Onda 3 — canon na carteira
 
-- [ ] `partes/<slug>.md` na raiz da carteira, com documento obrigatorio
-- [ ] `attorneyfw parte new "Nome" --documento <cpf|cnpj>` cria a ficha da carteira
-- [ ] Ficha da materia aceita `ref: <slug>` e herda a qualificacao
-- [ ] **Papel e da materia; qualificacao e da carteira**
-- [ ] Matriz e filial sao fichas distintas, ligadas por `matriz: <slug>`
-- [ ] Divergencia entre a ficha da carteira e a da materia e **violacao**, nao aviso
-- [ ] Ficha antiga sem `ref` continua carregando, sem migracao
-- [ ] `attorneyfw buscar` acha materia por nome ou documento de parte
-- [ ] `attorneyfw diagrama partes` le a ficha da carteira quando ha `ref`
-- [ ] Smoke reproduz o caso do corpus: o mesmo documento com duas sedes reprova
+- [x] `partes/<slug>.md` na raiz da carteira, com documento obrigatorio
+- [x] `attorneyfw parte new "Nome" --documento <cpf|cnpj>` cria a ficha da carteira
+- [x] Ficha da materia aceita `ref: <slug>` e herda a qualificacao
+- [x] **Papel e da materia; qualificacao e da carteira**
+- [x] Matriz e filial sao fichas distintas, ligadas por `matriz: <slug>`
+- [x] Divergencia entre a ficha da carteira e a da materia e **violacao**, nao aviso
+- [x] Ficha antiga sem `ref` continua carregando, sem migracao
+- [x] `attorneyfw buscar` acha materia por nome ou documento de parte
+- [x] `attorneyfw diagrama partes` le a ficha da carteira quando ha `ref`
+- [x] Smoke reproduz o caso do corpus: o mesmo documento com duas sedes reprova
 
 ### Onda 4 — modelo por tipo de acao
 
-- [ ] `templates/modelo-acao.yaml` com documentos, fundamentos e objecoes
-- [ ] `attorneyfw modelo destilar <tipo> --de <slug,slug>` produz `modelos/<tipo>.yaml`
-- [ ] **Cada linha carrega o slug das materias de origem e em quantas apareceu**
-- [ ] Item apoiado em uma materia so sai marcado como tal
-- [ ] `attorneyfw modelo aplicar <tipo>` cria itens **pendentes** na materia — nada dado por provado
-- [ ] Tipo sem materia de origem **falha**, e a mensagem manda usar o agente de fundamento
-- [ ] A saida declara sempre o `n` de materias destiladas
-- [ ] Smoke cobre destilacao, aplicacao e a recusa por falta de origem
+- [x] ~~`templates/modelo-acao.yaml`~~ — dispensado: o arquivo e inteiramente derivado, e template que nenhum comando le e template morto (o lint reprova). O formato esta no cabecalho que o `destilar` escreve
+- [x] `attorneyfw modelo destilar <tipo> --de <slug,slug>` produz `modelos/<tipo>.yaml`
+- [x] **Cada linha carrega o slug das materias de origem e em quantas apareceu**
+- [x] Item apoiado em uma materia so sai marcado como tal
+- [x] `attorneyfw modelo aplicar <tipo>` cria itens **pendentes** na materia — nada dado por provado
+- [x] Tipo sem materia de origem **falha**, e a mensagem manda usar o agente de fundamento
+- [x] A saida declara sempre o `n` de materias destiladas
+- [x] Smoke cobre destilacao, aplicacao e a recusa por falta de origem
 
 ### Onda 5 — transcricao com lastro
 
-- [ ] Bloco de transcricao declara o id do documento no canon
-- [ ] Numeros dentro da transcricao sao conferidos contra os que a ficha do documento registra
-- [ ] Numero que a ficha nao conhece vira **aviso**, nao violacao
-- [ ] Transcricao sem documento declarado e apontada pelo gate
-- [ ] Smoke reproduz o caso do corpus: valor divergente dentro das aspas
+- [x] Bloco de transcricao declara o id do documento no canon
+- [x] Numeros dentro da transcricao sao conferidos contra os que a ficha do documento registra
+- [x] Numero que a ficha nao conhece vira **aviso**, nao violacao
+- [x] Transcricao sem documento declarado e apontada pelo gate
+- [x] Smoke reproduz o caso do corpus: valor divergente dentro das aspas
 
 ### Transversal
 
-- [ ] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
-- [ ] `trackfw validate` sem violacoes de escopo de projeto antes de cada commit
-- [ ] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`, com `version` subida
+- [x] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
+- [x] `trackfw validate` sem violacoes de escopo de projeto antes de cada commit
+- [x] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill`, com `version` subida
 
 ## Escopo negativo
 

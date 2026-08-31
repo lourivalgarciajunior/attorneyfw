@@ -6,6 +6,38 @@ Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
 A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
 pelo menos um defeito encontrado e conferido no corpus.
 
+### Adicionado — transcricao com lastro
+
+- Bloco `transcricao <id>` no corpo do topico declara de qual documento do canon
+  veio o trecho. O `build` o converte em citacao recuada **assinada com o id** —
+  visivel, e nao em comentario, porque comentario e removido antes de a peca
+  sair e o `conferir` roda sobre o markdown gerado.
+
+- A ficha do documento ganhou `valores:`, com os numeros que ele contem,
+  conferidos uma vez na fonte. O `conferir` compara os dois.
+
+- O `docx` passou a renderizar citacao em bloco recuada e em corpo menor, em vez
+  de deixar o `>` do markdown a vista no papel.
+
+### Decidido
+
+- **Numero errado dentro das aspas e a pior posicao possivel para um erro de
+  digitacao.** No corpus, a transcricao de um auto de infracao dizia `,21` e o
+  paragrafo seguinte usava `,25` — e a soma da propria peca fecha com o `,25`. A
+  peca inteira sustenta que o Fisco errou; a Fazenda responde exibindo que a
+  autora transcreveu errado o documento que ela mesma juntou.
+
+- **Mesma parte inteira e centavos diferentes vira par**; e digitacao, e nao
+  outro valor. Valor que a ficha simplesmente nao registra tambem sai, dizendo
+  que ela nao registra — a ficha pode ainda nao conhece-lo.
+
+- **Transcricao sem origem declarada reprova o gate**, e origem fora do canon
+  tambem. Uma citacao sem procedencia e o contrario do que uma transcricao e.
+
+- `valores:` e lista com hifen, **nunca entre colchetes**: valor em portugues tem
+  virgula, e a lista inline quebraria `344.568,25` em dois numeros. Descoberto no
+  smoke, e agora esta escrito no proprio template.
+
 ### Adicionado — modelo por tipo de acao
 
 - **`attorneyfw modelo destilar <tipo> --de <slug,slug>`** produz

@@ -355,6 +355,22 @@ A verificação de item é extensão do que o gate já faz. Ele cobra `fato → 
 
 O valor do item é capturado **inteiro** e classificado depois. Capturar só o que já tem a forma esperada faria item malformado desaparecer da lista e virar "índice faltante" — que é outro defeito, com outra correção. Foi exatamente esse o erro da primeira conferência feita à mão sobre o corpus, e foi o comparador que o corrigiu.
 
+### Transcrição com lastro
+
+O pior achado do corpus estava **dentro das aspas**: numa anulatória fiscal, a transcrição do auto de infração dizia `R$ 344.568,21` e o parágrafo seguinte usava `R$ 344.568,25` — e a soma da própria peça fecha com o `,25`. A peça inteira sustenta que o Fisco errou; a Fazenda responde exibindo que a autora transcreveu errado o documento que ela mesma juntou.
+
+Por isso a transcrição declara de onde veio:
+
+````markdown
+```transcricao D3
+Beneficiou-se com a utilizacao de credito de ICMS no valor total de R$ 344.568,21...
+```
+````
+
+A ficha do documento registra, em `valores:`, os números que ele contém — conferidos uma vez na fonte. O `conferir` compara os dois. Valor transcrito com **a mesma parte inteira e centavos diferentes** sai como par: é digitação, não outro valor. Valor que a ficha simplesmente não registra sai como aviso, porque a ficha pode ainda não conhecê-lo.
+
+O `build` transforma o bloco em citação recuada, assinada com o id — a assinatura fica **visível**, e não em comentário, porque comentário é removido antes de a peça sair. O gate reprova transcrição sem origem declarada, ou com origem que o canon não conhece.
+
 Fora do alcance, e declarado: número dentro de imagem anexada.
 
 ## Dado pessoal na peça

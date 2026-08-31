@@ -341,6 +341,69 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// -------------------------------------------------- transcricao com lastro
+console.log('\ntranscricao com lastro');
+
+// O caso do corpus: a transcricao do auto de infracao diz ,21 e o resto da peca
+// usa ,25 — e a soma fecha com o ,25. O erro esta DENTRO das aspas.
+const fichaDoc = join(acme, 'docs', 'canon', 'documentos', 'fatura-contestada.md');
+// Um por linha, com hifen: em lista inline a virgula do valor parte o numero
+// em dois, e a comparacao passa a ser feita contra "344.568" e "25".
+writeFileSync(fichaDoc, lerLF(fichaDoc).replace(/^valores:.*$/m, ['valores:', '  - 344.568,25'].join('\n')), 'utf8');
+
+const comTranscricao = (id, valor) => ent.replace('texto '.repeat(200),
+  ['```transcricao ' + id,
+   `Utilizou-se indevidamente de creditos no valor total de R$ ${valor}.`,
+   '```'].join('\n'));
+
+writeFileSync(entPath, comTranscricao('D1', '344.568,21'), 'utf8');
+emAcme('build', '1');
+const trans = emAcme('conferir', '1');
+ok('valor transcrito divergente da ficha e apontado',
+  trans.saida.includes('344.568,21') && trans.saida.includes('344.568,25'));
+ok('a divergencia diz que esta dentro das aspas', trans.saida.includes('dentro das aspas'));
+ok('sai com o rotulo de transcricao', trans.saida.includes('transcricao x ficha'));
+
+ok('a transcricao vira citacao assinada na peca', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return md.includes('> Utilizou-se') && md.includes('_(D1)_') && !md.includes('```transcricao');
+})());
+
+ok('valor que bate com a ficha nao vira alarme', (() => {
+  writeFileSync(entPath, comTranscricao('D1', '344.568,25'), 'utf8');
+  emAcme('build', '1');
+  return !emAcme('conferir', '1').saida.includes('transcricao x ficha');
+})());
+
+ok('valor que a ficha nao registra sai como par, dizendo que ela nao registra', (() => {
+  writeFileSync(entPath, comTranscricao('D1', '9.999,00'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.saida.includes('9.999,00') && r.saida.includes('nao registra');
+})());
+
+ok('ficha sem valores nao gera comparacao', (() => {
+  const bom = lerLF(fichaDoc);
+  writeFileSync(fichaDoc, bom.replace(/^valores:\n {2}- .*$/m, 'valores:'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  writeFileSync(fichaDoc, bom, 'utf8');
+  return !r.saida.includes('transcricao x ficha');
+})());
+
+// O gate: transcricao tem de declarar a origem.
+ok('transcricao sem documento declarado reprova', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), '```transcricao\ntrecho qualquer\n```'), 'utf8');
+  return violacoes(emAcme('validate')).some((l) => l.includes('sem documento declarado'));
+})());
+ok('transcricao com origem fora do canon reprova', (() => {
+  writeFileSync(entPath, comTranscricao('D99', '10,00'), 'utf8');
+  return violacoes(emAcme('validate')).some((l) => l.includes('D99'));
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
 // --------------------------------------------------- modelo por tipo de acao
 console.log('\nmodelo por tipo de acao');
 

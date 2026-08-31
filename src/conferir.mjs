@@ -31,7 +31,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Erro, acharEscritorio, c, entregas, exigirMateria, rel } from './core.mjs';
+import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel } from './core.mjs';
 import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
@@ -262,13 +262,99 @@ function confereItens(texto) {
   return out;
 }
 
-// ---------------------------------------------------------------- comando
+// ---------------------------------------------------- transcricao com lastro
 
-export function conferirTexto(texto) {
-  return [...confereExtenso(texto), ...confereSoma(texto), ...confereItens(texto)];
+const RE_TRANSCRICAO = /^```transcricao[ \t]+([A-Za-z0-9-]+)[ \t]*\n([\s\S]*?)^```[ \t]*$/gm;
+
+/**
+ * A mesma transcricao **depois do `build`**, que a converte em citacao recuada e
+ * a assina com o id do documento.
+ *
+ * As duas formas sao aceitas porque o `conferir` roda sobre o markdown gerado —
+ * e e ele que sai —, mas quem rodar sobre o rascunho tambem tem de ser atendido.
+ */
+const RE_TRANSCRICAO_RENDERIZADA = /((?:^>.*\n)+?)^>[ \t]*_\(([A-Za-z0-9-]+)\)_[ \t]*$/gm;
+
+function blocosDeTranscricao(texto) {
+  const out = [];
+  for (const m of texto.matchAll(RE_TRANSCRICAO)) out.push({ id: m[1], corpo: m[2] });
+  for (const m of texto.matchAll(RE_TRANSCRICAO_RENDERIZADA)) {
+    out.push({ id: m[2], corpo: m[1].replace(/^>[ \t]?/gm, '') });
+  }
+  return out;
 }
 
-const ROTULO = { extenso: 'extenso x algarismo', soma: 'soma x total', item: 'item x pedido' };
+/**
+ * Confere os numeros de dentro das aspas contra os que a ficha do documento
+ * registra.
+ *
+ * Nasceu do pior achado do corpus: numa anulatoria fiscal, a transcricao do auto
+ * de infracao dizia `R$ 344.568,21` e o paragrafo seguinte usava `R$ 344.568,25`
+ * — e a soma da propria peca fecha com o `,25`. O erro estava **dentro da
+ * citacao direta**, marcada com "(Grifo nosso)".
+ *
+ * E a pior posicao possivel para um erro de digitacao. A peca inteira sustenta
+ * que o Fisco errou; a Fazenda responde exibindo que a autora transcreveu errado
+ * o documento que ela mesma juntou.
+ */
+function confereTranscricoes(texto, documentos) {
+  const out = [];
+  const porId = new Map(documentos.map((d) => [String(d.id), d]));
+
+  for (const { id, corpo } of blocosDeTranscricao(texto)) {
+    const d = porId.get(id);
+    if (!d) {
+      out.push({
+        tipo: 'transcricao',
+        esquerda: { rotulo: 'transcricao declara', valor: id },
+        direita: { rotulo: 'no canon de documentos', valor: 'ausente' },
+        trecho: 'transcricao com origem que o canon nao conhece',
+      });
+      continue;
+    }
+    const registrados = d.valores.map((v) => centavos(v));
+    if (!registrados.length) continue; // a ficha ainda nao registra valor: nada a comparar
+
+    RE_VALOR.lastIndex = 0;
+    for (const v of corpo.matchAll(RE_VALOR)) {
+      const transcrito = centavos(v[1]);
+      if (registrados.includes(transcrito)) continue;
+
+      // Mesma parte inteira e centavos diferentes e o sinal forte: e digitacao,
+      // e nao outro valor. Vira par; o resto vira aviso mais adiante.
+      const parecido = registrados.find((r) => Math.trunc(r / 100) === Math.trunc(transcrito / 100));
+      out.push({
+        tipo: 'transcricao',
+        esquerda: { rotulo: `transcrito de ${id}`, valor: `R$ ${emReais(transcrito)}` },
+        direita: parecido === undefined
+          ? { rotulo: `a ficha de ${id} registra`, valor: d.valores.map((x) => `R$ ${emReais(centavos(x))}`).join(', ') || '(nada)' }
+          : { rotulo: `a ficha de ${id} registra`, valor: `R$ ${emReais(parecido)}` },
+        trecho: parecido === undefined
+          ? 'valor transcrito que a ficha do documento nao registra'
+          : 'valor transcrito diverge do que a ficha registra — dentro das aspas',
+      });
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------- comando
+
+export function conferirTexto(texto, documentos = []) {
+  return [
+    ...confereExtenso(texto),
+    ...confereSoma(texto),
+    ...confereItens(texto),
+    ...confereTranscricoes(texto, documentos),
+  ];
+}
+
+const ROTULO = {
+  extenso: 'extenso x algarismo',
+  soma: 'soma x total',
+  item: 'item x pedido',
+  transcricao: 'transcricao x ficha do documento',
+};
 
 export function conferir(args) {
   const m = exigirMateria(args);
@@ -283,7 +369,9 @@ export function conferir(args) {
   if (!existsSync(fonte)) build({ ...args, _: [String(e.numero)] });
   const texto = readFileSync(fonte, 'utf8');
 
-  const achados = conferirTexto(texto);
+  const achados = conferirTexto(texto, canon(m, raiz).documentos.map((d) => ({
+    id: d.id, valores: lista(d.fm.valores),
+  })));
 
   if (args.json) {
     console.log(JSON.stringify({
@@ -296,7 +384,7 @@ export function conferir(args) {
   console.log(c.b(`conferencia numerica — ${rel(raiz, fonte)}`));
   if (!achados.length) {
     console.log(c.green('\n  Nenhuma divergencia nas tres verificacoes.'));
-    console.log(c.dim('  Extenso, soma e item. Nao confere numero dentro de imagem anexada.'));
+    console.log(c.dim('  Extenso, soma, item e transcricao. Nao confere numero dentro de imagem anexada.'));
     return 0;
   }
 

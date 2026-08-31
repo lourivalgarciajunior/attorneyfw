@@ -309,6 +309,24 @@ function validarMateria(m, { raiz, esc, ctx }) {
     }
   }
 
+  // ---- transcricao com lastro
+  // Numero errado DENTRO das aspas e a pior posicao possivel para um erro de
+  // digitacao: a peca sustenta que a outra parte errou, e a resposta e que a
+  // transcricao e que esta errada. Por isso a transcricao declara a origem.
+  {
+    const idsDoc = new Set(cn.documentos.map((d) => String(d.id)).filter(Boolean));
+    for (const e of es) {
+      const onde = rel(m.dir, e.caminho);
+      for (const t of e.corpo.matchAll(/^```transcricao[ 	]*([A-Za-z0-9-]*)[ 	]*$/gm)) {
+        if (!t[1]) {
+          erro(onde, 'transcricao sem documento declarado — use ```transcricao <id> para o gate poder conferir os numeros');
+        } else if (!idsDoc.has(t[1])) {
+          erro(onde, `transcricao aponta o documento "${t[1]}", que nao esta no canon`);
+        }
+      }
+    }
+  }
+
   // ---- dado pessoal na saida
   // Aviso, e nunca violacao: peca de verdade TEM de conter o CPF da parte, e o
   // CPF que qualifica o autor no processo dele nao e vazamento. Reprovar por

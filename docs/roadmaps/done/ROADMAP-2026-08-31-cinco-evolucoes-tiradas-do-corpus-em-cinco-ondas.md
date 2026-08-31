@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-cinco-evolucoes-tiradas-da-leitura-de-oito-pecas-reais.md
 adr: docs/adr/ADR-2026-08-31-anonimizacao-e-um-mapa-aplicado-de-uma-vez-nunca-uma-varredura.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-anonimizacao-e-um-mapa-aplicado-de-uma-vez-nunca-um
 
 # Roadmap: Cinco evolucoes tiradas do corpus, em cinco ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -34,13 +34,16 @@ numerico da **onda 2** e da ficha de documento que a **onda 3** consolida; e a
 
 ## Acceptance Criteria
 
-- [ ] As cinco ondas concluidas, cada uma com `npm run check` verde
-- [ ] Nenhuma substituicao automatica de dado pessoal
-- [ ] Nenhuma correcao automatica de extenso, soma ou item
-- [ ] Nenhum modelo de acao sem materia de origem
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`
+- [x] As cinco ondas concluidas, cada uma com `npm run check` verde
+- [x] Nenhuma substituicao automatica de dado pessoal
+- [x] Nenhuma correcao automatica de extenso, soma ou item
+- [x] Nenhum modelo de acao sem materia de origem
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill`
+
+Medido contra `main` em `e86c2c8` (0.3.0): **21 → 26 modulos**, **186 → 257
+asserts** no smoke, 11 regras de lint mantidas.
 
 ---
 
@@ -223,21 +226,65 @@ arquivo, junto do `ok`. Ele tinha nascido no meio do bloco da onda 3, e a onda 4
 
 ### ML-5A — Transcricao declarada e conferida
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`, `src/validate.mjs`, `src/build.mjs`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Bloco de transcricao declara o id do documento no canon
-- [ ] Numeros conferidos contra os que a ficha registra
-- [ ] Numero desconhecido da ficha vira **aviso**
-- [ ] Transcricao sem documento declarado e apontada pelo gate
-- [ ] Smoke reproduz o caso do corpus: valor divergente dentro das aspas
+- [x] Bloco de transcricao declara o id do documento no canon
+- [x] Numeros conferidos contra os que a ficha registra
+- [x] Numero desconhecido da ficha vira **aviso**
+- [x] Transcricao sem documento declarado e apontada pelo gate
+- [x] Smoke reproduz o caso do corpus: valor divergente dentro das aspas
 
 ---
 
+**Medido ao fim da onda:** 9 asserts, reproduzindo o caso do corpus — `,21`
+transcrito contra `,25` registrado na ficha.
+
+**Defeito encontrado rodando:** `valores: [344.568,25]` era partido na virgula do
+proprio valor, e a comparacao passava a ser feita contra "344.568" e "25". Dinheiro
+em portugues nao cabe em lista inline. Passou a ser lista com hifen, e o motivo
+esta escrito no template para nao se repetir.
+
+**Decisao autonoma:** o `conferir` aceita a transcricao nas **duas** formas — a
+do rascunho e a que o `build` produz. Ele roda sobre o markdown gerado, que e o
+que sai; mas quem rodar sobre o rascunho tambem tem de ser atendido.
+
 ## Barreira final
 
-- [ ] `npm run check` verde
-- [ ] `trackfw validate` sem violacoes de escopo de projeto
-- [ ] CI verde em Linux e Windows
-- [ ] Plugin publicado com `version` subida
-- [ ] REQ e roadmap em `done/`, com status batendo com a pasta
+- [x] `npm run check` verde
+- [x] `trackfw validate` sem violacoes de escopo de projeto
+- [x] CI verde em Linux e Windows
+- [x] Plugin publicado com `version` subida
+- [x] REQ e roadmap em `done/`, com status batendo com a pasta
+
+### O que esta REQ mediu
+
+Ela nasceu diferente da anterior: a de antes veio de **pedidos**, esta veio de
+**evidencia**. Cada onda tinha pelo menos um defeito encontrado e conferido em
+oito pecas reais.
+
+E a medida mais util nao foi de codigo. **A conferencia manual do corpus estava
+errada num ponto**, e quem a corrigiu foi o comparador da onda 2, rodando sobre
+as pecas depois de implementado. A leitura a mao dizia que uma lista tinha 75 de
+76 itens; nenhum indice faltava — o filtro manual era estrito demais e derrubava
+o item malformado e um terminado por virgula.
+
+Isso e, em si, o argumento inteiro da ferramenta: a pessoa atenta confia no
+numero que ja leu uma vez; a maquina nao le duas vezes, compara. Vale para quem
+escreve a peca e valeu para quem escreveu o relatorio sobre as pecas.
+
+### Defeitos, e onde apareceram
+
+Nenhum foi encontrado lendo codigo:
+
+| Onda | Defeito | Como apareceu |
+|---|---|---|
+| 1 | `package.json` truncado a zero byte | o proprio `npm run check`, logo apos o commit — o arquivo foi aberto para escrita antes de ser lido, na mesma expressao |
+| 2 | a analise manual do corpus, e nao o codigo | rodar o comparador contra as oito pecas |
+| 3 e 4 | assert amarrado ao codigo de saida do `validate`, duas vezes | o smoke, quebrando por violacao alheia a regra testada |
+| 5 | `valores: [344.568,25]` partido na virgula do valor | o primeiro teste de transcricao |
+
+O da onda 1 foi o unico destrutivo, e foi corrigido com `--amend` no mesmo
+minuto. Os das ondas 3 e 4 produziram uma correcao estrutural no smoke: o helper
+`violacoes()`, que filtra as linhas de erro do gate, para que um teste possa
+afirmar "nao gera violacao **desta** regra" em vez de "o gate passa".

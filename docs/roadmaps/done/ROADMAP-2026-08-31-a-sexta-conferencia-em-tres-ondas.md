@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-a-sexta-conferencia-continuidade-de-fato-entre-topicos-da-mesma-peca.md
 adr: docs/adr/ADR-2026-08-31-a-continuidade-de-fato-se-confere-contra-o-que-foi-declarado-e-nunca-inferindo-que-dois-fatos-sao-o-mesmo.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-a-continuidade-de-fato-se-confere-contra-o-que-foi-
 
 # Roadmap: A sexta conferencia, em tres ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -32,16 +32,16 @@ comparadores — decisao registrada no ADR para nao ser refeita.
 
 ## Acceptance Criteria
 
-- [ ] As tres ondas concluidas, cada uma com `npm run check` verde
-- [ ] Toda comparacao tem ancora declarada; sem ancora, silencio
-- [ ] Nada dentro de bloco de transcricao e conferido
-- [ ] Nenhuma das tres vira violacao — todas tem excecao legitima
-- [ ] Ano solto nao vira data
-- [ ] Diferenca so de caixa em nome nao vira achado
-- [ ] Cronologia vazia sai declarada como "nao conferido", e nao como cobranca
-- [ ] Zero modulo novo e zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
+- [x] As tres ondas concluidas, cada uma com `npm run check` verde
+- [x] Toda comparacao tem ancora declarada; sem ancora, silencio
+- [x] Nada dentro de bloco de transcricao e conferido
+- [x] Nenhuma das tres vira violacao — todas tem excecao legitima
+- [x] Ano solto nao vira data
+- [x] Diferenca so de caixa em nome nao vira achado
+- [x] Cronologia vazia sai declarada como "nao conferido", e nao como cobranca
+- [x] Zero modulo novo e zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
 
 ---
 
@@ -176,7 +176,7 @@ provado um de cada vez com copia de backup **fora do git**.
 
 ### ML-3B — CHANGELOG, versao e plugin
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `CHANGELOG.md`, `package.json`, `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. CHANGELOG 0.8.0 e `package.json` para `0.8.0`.
@@ -185,4 +185,15 @@ provado um de cada vez com copia de backup **fora do git**.
 4. Publicar e conferir o cache com `diff -r`.
 
 **Aceite:** `claude plugin validate .` passa; `diff -r` do cache sai limpo.
+
+Medido contra `main` em `ef9f93a` (0.7.0): **362 -> 384 asserts**, 14 -> 15 regras
+de lint, 30 modulos (nenhum novo — o comparador mora com os comparadores, como o
+ADR decidiu). Publicacao limpa: 0.8.0 nunca tinha sido publicada.
+
+**Segunda armadilha de regex nesta sequencia.** A regra 15 exigia espaco unico na
+frase da recusa, e reprovou o `templates/cronologia.md` so porque a frase estava
+requebrada em duas linhas. Corrigida com `\s+` entre as palavras. E a mesma
+familia do `\s` contra `[ 	]` que ja custou correcao no frontmatter — em prosa
+reflowada, regra que exige espaco unico quebra na primeira requebra de paragrafo.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-a-continuidade-de-fato-se-confere-contra-o-que-foi-declarado-e-nunca-inferindo-que-dois-fatos-sao-o-mesmo"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-a-sexta-conferencia-em-tres-ondas"
 
 # REQ: A sexta conferencia — continuidade de fato entre topicos da mesma peca
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -19,7 +19,7 @@ fatos sao o mesmo, e por que as tres sao aviso.
 ADR: `docs/adr/ADR-2026-08-31-numero-se-confere-contra-si-mesmo-e-contra-o-documento-de-onde-foi-transcrito.md`
 — a familia em que ela entra, e a regra de nao mexer no que esta dentro das aspas.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-a-sexta-conferencia-em-tres-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-a-sexta-conferencia-em-tres-ondas.md`
 
 ## Motivation
 
@@ -88,17 +88,17 @@ comparacao nao existe.
 
 ## Acceptance criteria
 
-- [ ] `12/03/2024` e `12 de marco de 2024` normalizam para a mesma chave.
-- [ ] `Lei 8.078, de 1990` nao produz data.
-- [ ] Data dentro de bloco `transcricao` **nao** e extraida.
-- [ ] Data no texto ausente da cronologia produz par; presente nao produz nada.
-- [ ] Dois topicos que declaram `D3` com datas diferentes produzem um par que **nomeia os dois topicos**.
-- [ ] Dois topicos com datas diferentes e **sem** documento comum nao produzem nada.
-- [ ] Ficha de `D3` com `data:` divergente da citada produz par.
-- [ ] `Construtora Alvares` contra o canon `Construtora Álvares` produz par.
-- [ ] `CONSTRUTORA ÁLVARES` **nao** produz par — diferenca so de caixa.
-- [ ] Apelido declarado no canon nao produz par.
-- [ ] Cronologia vazia: a linha diz quantas datas a peca cita e que nada foi conferido contra ela.
-- [ ] Nenhuma das tres vira violacao no gate.
-- [ ] `npm run check` verde: 15 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `12/03/2024` e `12 de marco de 2024` normalizam para a mesma chave.
+- [x] `Lei 8.078, de 1990` nao produz data.
+- [x] Data dentro de bloco `transcricao` **nao** e extraida.
+- [x] Data no texto ausente da cronologia produz par; presente nao produz nada.
+- [x] Dois topicos que declaram `D3` com datas diferentes produzem um par que **nomeia os dois topicos**.
+- [x] Dois topicos com datas diferentes e **sem** documento comum nao produzem nada.
+- [x] Ficha de `D3` com `data:` divergente da citada produz par.
+- [x] `Construtora Alvares` contra o canon `Construtora Álvares` produz par.
+- [x] `CONSTRUTORA ÁLVARES` **nao** produz par — diferenca so de caixa.
+- [x] Apelido declarado no canon nao produz par.
+- [x] Cronologia vazia: a linha diz quantas datas a peca cita e que nada foi conferido contra ela.
+- [x] Nenhuma das tres vira violacao no gate.
+- [x] `npm run check` verde: 15 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

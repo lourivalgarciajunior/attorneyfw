@@ -11,7 +11,13 @@ saida/*.pdf
 
 # O mapa de anonimizacao e a CHAVE que desfaz a anonimizacao de todas as pecas
 # de uma materia de uma vez. E o pior arquivo possivel para vazar.
-anonimizacao.yaml
+#
+# ANCORADO de proposito. Sem o caminho, o padrao casava tambem
+# `templates/anonimizacao.yaml` — o template do proprio CLI —, que deixou de ser
+# versionado sem que nada avisasse. O smoke local passava porque o arquivo
+# estava no disco; a CI, que clona limpo, reprovou. Regra 10 do lint existe por
+# causa disto.
+/materias/**/anonimizacao.yaml
 
 # Fichas de parte e modelos destilados sao material de cliente, como materias/.
 /partes/

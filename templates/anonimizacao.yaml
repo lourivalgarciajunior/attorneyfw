@@ -1,0 +1,36 @@
+# Mapa de anonimizacao — {{titulo}}
+# Criado por attorneyfw em {{data}}.
+#
+# ATENCAO: este arquivo e a CHAVE que desfaz a anonimizacao de todas as pecas
+# desta materia de uma vez. Nao versione, nao anexe, e nunca o mande junto com
+# a peca anonimizada.
+#
+# Formato: um par por linha, `real: ficticio`.
+#
+#   Jose Carlos de Almeida: Fulano de Tal
+#   123.456.789-00: 000.000.000-00
+#   Havai Colchoes Industria e Comercio: Empresa Alfa
+#
+# Por que um mapa, e nao uma varredura automatica:
+#
+# A substituicao e aplicada numa passada so, sobre o texto inteiro. Nao existe o
+# caso "escapou um paragrafo" — e foi exatamente isso que aconteceu nas pecas
+# que originaram este recurso. Meia anonimizacao e pior que nenhuma, porque
+# arquivo que parece seguro circula.
+#
+# Regras que o comando cobra antes de gravar qualquer coisa:
+#
+#  - o lado real precisa ter ao menos 4 caracteres, senao acerta dentro de
+#    outra palavra;
+#  - o lado ficticio nao pode ja existir no texto, senao a volta trocaria
+#    ocorrencia legitima pelo nome de outra pessoa;
+#  - o mesmo termo nao pode ser saida de um par e entrada de outro;
+#  - o texto so pode escrever o nome na forma declarada ou em MAIUSCULAS. Peca
+#    costuma escrever de tres jeitos; declare cada um como par proprio.
+#
+# Qualquer impedimento faz o comando falhar sem gravar nada.
+#
+# O que ele NAO faz: achar nome proprio que voce nao declarou. `attorneyfw dados`
+# aponta o que tem formato reconhecivel — CPF, CNPJ, e-mail, telefone — e ainda
+# assim nao ve nome. A decisao do que e sensivel e de quem assina.
+

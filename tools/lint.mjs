@@ -6,6 +6,7 @@
  *   npm run lint
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -113,6 +114,30 @@ for (const f of srcs) {
     if (/^\s*(\*|\/\/|\/\*)/.test(linha) || /nao|nunca/.test(t)) return;
     falha('porcentagem-de-exito', `src/${f}:${i + 1} parece emitir percentual de exito`);
   });
+}
+
+// 10. Arquivo que o CLI precisa e que o git nao versiona nao existe para quem
+//     clona. Um padrao de .gitignore sem ancora engoliu
+//     `templates/anonimizacao.yaml`, o smoke local passou porque o arquivo
+//     estava no disco, e so a CI reprovou — depois do merge.
+{
+  let versionados = null;
+  try {
+    versionados = new Set(
+      execFileSync('git', ['ls-files'], { cwd: RAIZ, encoding: 'utf8' })
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((f) => f.split('\\').join('/')),
+    );
+  } catch { /* sem git: nada a conferir, e nao e erro */ }
+  if (versionados) {
+    for (const dir of ['bin', 'src', 'templates', 'tools', 'test']) {
+      for (const f of readdirSync(join(RAIZ, dir))) {
+        const rel = `${dir}/${f}`;
+        if (!versionados.has(rel)) falha('nao-versionado', `${rel} nao esta no git — quem clonar nao vai te-lo`);
+      }
+    }
+  }
 }
 
 // 9. Os dois tipos de materia precisam ter vocabulario completo: uma chave a

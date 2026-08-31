@@ -464,7 +464,7 @@ O IPCA-E não tem coleta automática nesta versão: preenche-se à mão, e o com
 npm run check     # lint + smoke
 ```
 
-O lint tem onze regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
+O lint tem doze regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
 
 ## Escopo negativo
 

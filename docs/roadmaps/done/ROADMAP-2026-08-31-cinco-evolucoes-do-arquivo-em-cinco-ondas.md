@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-cinco-evolucoes-do-arquivo-do-escritorio-importar-estilo-formulas-titulo-e-prioridade.md
 adr: docs/adr/ADR-2026-08-31-importar-assiste-e-nao-preenche-tudo-entra-pendente-e-o-que-nao-e-mecanico-e-recusado-em-voz-alta.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-importar-assiste-e-nao-preenche-tudo-entra-pendente
 
 # Roadmap: Cinco evolucoes do arquivo, em cinco ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -33,14 +33,17 @@ por serem as menores.
 
 ## Acceptance Criteria
 
-- [ ] As cinco ondas concluidas, cada uma com `npm run check` verde
-- [ ] A importacao nao preenche tese, plano nem contrato de topico
-- [ ] O card de estilo nao prescreve, e nenhum gate reprova aderencia a voz
-- [ ] O foro e declarado, e nunca inferido
-- [ ] Nenhuma das ondas 2, 4 e 5 reprova o gate — as tres tem caso legitimo
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`
+- [x] As cinco ondas concluidas, cada uma com `npm run check` verde
+- [x] A importacao nao preenche tese, plano nem contrato de topico
+- [x] O card de estilo nao prescreve, e nenhum gate reprova aderencia a voz
+- [x] O foro e declarado, e nunca inferido
+- [x] Nenhuma das ondas 2, 4 e 5 reprova o gate — as tres tem caso legitimo
+- [x] Zero dependencia de runtime nova — o `.docx` e lido com zip e zlib do node
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill`
+
+Medido contra `main` em `a977df7` (0.4.0): **26 → 29 modulos**, **257 → 307
+asserts**, 15 → 16 templates.
 
 ---
 
@@ -215,8 +218,44 @@ a ignorar.
 
 ## Barreira final
 
-- [ ] `npm run check` verde
-- [ ] `trackfw validate` sem violacoes de escopo de projeto
-- [ ] CI verde em Linux e Windows
-- [ ] Plugin publicado com `version` subida
-- [ ] REQ e roadmap em `done/`, com status batendo com a pasta
+- [x] `npm run check` verde
+- [x] `trackfw validate` sem violacoes de escopo de projeto
+- [x] CI verde em Linux e Windows
+- [x] Plugin publicado com `version` subida
+- [x] REQ e roadmap em `done/`, com status batendo com a pasta
+
+### O que esta REQ mediu
+
+A primeira das tres ampliacoes nasceu de **pedidos**; a segunda, de **defeitos**
+encontrados no corpus; esta, do corpus como **arquivo**. E foi a que mais mexeu
+no que a ferramenta assume sobre quem a usa: ate aqui, ela supunha uma carteira
+que comeca vazia e cresce. Agora sabe que o escritorio ja tem tudo, em outro
+lugar, e que o problema e a porta.
+
+### Defeitos, e onde apareceram
+
+Nenhum foi encontrado lendo codigo. Sete, e cinco deles na onda 1:
+
+| Onda | Defeito | Como apareceu |
+|---|---|---|
+| 1 | reconhecedor de documento duplicado, com regex que nao casava CPF nenhum | rodar contra as oito pecas `.docx` reais |
+| 1 | `\s` no padrao de nome atravessava a linha e fazia **perder a primeira parte de cada peca**, em silencio | idem |
+| 1 | parentese de nome fantasia e barra em razao social nao previstos | idem |
+| 1 | trecho de anexo capturava so o que vinha **antes** de "conforme" | o smoke |
+| 1 | um `\b` de heredoc virou **backspace literal** dentro de um regex | comparar a saida com o mesmo regex rodado a parte |
+| 3 | `ctx` das formulas colidiu com o `ctx` do prazo, ja existente no `build` | a carga do modulo |
+| 4 | teste dependia de ficha criada num bloco **posterior** do smoke | inserir um bloco novo antes dele |
+
+O do `\b` e o mais instrutivo de toda a sequencia: o padrao ficou sintaticamente
+valido e semanticamente morto, e nenhuma leitura o denunciaria — o editor mostra
+`\b`, e so `cat -A` mostra `^H`. A partir dele, todo script de edicao com regex
+passou a ser escrito **em arquivo**, e nunca em heredoc.
+
+### E um numero de documento corrigido pela ferramenta
+
+A leitura manual dizia que quatro das oito pecas alternavam "Requerente" e
+"Autor" para a mesma parte. O `attorneyfw estilo`, rodando sobre as mesmas
+pecas, mede **tres**. Os documentos foram corrigidos para o numero do comando.
+
+E a segunda vez em tres REQs que a medicao automatica corrige a manual — e as
+duas vezes por o filtro manual ser estrito demais, nunca frouxo.

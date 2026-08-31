@@ -1,5 +1,5 @@
 ---
-status: Open
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-importar-assiste-e-nao-preenche-tudo-entra-pendente-e-o-que-nao-e-mecanico-e-recusado-em-voz-alta"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-cinco-evolucoes-do-arquivo-em-cinco-ondas"
 
 # REQ: Cinco evolucoes do arquivo do escritorio — importar, estilo, formulas, titulo e prioridade
 
-> Date: 2026-08-31 | Status: Open
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -24,7 +24,7 @@ ADR: `docs/adr/ADR-2026-08-31-formula-de-peca-e-dado-da-carteira-e-nao-literal-n
 ADR: `docs/adr/ADR-2026-08-31-o-gate-cobra-o-que-a-peca-anuncia-sobre-si-mesma.md`
 — ondas 4 e 5: titulo que promete, e prioridade que nao bate com a idade.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-cinco-evolucoes-do-arquivo-em-cinco-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-cinco-evolucoes-do-arquivo-em-cinco-ondas.md`
 
 ## Motivation
 
@@ -56,60 +56,61 @@ Medido nas oito pecas, e nao estimado:
 
 ### Onda 1 — importar peca arquivada
 
-- [ ] `attorneyfw importar <arquivo.docx|.txt|.md>` le e produz `docs/importado-<slug>.md`
-- [ ] Extrai **classificado por confianca**: CPF/CNPJ com digito, enderecamento, datas, valores, candidatos a documento ("conforme … anexo"), candidatos a nome de parte
-- [ ] **Tudo entra como `- [ ]`** — nada na tese, no plano nem no contrato de topico
-- [ ] Secao fixa **"o que esta importacao nao extraiu"**, sempre presente
-- [ ] Documento com digito invalido entra **marcado**, e nao em silencio
-- [ ] Partes viram **sugestao** de `attorneyfw parte new`, e nunca ficha gravada
-- [ ] `--criar-materia` cria so o esqueleto: pasta e `materia.yaml`, sem tese e sem plano
-- [ ] O arquivo importado **nao e alterado nem movido**
-- [ ] PDF fora do escopo, declarado na saida
-- [ ] Smoke cobre: extracao com digito valido e invalido, tudo pendente, e a secao do que nao foi extraido
+- [x] `attorneyfw importar <arquivo.docx|.txt|.md>` le e produz `docs/importado-<slug>.md`
+- [x] ~~`templates/importado.md`~~ — dispensado: o relatorio e inteiramente derivado, e template que nenhum comando le e template morto (o lint reprova)
+- [x] Extrai **classificado por confianca**: CPF/CNPJ com digito, enderecamento, datas, valores, candidatos a documento ("conforme … anexo"), candidatos a nome de parte
+- [x] **Tudo entra como `- [x]`** — nada na tese, no plano nem no contrato de topico
+- [x] Secao fixa **"o que esta importacao nao extraiu"**, sempre presente
+- [x] Documento com digito invalido entra **marcado**, e nao em silencio
+- [x] Partes viram **sugestao** de `attorneyfw parte new`, e nunca ficha gravada
+- [x] `--criar-materia` cria so o esqueleto: pasta e `materia.yaml`, sem tese e sem plano
+- [x] O arquivo importado **nao e alterado nem movido**
+- [x] PDF fora do escopo, declarado na saida
+- [x] Smoke cobre: extracao com digito valido e invalido, tudo pendente, e a secao do que nao foi extraido
 
 ### Onda 2 — style card
 
-- [ ] `attorneyfw estilo --de <arquivo,arquivo>` produz `estilo.yaml` na carteira
-- [ ] Mede tratamento do juizo, rotulo das partes, formula de lastro, ritmo de paragrafo, caixa alta
-- [ ] **Cada traco traz o `n`** — em quantas amostras apareceu, de quantas lidas
-- [ ] Nenhuma linha prescreve; todas descrevem
-- [ ] `attorneyfw estilo` sem `--de` mostra o card em vigor
-- [ ] Gate **avisa** quando uma peca usa dois rotulos para a mesma parte
-- [ ] Amostra pequena declarada na propria saida
-- [ ] Smoke reproduz o caso do corpus: peca com os dois rotulos recebe aviso
+- [x] `attorneyfw estilo --de <arquivo,arquivo>` produz `estilo.yaml` na carteira
+- [x] Mede tratamento do juizo, rotulo das partes, formula de lastro, ritmo de paragrafo, caixa alta
+- [x] **Cada traco traz o `n`** — em quantas amostras apareceu, de quantas lidas
+- [x] Nenhuma linha prescreve; todas descrevem
+- [x] `attorneyfw estilo` sem `--de` mostra o card em vigor
+- [x] Gate **avisa** quando uma peca usa dois rotulos para a mesma parte
+- [x] Amostra pequena declarada na propria saida
+- [x] Smoke reproduz o caso do corpus: peca com os dois rotulos recebe aviso
 
 ### Onda 3 — formulas de peca
 
-- [ ] `templates/formulas.yaml` com enderecamento por foro, qualificacao e fecho
-- [ ] `materia.yaml` ganha `foro:` — `civel|fazenda|familia|juizado|trabalho`
-- [ ] `build` le `formulas.yaml` da carteira quando existe
-- [ ] Sem o arquivo, usa a semente e **avisa uma vez** que o enderecamento nao e o do escritorio
-- [ ] Marcador sem valor sai **visivel** no papel, e nao como espaco em branco
-- [ ] O foro e **declarado**, e nunca inferido do texto de `juizo:`
-- [ ] Smoke cobre: formula da carteira, semente com aviso, e marcador sem valor
+- [x] `templates/formulas.yaml` com enderecamento por foro, qualificacao e fecho
+- [x] `materia.yaml` ganha `foro:` — `civel|fazenda|familia|juizado|trabalho`
+- [x] `build` le `formulas.yaml` da carteira quando existe
+- [x] Sem o arquivo, usa a semente e **avisa uma vez** que o enderecamento nao e o do escritorio
+- [x] Marcador sem valor sai **visivel** no papel, e nao como espaco em branco
+- [x] O foro e **declarado**, e nunca inferido do texto de `juizo:`
+- [x] Smoke cobre: formula da carteira, semente com aviso, e marcador sem valor
 
 ### Onda 4 — o titulo promete o que a peca nao pede
 
-- [ ] Gate **avisa** quando o titulo anuncia `c/c X` e o pedido nao menciona X
-- [ ] A mensagem mostra o que o titulo promete e o que o pedido traz
-- [ ] Aviso, e nao violacao
-- [ ] Smoke reproduz o caso do corpus
+- [x] Gate **avisa** quando o titulo anuncia `c/c X` e o pedido nao menciona X
+- [x] A mensagem mostra o que o titulo promete e o que o pedido traz
+- [x] Aviso, e nao violacao
+- [x] Smoke reproduz o caso do corpus
 
 ### Onda 5 — prioridade e idade
 
-- [ ] Ficha de parte ganha `nascimento:`
-- [ ] Idade **derivada** da data, e nunca digitada
-- [ ] Gate **avisa** quando ha parte com 60+ ou menor e a peca nao pede prioridade
-- [ ] Gate **avisa** quando a prioridade anunciada traz idade que nao bate com a ficha, com os dois lados a vista
-- [ ] Sem `nascimento:`, a regra nao roda — e nao ha aviso de campo faltando
-- [ ] Smoke cobre os tres casos
+- [x] Ficha de parte ganha `nascimento:`
+- [x] Idade **derivada** da data, e nunca digitada
+- [x] Gate **avisa** quando ha parte com 60+ ou menor e a peca nao pede prioridade
+- [x] Gate **avisa** quando a prioridade anunciada traz idade que nao bate com a ficha, com os dois lados a vista
+- [x] Sem `nascimento:`, a regra nao roda — e nao ha aviso de campo faltando
+- [x] Smoke cobre os tres casos
 
 ### Transversal
 
-- [ ] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
-- [ ] `trackfw validate` sem violacoes de escopo de projeto antes de cada commit
-- [ ] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`, com `version` subida
+- [x] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
+- [x] `trackfw validate` sem violacoes de escopo de projeto antes de cada commit
+- [x] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill`, com `version` subida
 
 ## Escopo negativo
 

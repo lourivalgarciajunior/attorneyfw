@@ -202,6 +202,19 @@ for (const arq of ['README.md', 'src/conferir.mjs', 'templates/cronologia.md']) 
   }
 }
 
+// 17. O modo `--arquivo` roda tres das seis conferencias. Se a declaracao do que
+//     NAO rodou sumir, o relatorio passa a ser lido como conferencia completa — e
+//     quem le protocola. Meia conferencia apresentada como conferencia e pior que
+//     nenhuma, e essa frase e a unica coisa que segura a diferenca.
+for (const arq of ['README.md', 'src/conferir.mjs']) {
+  const t = semAcento(arq === 'README.md' ? readme : ler(...arq.split('/')));
+  const declara = /tres\s+das\s+seis/.test(t);
+  const recusa = /nao\s+e\s+peca\s+conferida|pior\s+que\s+nenhuma/.test(t);
+  if (!(declara && recusa)) {
+    falha('meia-conferencia', `${arq} nao declara que o modo --arquivo roda tres das seis, nem que verde ali nao e peca conferida`);
+  }
+}
+
 console.log(`attorneyfw ${pkg.version} | ${srcs.length} modulos | ${templates.length} templates | vocabulario ${a.size} chaves`);
 if (!existsSync(join(RAIZ, 'test', 'smoke.mjs'))) falha('teste', 'test/smoke.mjs sumiu');
 for (const e of erros) console.log(`  ERRO   ${e}`);

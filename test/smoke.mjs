@@ -26,6 +26,16 @@ const ok = (nome, cond) => {
   else { console.log(`  FALHA ${nome}`); falhas++; }
 };
 
+/**
+ * Leitura normalizada para LF. O teste substitui trecho multilinha dentro de
+ * arquivo gerado a partir de template; com CRLF no disco, a busca por um
+ * trecho que atravessa quebra de linha nao casa, e o teste falha dizendo
+ * outra coisa — no Windows, "fato F1 nao existe na tese", em cima de uma
+ * tese que parece certa. O .gitattributes normaliza o checkout; isto
+ * protege quem clonar com outra configuracao.
+ */
+const lerLF = (...p) => readFileSync(join(...p), 'utf8').replace(/\r\n/g, '\n');
+
 const HOJE = new Date().toISOString().slice(0, 10);
 const diasAtras = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
 
@@ -90,14 +100,14 @@ ok('plano sem tese preenchida ainda assim cria', emAcme('plano').codigo === 0);
 
 // preenche a tese com fatos e pedidos numerados
 const teseArq = readdirSync(join(acme, 'docs', 'tese'))[0];
-const tese = readFileSync(join(acme, 'docs', 'tese', teseArq), 'utf8')
+const tese = lerLF(acme, 'docs', 'tese', teseArq)
   .replace('- F1 — \n- F2 — ', '- F1 — a cobranca foi lancada sem contrato\n- F2 — o cliente contestou por escrito')
   .replace('- P1 — \n- P2 — ', '- P1 — declaracao de inexigibilidade\n- P2 — devolucao em dobro');
 writeFileSync(join(acme, 'docs', 'tese', teseArq), tese, 'utf8');
 
 // preenche o plano e materializa
 const planoArq = readdirSync(join(acme, 'docs', 'plano'))[0];
-const plano = readFileSync(join(acme, 'docs', 'plano', planoArq), 'utf8')
+const plano = lerLF(acme, 'docs', 'plano', planoArq)
   .replace('| 01 |  |  |  |  |', `| 01 | Peticao inicial | inicial |  |  |`)
   .replace('| 02 |  |  |  |  |', `| 02 | Replica | replica | ${diasAtras(3)} | 15 |`)
   // um vao declarado no plano: nao vira entrega, mas tem de ser dito em voz alta
@@ -116,7 +126,7 @@ ok('gate reprova contrato em branco fora do backlog', emAcme('validate').codigo 
 
 // preenche o contrato do topico
 const entPath = join(acme, 'entregas', 'minuta', 'ent-01-peticao-inicial.md');
-let ent = readFileSync(entPath, 'utf8')
+let ent = lerLF(entPath)
   .replace('sustenta:', 'sustenta: a cobranca e inexigivel por falta de contrato')
   .replace('fatos: []', 'fatos: [F1, F2]')
   .replace('provado: []', 'provado: [F1, F2]')
@@ -214,22 +224,22 @@ ok('mapa de risco', emBeta('mapa').codigo === 0);
 ok('tese e recusada em materia consultiva', emBeta('tese').codigo === 1);
 const mapaArq = readdirSync(join(beta, 'docs', 'mapa-risco'))[0];
 writeFileSync(join(beta, 'docs', 'mapa-risco', mapaArq),
-  readFileSync(join(beta, 'docs', 'mapa-risco', mapaArq), 'utf8')
+  lerLF(beta, 'docs', 'mapa-risco', mapaArq)
     .replace('- R1 — \n- R2 — ', '- R1 — multa sem teto\n- R2 — foro de eleicao abusivo'), 'utf8');
 ok('plano consultivo', emBeta('plano').codigo === 0);
 const planoBeta = readdirSync(join(beta, 'docs', 'plano'))[0];
 writeFileSync(join(beta, 'docs', 'plano', planoBeta),
-  readFileSync(join(beta, 'docs', 'plano', planoBeta), 'utf8')
+  lerLF(beta, 'docs', 'plano', planoBeta)
     .replace('| 01 |  |  |  |  |', '| 01 | Minuta do contrato | minuta |  |  |'), 'utf8');
 ok('materializa a minuta', emBeta('plano', '--materializar').codigo === 0);
 
 const minPath = join(beta, 'entregas', 'backlog', 'ent-01-minuta-do-contrato.md');
 ok('contrato consultivo nasce com riscos e mitigado', (() => {
-  const t = readFileSync(minPath, 'utf8');
+  const t = lerLF(minPath);
   return t.includes('riscos: []') && t.includes('mitigado: []') && !t.includes('pedidos:');
 })());
 
-writeFileSync(minPath, readFileSync(minPath, 'utf8')
+writeFileSync(minPath, lerLF(minPath)
   .replace('sustenta:', 'sustenta: a multa fica limitada a 10% do valor do contrato')
   .replace('riscos: []', 'riscos: [R1, R2]')
   .replace('mitigado: []', 'mitigado: [R1, R2]')

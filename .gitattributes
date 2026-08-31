@@ -1,0 +1,11 @@
+# O CLI escreve template verbatim no disco de quem advoga, e o autor esta no
+# Windows. Com o checkout convertendo para CRLF, toda substituicao multilinha
+# feita contra o conteudo de um template deixa de casar — foi o que reprovou o
+# smoke no Windows na 0.1.0, com a tese saindo sem fatos numerados e o gate
+# acusando "fato F1 nao existe" em cima de um arquivo aparentemente correto.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.docx binary
+*.pdf binary

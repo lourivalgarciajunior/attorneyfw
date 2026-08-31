@@ -52,7 +52,7 @@ comparadores — decisao registrada no ADR para nao ser refeita.
 
 ### ML-1A — `tabela()` sobe para o core
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/core.mjs`, `src/diagrama.mjs`
 **Acoes:**
 1. Mover `tabela(corpo, alias)` de `src/diagrama.mjs` para `src/core.mjs`,
@@ -65,7 +65,7 @@ comparadores — decisao registrada no ADR para nao ser refeita.
 
 ### ML-1B — Datas em prosa, e a exclusao da transcricao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`
 **Acoes:**
 1. `datasEmProsa(texto)`: reconhece `12/03/2024` e `12 de marco de 2024`,
@@ -80,7 +80,7 @@ solto nao sai.
 
 ### ML-1C — `conferirContinuidade`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`
 **Acoes:**
 1. `data-fora-da-cronologia` — ancora: a tabela de `docs/canon/cronologia.md`.
@@ -100,7 +100,7 @@ nada; com `D3` declarado nos dois, produzem par nomeando os dois.
 
 ### ML-1D — Testes do comparador
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Normalizacao das duas grafias de data; ano solto; data em transcricao.

@@ -20,7 +20,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   Erro, acharEscritorio, c, canon, entregas, escrever, estrategia, exigirMateria,
-  lista, pendencias, rel, valor,
+  lista, pendencias, rel, tabela, valor,
 } from './core.mjs';
 
 export const TIPOS_DIAGRAMA = ['linha-do-tempo', 'partes', 'fato-prova'];
@@ -36,32 +36,6 @@ function rot(s, max = 64) {
     .replace(/\|/g, '/');
 }
 
-/**
- * Le uma tabela markdown por NOME de coluna, nao por posicao — escritorio troca
- * a ordem das colunas sem avisar, e leitura posicional quebraria calada. Mesma
- * regra que o `linhasDoPlano` ja aplica ao plano de entregas.
- */
-function tabela(corpo, alias) {
-  const linhas = corpo.replace(/\r\n/g, '\n').split('\n');
-  const iCab = linhas.findIndex((l, i) => /^\|/.test(l.trim()) && /^\|[\s|:-]*\|?$/.test((linhas[i + 1] || '').trim()));
-  if (iCab < 0) return [];
-  const celulas = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((x) => x.trim());
-  const cab = celulas(linhas[iCab]).map((h) => h.toLowerCase());
-  const idx = {};
-  for (const [chave, nomes] of Object.entries(alias)) {
-    idx[chave] = cab.findIndex((h) => nomes.some((n) => h.includes(n)));
-  }
-  const out = [];
-  for (let i = iCab + 2; i < linhas.length; i++) {
-    const l = linhas[i].trim();
-    if (!/^\|/.test(l)) break;
-    const cs = celulas(l);
-    const reg = {};
-    for (const k of Object.keys(alias)) reg[k] = idx[k] >= 0 ? (cs[idx[k]] || '') : '';
-    if (Object.values(reg).some((v) => v)) out.push(reg);
-  }
-  return out;
-}
 
 const NAO_PROVADO = 'NAO PROVADO';
 

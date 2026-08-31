@@ -31,7 +31,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel } from './core.mjs';
+import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel, slug, tabela } from './core.mjs';
 import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
@@ -434,6 +434,211 @@ export function conferirTopicos(topicos, documentos = []) {
     }
   }
   return out;
+}
+
+// ---------------------------------------- continuidade de fato entre topicos
+
+/**
+ * A sexta conferencia.
+ *
+ * O template da cronologia promete, desde a 0.1.0 e em toda materia nova, que
+ * "e contra isto que se confere se a data citada no topico 4 bate com a do
+ * topico 9". Ate a 0.7.0 nada conferia: quatro modulos liam a cronologia — o
+ * diagrama, o brief, a busca e o status — e nenhum comparava.
+ *
+ * A pergunta que da forma a isto nao e "como conferir continuidade". E: **o que
+ * em continuidade e comparacao?** Dizer que o topico 4 fala do mesmo evento do
+ * topico 9 e leitura, e leitura nao mora aqui.
+ *
+ * So e comparavel o que tem **ancora declarada**: a cronologia declara as datas
+ * dos fatos, o contrato declara os documentos, o canon declara as grafias. Contra
+ * as tres, comparar e mecanico. Fora delas, a ferramenta **cala** — nao ha
+ * casamento por proximidade, nao ha "o marco mais parecido", e ela **nunca infere
+ * que dois fatos sao o mesmo fato**.
+ */
+const MESES = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho',
+  'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+const RE_DATA_NUM = /\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b/g;
+const RE_DATA_EXT = new RegExp(`\\b(\\d{1,2})\\s+de\\s+(${MESES.map((x) => x.replace('c', '[cç]')).join('|')})\\s+de\\s+(\\d{4})\\b`, 'gi');
+const RE_ISO = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+
+const iso = (a, m, d) => {
+  const [A, M, D] = [Number(a), Number(m), Number(d)];
+  if (M < 1 || M > 12 || D < 1 || D > 31) return null;
+  return `${A}-${String(M).padStart(2, '0')}-${String(D).padStart(2, '0')}`;
+};
+
+/** `12/03/2024`, `12 de marco de 2024` e `2024-03-12` viram a mesma chave. */
+export function normalizarData(txt) {
+  const t = String(txt || '').trim();
+  for (const [re, ordem] of [[RE_DATA_NUM, 'dmy'], [RE_DATA_EXT, 'ext'], [RE_ISO, 'ymd']]) {
+    re.lastIndex = 0;
+    const m = re.exec(t);
+    if (!m) continue;
+    if (ordem === 'dmy') return iso(m[3], m[2], m[1]);
+    if (ordem === 'ymd') return iso(m[1], m[2], m[3]);
+    return iso(m[3], MESES.findIndex((x) => sa(x) === sa(m[2])) + 1, m[1]);
+  }
+  return null;
+}
+
+/**
+ * O texto do topico sem o que e citacao.
+ *
+ * Bloco cercado e trecho recuado sao do documento, e nao da peca. A ferramenta ja
+ * decidiu que transcricao nao se corrige — apontar uma data ali dentro seria pedir
+ * que se falsificasse a citacao para ela bater com a cronologia.
+ */
+const prosaDe = (texto) => String(texto || '')
+  .replace(/```[\s\S]*?```/g, '')
+  .replace(/^[ \t]*>.*$/gm, '');
+
+/** Datas completas da prosa. Ano solto nao e data: `Lei 8.078, de 1990` nao entra. */
+export function datasEmProsa(texto) {
+  const t = prosaDe(texto);
+  const out = [];
+  for (const re of [RE_DATA_NUM, RE_DATA_EXT]) {
+    re.lastIndex = 0;
+    for (const m of t.matchAll(re)) {
+      const chave = normalizarData(m[0]);
+      if (chave) out.push({ chave, grafia: m[0] });
+    }
+  }
+  return out;
+}
+
+/**
+ * Grafia que casa com um nome do canon a menos de acento ou pontuacao, mas nao e
+ * a declarada.
+ *
+ * Diferenca **so de caixa nao conta**: qualificacao em caixa alta e forma normal
+ * de peca, e reclamar dela seria ruido em toda peca do mundo.
+ */
+export function grafiasForaDoCanon(texto, aceitas) {
+  const palavras = prosaDe(texto).split(/\s+/)
+    .map((w) => w.replace(/^[^\wÀ-ÿ]+|[^\wÀ-ÿ]+$/g, ''))
+    .filter(Boolean);
+  const porChave = new Map();
+  for (const a of aceitas) {
+    const k = slug(a);
+    if (k.length < 4) continue; // sigla curta casa com qualquer coisa
+    if (!porChave.has(k)) porChave.set(k, a);
+  }
+  const tamanhos = [...new Set([...porChave.values()].map((a) => a.trim().split(/\s+/).length))];
+
+  const out = new Map();
+  for (const n of tamanhos) {
+    for (let i = 0; i + n <= palavras.length; i++) {
+      const trecho = palavras.slice(i, i + n).join(' ');
+      const declarada = porChave.get(slug(trecho));
+      if (!declarada) continue;
+      if (trecho.toUpperCase() === declarada.toUpperCase()) continue;
+      out.set(`${trecho} ${declarada}`, { grafia: trecho, declarada });
+    }
+  }
+  return [...out.values()];
+}
+
+const m0 = (id) => `topico ${id}`;
+
+export function conferirContinuidade(topicos, cn = {}, cronologia = '') {
+  const out = [];
+  const ts = (topicos || []).filter((t) => String(t.texto || '').trim());
+
+  const marcos = tabela(cronologia, { data: ['data'], fato: ['fato', 'evento'] })
+    .map((x) => normalizarData(x.data)).filter(Boolean);
+  const naCrono = new Set(marcos);
+
+  // ---- 1. data no texto que a cronologia nao registra
+  if (naCrono.size) {
+    const onde = new Map();
+    for (const t of ts) {
+      for (const d of datasEmProsa(t.texto)) {
+        if (naCrono.has(d.chave)) continue;
+        if (!onde.has(d.chave)) onde.set(d.chave, { grafia: d.grafia, topicos: [] });
+        const reg = onde.get(d.chave);
+        if (!reg.topicos.includes(String(t.id))) reg.topicos.push(String(t.id));
+      }
+    }
+    for (const [, reg] of onde) {
+      out.push({
+        tipo: 'data-fora-da-cronologia', topico: reg.topicos.join(', '),
+        esquerda: { rotulo: 'a peca cita', valor: reg.grafia },
+        direita: { rotulo: 'a cronologia tem', valor: `${naCrono.size} marco(s), nenhum nesta data` },
+        trecho: 'data no texto que a cronologia nao registra',
+      });
+    }
+  }
+
+  // ---- 2. datas divergentes entre topicos que declaram o mesmo documento
+  // Topico que declara DOIS documentos fica de fora: atribuir a data a um deles
+  // seria inferencia, e inferencia nao mora aqui.
+  const porDoc = new Map();
+  for (const t of ts) {
+    const docs = lista(t.documentos);
+    if (docs.length !== 1) continue;
+    const id = String(docs[0]);
+    if (!porDoc.has(id)) porDoc.set(id, []);
+    for (const d of datasEmProsa(t.texto)) porDoc.get(id).push({ ...d, topico: String(t.id) });
+  }
+  const fichaDe = new Map((cn.documentos || []).map((d) => [String(d.id), d]));
+  for (const [id, citadas] of porDoc) {
+    const chaves = [...new Set(citadas.map((x) => x.chave))];
+    if (chaves.length > 1) {
+      const a = citadas.find((x) => x.chave === chaves[0]);
+      const b = citadas.find((x) => x.chave === chaves[1]);
+      out.push({
+        tipo: 'data-divergente-do-documento', topico: `${a.topico}, ${b.topico}`,
+        esquerda: { rotulo: `${m0(a.topico)} cita`, valor: a.grafia },
+        direita: { rotulo: `${m0(b.topico)} cita`, valor: b.grafia },
+        trecho: `datas diferentes em topicos que declaram ${id}`,
+      });
+    }
+    const daFicha = normalizarData(fichaDe.get(id)?.fm?.data || '');
+    if (!daFicha) continue;
+    for (const x of citadas) {
+      if (x.chave === daFicha) continue;
+      out.push({
+        tipo: 'data-divergente-do-documento', topico: x.topico,
+        esquerda: { rotulo: `${m0(x.topico)} cita`, valor: x.grafia },
+        direita: { rotulo: `a ficha de ${id} registra`, valor: fichaDe.get(id).fm.data },
+        trecho: 'data citada diverge da ficha do documento declarado',
+      });
+    }
+  }
+
+  // ---- 3. grafia divergente de um nome do canon
+  const aceitas = [...(cn.partes || []), ...(cn.documentos || [])]
+    .flatMap((x) => [x.nome, ...(x.apelidos || [])]).filter(Boolean);
+  for (const t of ts) {
+    for (const g of grafiasForaDoCanon(t.texto, aceitas)) {
+      out.push({
+        tipo: 'grafia-fora-do-canon', topico: String(t.id),
+        esquerda: { rotulo: 'o texto escreve', valor: g.grafia },
+        direita: { rotulo: 'o canon declara', valor: g.declarada },
+        trecho: 'grafia que nao e a declarada no canon',
+      });
+    }
+  }
+  return out;
+}
+
+
+/**
+ * O que a continuidade **nao** conferiu nesta peca.
+ *
+ * Sem cronologia nao ha ancora, e a comparacao simplesmente nao roda. Isso sai
+ * dito — e nao vira cobranca: relatorio calado sobre o que nao olhou e lido como
+ * se tivesse olhado tudo.
+ */
+export function continuidadeNaoConferida(topicos, cronologia = '') {
+  const marcos = tabela(cronologia, { data: ['data'], fato: ['fato'] })
+    .map((x) => normalizarData(x.data)).filter(Boolean);
+  if (marcos.length) return '';
+  const n = new Set((topicos || []).flatMap((t) => datasEmProsa(t.texto).map((d) => d.chave))).size;
+  if (!n) return '';
+  return `  A peca cita ${n} data(s) e a cronologia esta vazia — nenhuma foi conferida contra ela.`;
 }
 
 // ---------------------------------------------------------------- comando

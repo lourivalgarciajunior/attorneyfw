@@ -23,6 +23,7 @@ export function init(args) {
     oab: args.oab || 'a definir',
   }));
   escrever(join(raiz, 'docs/feriados.md'), template('feriados.md', { nome, data: hoje() }));
+  escrever(join(raiz, 'formulas.yaml'), template('formulas.yaml', { nome, data: hoje() }));
 
   console.log(`${c.green('escritorio criado')} — ${nome}`);
   console.log(c.dim('  proximo: attorneyfw materia new "Cliente — Assunto" --tipo contencioso'));
@@ -62,6 +63,7 @@ export function materiaNew(args) {
     adverso: args.adverso || 'a definir',
     processo: args.processo || '',
     juizo: args.juizo || 'a definir',
+    foro: args.foro || 'civel',
     valor_pedido: args['valor-pedido'] || '',
   }));
   escrever(join(dir, 'docs/canon/cronologia.md'), template('cronologia.md', { titulo, data: hoje() }));

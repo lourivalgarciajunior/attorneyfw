@@ -193,6 +193,25 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## As fórmulas da peça
+
+O `build` montava o endereçamento com uma linha escrita no código, feita para ser neutra: sem acento e com o gênero entre parênteses. Medida contra oito peças reais de um escritório, **ela não aparecia em nenhuma.** As oito usavam a forma cheia, com acento e gênero resolvido, e ela variava com o foro — seis formas distintas em oito peças. O `build` emitia uma sétima, que não era de ninguém.
+
+Endereçamento é a primeira coisa que o juízo lê. Sair numa forma que o escritório não usa denuncia a peça antes do primeiro argumento.
+
+Agora as fórmulas moram em `formulas.yaml`, na carteira — o mesmo padrão já decidido para a série de índice e para a tabela de custas: **o que muda por escritório, por comarca e por ano não pode estar compilado.**
+
+```yaml
+enderecamento_civel: EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA {juizo} DA COMARCA DE {comarca}
+enderecamento_juizado: AO JUIZO DE DIREITO DO {juizo} DA COMARCA DE {comarca}
+```
+
+O foro vem de `foro:` no `materia.yaml` — `civel`, `fazenda`, `familia`, `juizado` ou `trabalho` —, e é **declarado, nunca inferido** do texto de `juizo:`. Inferir acertaria em quase todos os casos do corpus, e o que sobra endereça a peça ao juízo errado.
+
+**Marcador sem valor sai visível no papel**, como `{comarca}`, e não como espaço em branco: peça com buraco tem de parecer peça com buraco, e espaço em branco ninguém nota na revisão. O `build` também conta quantos ficaram.
+
+Sem `formulas.yaml`, o `build` **não falha** — peça tem de sair. Usa a semente do CLI e avisa, uma vez por execução, que o endereçamento não é o do escritório.
+
 ## Style card — como este escritório escreve
 
 ```bash

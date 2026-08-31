@@ -1,0 +1,45 @@
+# Formulas de peca — {{nome}}
+# Criado por attorneyfw em {{data}}.
+#
+# ISTO E UMA SEMENTE. Nao ha "formula padrao correta": substitua pelas do seu
+# escritorio. O `attorneyfw importar` mostra o enderecamento das pecas que voce
+# ja tem, e e de la que estas linhas devem sair.
+#
+# O CLI trazia uma formula escrita no codigo, neutra — sem acento e com o genero
+# entre parenteses. Medida contra oito pecas reais de um escritorio, ela nao
+# aparecia em nenhuma: as oito usavam a forma cheia, com acento e genero
+# resolvido, e ela variava com o foro. Enderecamento e a primeira coisa que o
+# juizo le.
+#
+# Marcadores disponiveis:
+#   {juizo}     o que estiver em `juizo:` no materia.yaml
+#   {comarca}   `comarca:` da materia, ou do escritorio
+#   {cliente}   `cliente:` da materia
+#   {adverso}   `adverso:` da materia
+#   {processo}  `processo:` da materia
+#   {titulo}    o titulo da entrega
+#   {advogado}  `advogado:` do escritorio
+#   {oab}       `oab:` do escritorio
+#   {hoje}      a data de hoje
+#
+# Marcador sem valor sai VISIVEL no papel — `{comarca}` e nao um espaco em
+# branco. Peca com buraco tem de parecer peca com buraco.
+#
+# A chave usada e `enderecamento_<foro>`, e o foro vem de `foro:` no
+# materia.yaml. Ele e DECLARADO, e nunca inferido do texto do juizo: inferir
+# acerta quase sempre, e o que sobra enderecca a peca ao juizo errado.
+
+semente: true
+
+enderecamento_civel: EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA {juizo} DA COMARCA DE {comarca}
+enderecamento_fazenda: EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA {juizo} DA COMARCA DE {comarca}
+enderecamento_familia: EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA {juizo} DA COMARCA DE {comarca}
+enderecamento_juizado: AO JUIZO DE DIREITO DO {juizo} DA COMARCA DE {comarca}
+enderecamento_trabalho: EXCELENTISSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA {juizo} DE {comarca}
+
+qualificacao: '{cliente}, ja qualificado(a) nos autos, vem, por seu advogado que esta subscreve, apresentar'
+em_face: em face de {adverso}, pelas razoes de fato e de direito a seguir expostas.
+
+fecho_primeira: Nestes termos,
+fecho_segunda: pede deferimento.
+local_e_data: '{comarca}, {hoje}.'

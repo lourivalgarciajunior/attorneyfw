@@ -457,7 +457,65 @@ ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
   return violacoes(emAcme('validate')).length === antes;
 })());
 
-// ------------------------------------------------------------------ estilo
+// ---------------------------------------------------------------- formulas
+console.log('\nformulas de peca');
+
+const formulasArq = join(raiz, 'formulas.yaml');
+ok('o init cria formulas.yaml na carteira', existsSync(formulasArq));
+ok('e ele vem marcado como semente', lerLF(formulasArq).includes('semente: true'));
+
+const buildAcme = emAcme('build', '1');
+ok('o build avisa que esta usando a semente', buildAcme.saida.includes('nao e o do seu escritorio'));
+
+const saidaAcme = () => readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+ok('o enderecamento sai da formula, e nao do codigo',
+  saidaAcme().includes('EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA')
+  && !saidaAcme().includes('EXCELENTISSIMO(A)'));
+
+// A formula da carteira manda. E ela some o aviso de semente.
+ok('formula da carteira substitui a semente', (() => {
+  const bom = lerLF(formulasArq);
+  writeFileSync(formulasArq, bom
+    .replace(/^semente:.*$/m, 'semente: false')
+    .replace(/^enderecamento_civel:.*$/m, 'enderecamento_civel: AO DOUTO JUIZO DA {juizo}, COMARCA DE {comarca}'), 'utf8');
+  const r = emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(formulasArq, bom, 'utf8');
+  return md.includes('AO DOUTO JUIZO DA') && !r.saida.includes('nao e o do seu escritorio');
+})());
+
+// Marcador sem valor tem de aparecer no papel.
+ok('marcador sem valor sai visivel, e nao em branco', (() => {
+  const bom = lerLF(formulasArq);
+  writeFileSync(formulasArq, `${bom}\nenderecamento_civel: JUIZO {inexistente} DE {comarca}\n`, 'utf8');
+  const r = emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(formulasArq, bom, 'utf8');
+  return md.includes('{inexistente}') && r.saida.includes('sem valor');
+})());
+
+// O foro e declarado. Foro invalido e erro, e nao palpite.
+ok('foro invalido e recusado com a lista', (() => {
+  const mat = join(acme, 'materia.yaml');
+  const bom = lerLF(mat);
+  writeFileSync(mat, bom.replace(/^foro:.*$/m, 'foro: penal'), 'utf8');
+  const r = emAcme('build', '1');
+  writeFileSync(mat, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('civel, fazenda, familia, juizado, trabalho');
+})());
+
+ok('foro juizado usa a formula do juizado', (() => {
+  const mat = join(acme, 'materia.yaml');
+  const bom = lerLF(mat);
+  writeFileSync(mat, bom.replace(/^foro:.*$/m, 'foro: juizado'), 'utf8');
+  emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(mat, bom, 'utf8');
+  emAcme('build', '1');
+  return md.includes('AO JUIZO DE DIREITO DO');
+})());
+
+// -------------------------------------------------------------------- estilo
 console.log('\nstyle card');
 
 const amostraA = join(raiz, 'amostra-a.txt');

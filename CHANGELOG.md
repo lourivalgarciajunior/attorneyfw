@@ -6,6 +6,35 @@ Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes
 anteriores tiraram do corpus os defeitos das pecas; esta tira delas o que elas
 tambem sao — o acervo que a ferramenta nao sabia ler.
 
+### Adicionado — as formulas saem do codigo
+
+- **`formulas.yaml` na carteira**, com enderecamento por foro, qualificacao e
+  fecho. O `attorneyfw init` a cria, marcada como **semente**.
+
+- **`foro:` no `materia.yaml`** — `civel`, `fazenda`, `familia`, `juizado` ou
+  `trabalho` —, e `--foro` no `materia new`.
+
+### Decidido
+
+- **O `build` emitia um enderecamento que nao aparecia em nenhuma das oito pecas
+  reais.** Ele fora escrito para ser neutro — sem acento, com o genero entre
+  parenteses —, e as oito usavam a forma cheia, que varia com o foro: seis formas
+  distintas em oito pecas. O `build` emitia uma setima, que nao era de ninguem.
+
+- **O que muda por escritorio, por comarca e por ano nao pode estar compilado.**
+  Mesmo padrao ja decidido para a serie de indice e para a tabela de custas.
+
+- **O foro e declarado, e nunca inferido** do texto de `juizo:`. Inferir
+  acertaria em quase todos os casos do corpus, e o que sobra enderecca a peca ao
+  juizo errado — mesma familia da recusa de inferir o polo do cliente.
+
+- **Marcador sem valor sai visivel no papel**, como `{comarca}`, e nao como
+  espaco em branco: peca com buraco tem de parecer peca com buraco. O `build`
+  ainda os conta, para nao depender de alguem reparar.
+
+- **Sem `formulas.yaml` o `build` nao falha** — peca tem de sair. Usa a semente e
+  avisa uma vez que o enderecamento nao e o do escritorio.
+
 ### Adicionado — style card
 
 - **`attorneyfw estilo --de <arquivos>`** deriva `estilo.yaml` das pecas do

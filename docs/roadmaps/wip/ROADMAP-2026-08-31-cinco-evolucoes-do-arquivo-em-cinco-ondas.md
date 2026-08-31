@@ -149,23 +149,31 @@ E a guarda de que o card continua descritivo quando alguem acrescentar um traco.
 
 ### ML-3A — O arquivo e a semente
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `templates/formulas.yaml` (novo), `src/formulas.mjs` (novo), `templates/materia.yaml`
 **Aceite:**
-- [ ] Enderecamento por foro, qualificacao e fecho, com marcadores
-- [ ] `foro:` no `materia.yaml`, **declarado**
-- [ ] Uma semente, marcada como semente
+- [x] Enderecamento por foro, qualificacao e fecho, com marcadores
+- [x] `foro:` no `materia.yaml`, **declarado**
+- [x] Uma semente, marcada como semente
 
 ### ML-3B — O `build` usa, e avisa quando nao tem
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/build.mjs`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Le `formulas.yaml` da carteira quando existe
-- [ ] Sem ele, usa a semente e **avisa uma vez**
-- [ ] Marcador sem valor sai **visivel** no papel
+- [x] Le `formulas.yaml` da carteira quando existe
+- [x] Sem ele, usa a semente e **avisa uma vez**
+- [x] Marcador sem valor sai **visivel** no papel
 
 ---
+
+**Medido ao fim da onda:** 8 asserts. O que mais importa e o do marcador: `{x}`
+sem valor tem de **aparecer no papel**, e o build tem de conta-lo — espaco em
+branco ninguem nota na revisao.
+
+**Defeito encontrado rodando:** o `ctx` das formulas colidiu com o `ctx` do
+contexto de prazo, que ja existia no `build`. Erro de carga, imediato, e sem
+consequencia — mas e o tipo de coisa que so aparece executando.
 
 ## Wave 4 — O titulo promete o que a peca nao pede
 

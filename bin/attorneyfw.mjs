@@ -40,7 +40,8 @@ const VERSAO = JSON.parse(
 const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
 
   attorneyfw init "Escritorio"          cria a carteira
-  attorneyfw materia new "Cliente — X"  nova materia (--tipo contencioso|consultivo)
+  attorneyfw materia new "Cliente — X"  nova materia (--tipo contencioso|consultivo,
+                            --foro civel|fazenda|familia|juizado|trabalho)
   attorneyfw estilo [--de a.docx,b.docx] style card do escritorio, com o n a vista
   attorneyfw importar <arquivo>         le peca arquivada e produz relatorio de
                             PENDENCIAS (.docx/.txt/.md) [--criar-materia "T"]

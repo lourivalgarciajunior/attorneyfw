@@ -6,6 +6,19 @@ Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
 A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
 pelo menos um defeito encontrado e conferido no corpus.
 
+### Corrigido
+
+- **O `.gitignore` do mapa de anonimizacao engolia o template do proprio CLI.**
+  O padrao `anonimizacao.yaml`, sem ancora, casava tambem
+  `templates/anonimizacao.yaml`, que deixou de ser versionado sem que nada
+  avisasse. O smoke local passava porque o arquivo estava no disco; a CI, que
+  clona limpo, reprovou — **depois do merge**.
+
+  O padrao passou a ser `/materias/**/anonimizacao.yaml`, e ha uma **regra de
+  lint nova**: arquivo em `bin/`, `src/`, `templates/`, `tools/` ou `test/` que o
+  git nao versiona reprova o build. Ela pega a classe inteira, e nao so este
+  caso.
+
 ### Adicionado — transcricao com lastro
 
 - Bloco `transcricao <id>` no corpo do topico declara de qual documento do canon

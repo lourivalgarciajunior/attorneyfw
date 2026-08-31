@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.5.0 — 2026-08-31
+
+Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes
+anteriores tiraram do corpus os defeitos das pecas; esta tira delas o que elas
+tambem sao — o acervo que a ferramenta nao sabia ler.
+
+### Adicionado — a porta de entrada
+
+- **`attorneyfw importar <arquivo.docx|.txt|.md>`**, com `--criar-materia` e
+  `--materia`. Produz `docs/importado-<slug>.md` com **tudo em `- [ ]`**.
+
+- Leitura de `.docx` **sem dependencia nenhuma**: o pacote e um zip e o corpo
+  esta em `word/document.xml`, com deflate cru que o `inflateRawSync` do proprio
+  node resolve.
+
+### Decidido
+
+- **A importacao assiste, e nao preenche.** A 0.4.0 decidiu que o modelo de acao
+  sai das materias ja trabalhadas — e um escritorio com quinhentas pecas no disco
+  tem **zero** materias na carteira. Sem porta de entrada, o `destilar` destila
+  do vazio.
+
+  Mas **nada entra na tese, no plano nem em contrato de topico**. Peca importada
+  e material bruto, e a cadeia continua comecando pela DEC. E a terceira vez que
+  esta forma e recusada, depois do modelo de acao e da amostra jurisprudencial —
+  e a mais tentadora das tres, porque o resultado pareceria trabalho pronto.
+
+- **O que e mecanico entra classificado por confianca**: documento com digito
+  verificador e enderecamento em `alta`; data e valor em `forma` — alta na forma
+  e **nenhuma** no significado; nome de parte e trecho de anexo em `media`.
+
+- **Secao fixa "o que esta importacao NAO extraiu"**, sempre presente, listando o
+  que so a leitura resolve. Silencio sobre o que faltou seria a importacao se
+  apresentando como completa.
+
+- **Documento com digito que nao fecha entra marcado**, e nao em silencio. Foi
+  assim que, rodando contra as oito pecas reais, apareceu um CPF de requerente
+  que nao existe — importar sem conferir o teria propagado para a ficha da
+  carteira, que e a fonte de todas as pecas seguintes.
+
+- **Ficha da carteira e sugerida, e nunca gravada.** O relatorio imprime o
+  `attorneyfw parte new` correspondente e diz que nao o executou.
+
+- **A peca importada nao e alterada nem movida.** PDF fica fora, declarado.
+
+### Corrigido — tudo encontrado rodando contra as oito pecas
+
+- O reconhecedor de CPF e CNPJ era uma **segunda implementacao**, com regex
+  proprio que nao casava CPF nenhum. Passou a ser o mesmo do `attorneyfw dados`.
+  Duas implementacoes do mesmo reconhecimento divergem sempre.
+
+- O padrao de nome usava `\s`, e com isso **atravessava a quebra de linha**:
+  comecava no enderecamento em caixa alta da linha de cima e ia ate a
+  qualificacao da primeira parte, que era entao descartada inteira pelo filtro
+  de cabecalho. O efeito era perder **a primeira parte de cada peca**, em
+  silencio. Agora e `[ \t]`.
+
+- O padrao de nome tambem nao previa o parentese com nome fantasia entre o nome
+  e a virgula, nem a barra em razao social — perdia todas as partes de uma peca
+  e a re de outra.
+
+- O trecho de anexo capturava so o que vinha **antes** de "conforme" — e e
+  depois dela que o documento e nomeado.
+
+- Um `\b` escrito por heredoc virou **caractere backspace** dentro de um regex,
+  e o padrao deixou de casar qualquer coisa em silencio. Encontrado comparando a
+  saida com o mesmo regex rodado a parte.
+
 ## 0.4.0 — 2026-08-31
 
 Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.

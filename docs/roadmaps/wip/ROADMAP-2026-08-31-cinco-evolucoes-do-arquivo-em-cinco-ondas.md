@@ -51,7 +51,7 @@ por serem as menores.
 
 ### ML-1A — Leitura e extracao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/importar.mjs` (novo)
 **Acoes:**
 1. Ler `.docx` (unzip + `word/document.xml`), `.txt` e `.md`.
@@ -61,30 +61,53 @@ por serem as menores.
 3. Marcar documento com digito invalido, em vez de ignora-lo.
 
 **Aceite:**
-- [ ] `.docx` lido sem dependencia nova — o mesmo caminho de OOXML que o projeto ja usa
-- [ ] Cada item traz origem e confianca
-- [ ] Digito invalido sai marcado
+- [x] `.docx` lido sem dependencia nova — o mesmo caminho de OOXML que o projeto ja usa
+- [x] Cada item traz origem e confianca
+- [x] Digito invalido sai marcado
 
 ### ML-1B — O relatorio, e o que ele recusa
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/importar.mjs`, `templates/importado.md` (novo), `bin/attorneyfw.mjs`
 **Aceite:**
-- [ ] `docs/importado-<slug>.md` com **tudo** em `- [ ]`
-- [ ] Secao fixa "o que esta importacao nao extraiu", **sempre** presente
-- [ ] Partes saem como **sugestao** de `attorneyfw parte new`, e nao gravadas
-- [ ] `--criar-materia` cria so pasta e `materia.yaml`
-- [ ] O arquivo de origem nao e alterado nem movido
+- [x] `docs/importado-<slug>.md` com **tudo** em `- [x]`
+- [x] Secao fixa "o que esta importacao nao extraiu", **sempre** presente
+- [x] Partes saem como **sugestao** de `attorneyfw parte new`, e nao gravadas
+- [x] `--criar-materia` cria so pasta e `materia.yaml`
+- [x] O arquivo de origem nao e alterado nem movido
 
 ### ML-1C — Documentacao e smoke
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`, `README.md`, `CHANGELOG.md`, `package.json`
 **Aceite:**
-- [ ] Smoke cobre digito valido e invalido, tudo pendente, e a secao do que faltou
-- [ ] PDF declarado fora do escopo na saida
+- [x] Smoke cobre digito valido e invalido, tudo pendente, e a secao do que faltou
+- [x] PDF declarado fora do escopo na saida
 
 ---
+
+**Medido ao fim da onda:** 21 asserts, e o comando rodado contra as **oito pecas
+`.docx` reais**. Sobre elas extrai de 4 a 24 itens por peca, todos pendentes — e
+marca o CPF que nao fecha o digito.
+
+**Desvio do plano:** o `templates/importado.md` previsto nao foi criado. O
+relatorio e inteiramente derivado do que se extraiu; template so para satisfazer
+a linha do plano seria template morto, e o lint reprova. Mesma decisao da onda 4
+da REQ anterior.
+
+**Cinco defeitos, todos encontrados rodando contra peca de verdade** — nenhum
+apareceu lendo o codigo:
+
+1. reconhecedor de documento duplicado, com regex que nao casava CPF nenhum;
+2. `\s` no padrao de nome atravessava a linha e fazia **perder a primeira parte
+   de cada peca**, em silencio;
+3. o parentese de nome fantasia e a barra em razao social nao eram previstos;
+4. o trecho de anexo capturava so o que vinha antes de "conforme";
+5. um `\b` escrito por heredoc virou **backspace literal** dentro de um regex.
+
+O quinto e o mais instrutivo do dia: o padrao ficou sintaticamente valido e
+semanticamente morto, e nenhuma leitura do codigo o denunciaria — `Read` mostra
+`\b`, e so `cat -A` mostra `^H`.
 
 ## Wave 2 — Style card
 

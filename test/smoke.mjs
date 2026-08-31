@@ -457,7 +457,91 @@ ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
   return violacoes(emAcme('validate')).length === antes;
 })());
 
-// -------------------------------------------------------- canon da carteira
+// ---------------------------------------------------------------- importar
+console.log('\nimportar peca arquivada');
+
+// CPF valido e CPF com digito que nao fecha, lado a lado. O invalido e o caso
+// do corpus: numa peca real, o CPF de um requerente nao existe — e importar sem
+// conferir o teria propagado para a ficha da carteira.
+const CPF_BOM = '529.982.247-25';
+const CPF_RUIM = '529.982.247-99';
+const pecaArquivada = join(raiz, 'peca-antiga.txt');
+writeFileSync(pecaArquivada, [
+  'EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 2a VARA CIVEL DA COMARCA DE ARAPONGAS - PR',
+  '',
+  `JOAO DA SILVA SAURO, brasileiro, casado, inscrito no CPF ${CPF_BOM}, e`,
+  `MARIA DE SOUZA LIMA, brasileira, solteira, inscrita no CPF ${CPF_RUIM}, vem propor acao`,
+  'em face de INDUSTRIA ZEBRA LTDA, pessoa juridica de direito privado, CNPJ 11.222.333/0001-81.',
+  '',
+  'Em 14/03/2024 houve a cobranca de R$ 8.500,00, conforme fatura anexo.',
+  'Em 02/04/2024 a autora reclamou, conforme protocolo anexo.',
+].join('\n'), 'utf8');
+
+const imp = run('importar', pecaArquivada);
+const relImp = join(raiz, 'docs', 'importado-peca-antiga.md');
+ok('importa e grava o relatorio', imp.codigo === 0 && existsSync(relImp));
+
+const rel = () => lerLF(relImp);
+ok('CPF valido entra classificado', rel().includes(`${CPF_BOM}  _(CPF)_`));
+ok('CPF com digito que nao fecha entra MARCADO, e nao em silencio',
+  rel().includes(CPF_RUIM) && rel().includes('DIGITO VERIFICADOR NAO FECHA'));
+ok('o terminal tambem avisa do digito', imp.saida.includes('digito nao fecha'));
+ok('CNPJ valido entra', rel().includes('11.222.333/0001-81'));
+ok('enderecamento extraido', rel().includes('VARA CIVEL DA COMARCA DE ARAPONGAS'));
+ok('nomes candidatos extraidos', rel().includes('JOAO DA SILVA SAURO') && rel().includes('INDUSTRIA ZEBRA LTDA'));
+ok('datas extraidas', rel().includes('2024-03-14') && rel().includes('2024-04-02'));
+ok('valores extraidos', rel().includes('R$ 8.500,00'));
+ok('trecho que aponta anexo extraido', rel().toLowerCase().includes('conforme'));
+
+// A propriedade central: nada e afirmado.
+// So as secoes de extracao: a secao final "o que NAO extraiu" tambem tem
+// bullets, e eles sao texto explicativo, nao item pendente.
+ok('TUDO o que foi extraido entra como pendente', (() => {
+  const corpo = rel().split('## O que esta importacao NAO extraiu')[0];
+  const linhas = corpo.split('\n').filter((l) => l.startsWith('- ') && !l.startsWith('- _'));
+  return linhas.length > 5 && linhas.every((l) => l.startsWith('- [ ] '));
+})());
+ok('a secao do que NAO foi extraido esta la', rel().includes('O que esta importacao NAO extraiu'));
+ok('e ela diz que a tese nao sai por regra', rel().includes('a tese'));
+ok('e que a lista de nomes pode estar incompleta', rel().includes('pode estar incompleta'));
+
+// Ficha da carteira e sugerida, e nunca gravada — ela e a fonte de todas as
+// pecas seguintes.
+ok('a ficha da carteira e sugerida, e nao criada', (() => {
+  const sugere = rel().includes('attorneyfw parte new "JOAO DA SILVA SAURO"');
+  const naoCriou = !existsSync(join(raiz, 'partes', 'joao-da-silva-sauro.md'));
+  return sugere && naoCriou;
+})());
+ok('o relatorio diz que os comandos nao foram executados', rel().includes('nao foram executados'));
+
+// Nada toca tese, plano ou contrato de topico.
+ok('a importacao nao cria tese nem plano', (() => {
+  const antes = violacoes(emAcme('validate')).length;
+  emAcme('importar', pecaArquivada);
+  return violacoes(emAcme('validate')).length === antes
+    && !existsSync(join(acme, 'docs', 'tese', 'importado.md'));
+})());
+
+ok('o arquivo de origem nao e alterado', (() => {
+  const t = lerLF(pecaArquivada);
+  run('importar', pecaArquivada);
+  return lerLF(pecaArquivada) === t;
+})());
+
+ok('PDF e recusado com instrucao', (() => {
+  const pdf = join(raiz, 'x.pdf');
+  writeFileSync(pdf, '%PDF-1.4', 'utf8');
+  const r = run('importar', pdf);
+  return r.codigo === 1 && r.saida.includes('fora do escopo');
+})());
+ok('extensao desconhecida e recusada', (() => {
+  const odd = join(raiz, 'x.rtf');
+  writeFileSync(odd, 'nada', 'utf8');
+  return run('importar', odd).codigo === 1;
+})());
+ok('arquivo inexistente e recusado', run('importar', join(raiz, 'nao-existe.txt')).codigo === 1);
+
+// --------------------------------------------------------- canon da carteira
 console.log('\ncanon da carteira');
 
 const CNPJ_MATRIZ = '11.222.333/0001-81';

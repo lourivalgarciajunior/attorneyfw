@@ -193,6 +193,33 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## A porta de entrada — importar peca arquivada
+
+```bash
+attorneyfw importar "peticao.docx"
+attorneyfw importar "peticao.docx" --criar-materia "Cliente — Assunto"
+```
+
+A 0.4.0 decidiu que o modelo de ação sai das matérias que o escritório já trabalhou. Encostando isso na realidade aparece o problema: **um escritório com quinhentas peças no disco tem zero matérias na carteira.** Ninguém redigita. Sem porta de entrada, o `modelo destilar` destila do vazio e a memória institucional acumula em anos.
+
+**A importação assiste, e não preenche.** Ela produz `docs/importado-<slug>.md` com tudo em `- [ ]`, para confirmar ou descartar item a item. **Nada entra na tese, no plano ou em contrato de tópico** — peça importada é material bruto, e a cadeia continua começando pela DEC.
+
+O que sai por regra, classificado por confiança:
+
+| | confiança | |
+|---|---|---|
+| CPF e CNPJ | **alta** | conferidos por dígito verificador |
+| endereçamento | **alta** | a primeira linha |
+| datas e valores | **forma** | alta na forma, **nenhuma** no significado |
+| trechos que apontam anexo | média | dizem que há prova, não qual |
+| nomes de parte | média | pegam cabeçalho, e **podem faltar** |
+
+**Documento com dígito que não fecha entra marcado**, e não em silêncio. Rodando contra oito peças reais, foi assim que apareceu um CPF de requerente que não existe — e importar sem conferir teria propagado o erro para a ficha da carteira, que é a fonte de todas as peças seguintes.
+
+Partes viram **sugestão** de `attorneyfw parte new`, e nunca ficha gravada. `.docx` é lido sem dependência nenhuma — o pacote é um zip e o corpo está em `word/document.xml`. PDF está fora do escopo, e o comando diz isso.
+
+O relatório termina sempre com uma seção fixa — **"o que esta importação NÃO extraiu"** — listando o que só a leitura resolve: qual fato é controvertido, qual documento prova o quê, qual fundamento sustenta qual pedido, e a tese. Silêncio sobre o que faltou seria a importação se apresentando como completa.
+
 ## O canon da carteira
 
 ```bash

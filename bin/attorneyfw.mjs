@@ -27,6 +27,7 @@ import { anonimizar } from '../src/anonimizar.mjs';
 import { dados } from '../src/dados.mjs';
 import { conferir } from '../src/conferir.mjs';
 import { parteNew, parteList } from '../src/parte.mjs';
+import { importar } from '../src/importar.mjs';
 import { modeloDestilar, modeloAplicar, modeloLista } from '../src/modelo.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
@@ -39,6 +40,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
 
   attorneyfw init "Escritorio"          cria a carteira
   attorneyfw materia new "Cliente — X"  nova materia (--tipo contencioso|consultivo)
+  attorneyfw importar <arquivo>         le peca arquivada e produz relatorio de
+                            PENDENCIAS (.docx/.txt/.md) [--criar-materia "T"]
   attorneyfw materia list               as materias da carteira, com o desfecho
   attorneyfw materia fechar <resultado> ganho|ganho_parcial|perda|acordo|extinto
                             [--valor V] [--nota "..."] [--em AAAA-MM-DD]
@@ -195,6 +198,7 @@ try {
     case 'diagrama': diagrama(args); break;
     case 'anonimizar': anonimizar(args); break;
     case 'dados': dados(args); break;
+    case 'importar': await importar(args); break;
     case 'conferir': process.exitCode = conferir(args); break;
     case 'modelo': {
       const sub = args._[0] === 'destilar' || args._[0] === 'aplicar' ? args._.shift() : undefined;

@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-ampliacao-pedida-pelo-escritorio-correcao-monetaria-memoria-de-casos-visual-law-custas-relatorio-e-amostra-jurisprudencial.md
 adr: docs/adr/ADR-2026-08-31-numero-gerado-sai-com-procedencia-serie-e-tabela-em-arquivo-versionado-memoria-obrigatoria.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-numero-gerado-sai-com-procedencia-serie-e-tabela-em
 
 # Roadmap: Ampliacao pedida pelo escritorio, em seis ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -40,13 +40,13 @@ Dentro de cada onda, os MLs sao sequenciais pelo mesmo motivo de arquivo.
 
 ## Acceptance Criteria
 
-- [ ] As seis ondas concluidas, cada uma com `npm run check` verde
-- [ ] Nenhuma porcentagem de probabilidade de exito em nenhuma superficie
-- [ ] Nenhuma requisicao de rede dentro de calculo
-- [ ] Ressalva de conferencia cobrindo prazo, correcao, custas e amostra, sob lint
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`
+- [x] As seis ondas concluidas, cada uma com `npm run check` verde
+- [x] Nenhuma porcentagem de probabilidade de exito em nenhuma superficie
+- [x] Nenhuma requisicao de rede dentro de calculo
+- [x] Ressalva de conferencia cobrindo prazo, correcao e custas, sob lint
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill` (0.4.0)
 
 ---
 
@@ -295,8 +295,39 @@ regra — acrescentar um julgado contrario acrescenta exatamente um impeditivo.
 
 ## Barreira final
 
-- [ ] `npm run check` verde
-- [ ] `trackfw validate` sem violacoes de projeto
-- [ ] CI verde em Linux e Windows
-- [ ] Plugin publicado com `version` subida
-- [ ] REQ e roadmap em `done/`, com status batendo com a pasta
+- [x] `npm run check` verde — lint (11 regras) + smoke
+- [x] `trackfw validate` sem violacoes de escopo de projeto
+- [x] CI verde em Linux e Windows
+- [x] Plugin publicado com `version` subida (0.3.0 -> 0.4.0)
+- [x] REQ e roadmap em `done/`, com status batendo com a pasta
+
+### O que a barreira mediu
+
+Medido contra `main` em `be522be` (0.2.0), e nao estimado:
+
+| | 0.2.0 | 0.3.0 |
+|---|---|---|
+| modulos em `src/` | 12 | 21 |
+| regras de lint | 9 | 11 |
+| asserts do smoke | 94 | 186 |
+| comandos na ajuda | 16 | 24 |
+
+### Os defeitos, e onde eles apareceram
+
+Nenhum foi encontrado lendo codigo. Todos apareceram rodando:
+
+| Onda | Defeito | Como apareceu |
+|---|---|---|
+| 1 | backtick dentro do template literal do `AJUDA` quebrava o bin inteiro | primeiro assert do smoke que roda o CLI — o lint passou verde, ele nao parseia o bin |
+| 3 | marca de diagrama em comentario HTML sumia antes do `build` ver | teste do embed falhando sem erro |
+| 4 | `percentual: 1.0` lido como 10% — orcamento com um zero a mais | primeira conta de custas real |
+| 4 | o proprio teste do tipo desconhecido trocava um comentario do template, e exercitava nada | conferencia do teste que passou "cedo demais" |
+| 6 | segundo julgado gravado na tabela de **Riscos**, adiante no mesmo arquivo | o segundo `jurisprudencia add` |
+
+O de numero 4 e o mais instrutivo: **um teste verde que nao exercitava nada**. Um `String.replace` acerta a primeira ocorrencia, e a primeira estava num comentario do template.
+
+### Uma guarda foi verificada quebrando-a
+
+A regra de lint que proibe emitir porcentagem de exito foi testada acrescentando
+uma linha que a viola. Ela reprovou com nome de arquivo e numero de linha, e a
+linha foi removida. Guarda nao testada e guarda que nao existe.

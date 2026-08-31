@@ -1,5 +1,5 @@
 ---
-status: Open
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-numero-gerado-sai-com-procedencia-serie-e-tabela-em-arquivo-versionado-memoria-obrigatoria"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-ampliacao-pedida-pelo-escritorio-em-seis-ondas"
 
 # REQ: Ampliacao pedida pelo escritorio — correcao monetaria, memoria de casos, visual law, custas, relatorio e amostra jurisprudencial
 
-> Date: 2026-08-31 | Status: Open
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -24,7 +24,7 @@ ADR: `docs/adr/ADR-2026-08-31-visual-law-deriva-do-canon-e-da-cronologia-nunca-d
 ADR: `docs/adr/ADR-2026-08-31-prognostico-e-semaforo-com-premissas-a-vista-e-jurisprudencia-e-amostra-conferida.md`
 — onda 6: semaforo em vez de porcentagem, amostra em vez de censo.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-ampliacao-pedida-pelo-escritorio-em-seis-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-ampliacao-pedida-pelo-escritorio-em-seis-ondas.md`
 
 ## Motivation
 
@@ -54,69 +54,69 @@ incerta.
 
 ### Onda 1 — item 9, correcao monetaria com memoria de calculo
 
-- [ ] `attorneyfw indice atualizar [serie]` busca INPC, IPCA-E, IGP-M e Selic e grava em `tabelas/indices/<serie>.csv` na carteira
-- [ ] `attorneyfw atualizar <valor> --de <data> [--ate <data>]` devolve o valor corrigido
-- [ ] Juros de mora configuraveis: `--juros <pct-ao-mes>`, `--juros-de <data>`, e `--selic` para a taxa unica do art. 406 do CC
-- [ ] A saida traz **sempre** a memoria linha a linha: mes, indice, fator acumulado, e o marco inicial de cada componente
-- [ ] A saida traz a procedencia: qual serie, qual cobertura, e a data da ultima atualizacao do arquivo
-- [ ] Periodo fora da cobertura da serie **falha** com mensagem que diz ate onde a serie vai e manda atualizar — nao extrapola, nao repete, nao interpola
-- [ ] `--json` para consumo por outro comando
-- [ ] Calculo nao faz nenhuma requisicao de rede; so `indice atualizar` faz
-- [ ] Regra de lint estende a ressalva de conferencia a correcao monetaria
+- [x] `attorneyfw indice atualizar [serie]` busca INPC, IPCA-E, IGP-M e Selic e grava em `tabelas/indices/<serie>.csv` na carteira
+- [x] `attorneyfw atualizar <valor> --de <data> [--ate <data>]` devolve o valor corrigido
+- [x] Juros de mora configuraveis: `--juros <pct-ao-mes>`, `--juros-de <data>`, e `--selic` para a taxa unica do art. 406 do CC
+- [x] A saida traz **sempre** a memoria linha a linha: mes, indice, fator acumulado, e o marco inicial de cada componente
+- [x] A saida traz a procedencia: qual serie, qual cobertura, e a data da ultima atualizacao do arquivo
+- [x] Periodo fora da cobertura da serie **falha** com mensagem que diz ate onde a serie vai e manda atualizar — nao extrapola, nao repete, nao interpola
+- [x] `--json` para consumo por outro comando
+- [x] Calculo nao faz nenhuma requisicao de rede; so `indice atualizar` faz
+- [x] Regra de lint estende a ressalva de conferencia a correcao monetaria
 
 ### Onda 2 — item 6, memoria de casos
 
-- [ ] `materia.yaml` ganha `valor_pedido`, `resultado`, `resultado_em`, `resultado_valor` e `resultado_nota`
-- [ ] `resultado` aceita apenas `ganho`, `ganho_parcial`, `perda`, `acordo`, `extinto` ou vazio
-- [ ] `attorneyfw materia fechar --resultado <r> [--valor V] [--nota "..."]` grava o desfecho
-- [ ] `attorneyfw buscar <termo> [--tipo] [--resultado]` varre a carteira e devolve **materias** com tipo, estado, resultado e trecho
-- [ ] A busca varre tese, mapa de risco, DEC e titulos de entrega — **nao** varre corpo de minuta
-- [ ] `materia list` e `status` na raiz mostram o resultado
-- [ ] `context` da carteira inclui o resultado das materias fechadas
-- [ ] `validate` **avisa** (nao viola) quando todas as entregas estao em `entregue` ha mais de 90 dias sem resultado
+- [x] `materia.yaml` ganha `valor_pedido`, `resultado`, `resultado_em`, `resultado_valor` e `resultado_nota`
+- [x] `resultado` aceita apenas `ganho`, `ganho_parcial`, `perda`, `acordo`, `extinto` ou vazio
+- [x] `attorneyfw materia fechar --resultado <r> [--valor V] [--nota "..."]` grava o desfecho
+- [x] `attorneyfw buscar <termo> [--tipo] [--resultado]` varre a carteira e devolve **materias** com tipo, estado, resultado e trecho
+- [x] A busca varre tese, mapa de risco, DEC e titulos de entrega — **nao** varre corpo de minuta
+- [x] `materia list` e `status` na raiz mostram o resultado
+- [x] `context` da carteira inclui o resultado das materias fechadas
+- [x] `validate` **avisa** (nao viola) quando todas as entregas estao em `entregue` ha mais de 90 dias sem resultado
 
 ### Onda 3 — item 5, visual law
 
-- [ ] `attorneyfw diagrama linha-do-tempo [--materia]` gera Mermaid a partir de cronologia × canon de documentos
-- [ ] `attorneyfw diagrama partes` gera Mermaid a partir do canon de partes
-- [ ] `attorneyfw diagrama fato-prova` gera Mermaid ligando cada `F` ao `D` que o paga
-- [ ] Marco ou fato **sem documento** sai visivelmente marcado como nao provado
-- [ ] `build` embute os blocos Mermaid pedidos pela entrega
-- [ ] `docx` renderiza o que conseguir e, sem renderizador, insere aviso no lugar da figura — **a peca sai de qualquer modo**
-- [ ] `docx` continua lendo o markdown do `build` e nao consulta canon nem cronologia
+- [x] `attorneyfw diagrama linha-do-tempo [--materia]` gera Mermaid a partir de cronologia × canon de documentos
+- [x] `attorneyfw diagrama partes` gera Mermaid a partir do canon de partes
+- [x] `attorneyfw diagrama fato-prova` gera Mermaid ligando cada `F` ao `D` que o paga
+- [x] Marco ou fato **sem documento** sai visivelmente marcado como nao provado
+- [x] `build` embute os blocos Mermaid pedidos pela entrega
+- [x] `docx` renderiza o que conseguir e, sem renderizador, insere aviso no lugar da figura — **a peca sai de qualquer modo**
+- [x] `docx` continua lendo o markdown do `build` e nao consulta canon nem cronologia
 
 ### Onda 4 — item 7, custas processuais
 
-- [ ] Formato `tabelas/custas/<tribunal>-<ano>.yaml` com norma, data da norma, faixas e formula
-- [ ] `attorneyfw custas <valor> --tribunal <t> [--ano N]` devolve o orcamento
-- [ ] A saida diz qual norma aplicou, de que data, e a memoria de cada componente
-- [ ] Tabela ausente falha dizendo qual arquivo criar
-- [ ] Ao menos um tribunal semeado como exemplo de formato, marcado como **conferir na fonte**
-- [ ] Regra de lint estende a ressalva de conferencia a custas
+- [x] Formato `tabelas/custas/<tribunal>-<ano>.yaml` com norma, data da norma, faixas e formula
+- [x] `attorneyfw custas <valor> --tribunal <t> [--ano N]` devolve o orcamento
+- [x] A saida diz qual norma aplicou, de que data, e a memoria de cada componente
+- [x] Tabela ausente falha dizendo qual arquivo criar
+- [x] Ao menos um tribunal semeado como exemplo de formato, marcado como **conferir na fonte**
+- [x] Regra de lint estende a ressalva de conferencia a custas
 
 ### Onda 5 — item 11, relatorio de resultado ao cliente
 
-- [ ] `attorneyfw relatorio [--materia]` produz o relatorio de encerramento
-- [ ] Compara `valor_pedido` × `resultado_valor`, corrigidos pela onda 1
-- [ ] **O sinal do ganho depende do papel do cliente no canon de partes** — o mesmo par de numeros e ganho para o reu e perda parcial para o autor
-- [ ] Falha, sem inventar, quando falta resultado ou papel
-- [ ] Sai em markdown, e em DOCX pelo caminho ja existente
+- [x] `attorneyfw relatorio [--materia]` produz o relatorio de encerramento
+- [x] Compara `valor_pedido` × `resultado_valor`, corrigidos pela onda 1
+- [x] **O sinal do ganho depende do papel do cliente no canon de partes** — o mesmo par de numeros e ganho para o reu e perda parcial para o autor
+- [x] Falha, sem inventar, quando falta resultado ou papel
+- [x] Sai em markdown, e em DOCX pelo caminho ja existente
 
 ### Onda 6 — item 3, amostra jurisprudencial e semaforo
 
-- [ ] `tese`/`mapa` ganham secao de amostra jurisprudencial com identificador, link, resultado e a razao da classificacao
-- [ ] `attorneyfw jurisprudencia add` registra um julgado; sem leitura confirmada ele entra como **pendente**
-- [ ] A saida sempre declara o `n` da amostra — nunca a apresenta como universo
-- [ ] `attorneyfw prognostico` devolve **semaforo** (verde/amarelo/vermelho) com as razoes, cada uma apontando o artefato de origem
-- [ ] Nenhuma superficie produz porcentagem de exito
-- [ ] Regra de lint reprova se qualquer superficie passar a emitir probabilidade de exito
+- [x] `tese`/`mapa` ganham secao de amostra jurisprudencial com identificador, link, resultado e a razao da classificacao
+- [x] `attorneyfw jurisprudencia add` registra um julgado; sem leitura confirmada ele entra como **pendente**
+- [x] A saida sempre declara o `n` da amostra — nunca a apresenta como universo
+- [x] `attorneyfw prognostico` devolve **semaforo** (verde/amarelo/vermelho) com as razoes, cada uma apontando o artefato de origem
+- [x] Nenhuma superficie produz porcentagem de exito
+- [x] Regra de lint reprova se qualquer superficie passar a emitir probabilidade de exito
 
 ### Transversal
 
-- [ ] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
-- [ ] `trackfw validate` sem violacoes de projeto antes de cada commit
-- [ ] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
-- [ ] Plugin `attorneyfw` no `plugin-skill` atualizado — skills, agentes e comandos que passam a ter superficie nova
+- [x] `npm run check` verde ao fim de cada onda; CI verde em Linux e Windows
+- [x] `trackfw validate` sem violacoes de projeto antes de cada commit
+- [x] README, `AJUDA` do bin e CHANGELOG atualizados a cada onda
+- [x] Plugin `attorneyfw` no `plugin-skill` atualizado — skills, agentes e comandos que passam a ter superficie nova
 
 ## Escopo negativo
 

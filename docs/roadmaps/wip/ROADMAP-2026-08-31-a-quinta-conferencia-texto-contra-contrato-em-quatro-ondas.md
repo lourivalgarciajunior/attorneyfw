@@ -21,11 +21,17 @@ ADR: `docs/adr/ADR-2026-08-31-o-texto-do-topico-se-confere-contra-o-proprio-cont
 
 ## Por que as ondas sao sequenciais
 
-A **onda 1** e insumo puro das ondas 2 e 3: sem chave normalizada de citacao,
-nao ha o que comparar. As **ondas 2 e 3** tocam ambas `test/smoke.mjs`, e a onda
-3 consome `conferirTopicos`, exportado pela onda 2. A **onda 4** toca
-`bin/attorneyfw.mjs`, `README.md`, `CHANGELOG.md` e `tools/lint.mjs`, e so faz
-sentido depois de o comportamento existir.
+A **onda 1** e insumo puro das outras: sem chave normalizada de citacao, nao ha
+o que comparar. As **ondas 2 e 3** tocam ambas `test/smoke.mjs`, e a onda 3
+consome o comparador. A **onda 4** toca `bin/attorneyfw.mjs`, `README.md`,
+`CHANGELOG.md` e `tools/lint.mjs`, e so faz sentido depois de o comportamento
+existir.
+
+**Correcao feita durante a execucao.** O extrator ia sozinho na onda 1, e o
+comparador vinha na onda 2. Nao fecha: a regra `modulo-orfao` do lint reprova
+modulo que o bin nao alcanca, e ela esta certa — modulo que ninguem importa nao
+embarca. Entao o **primeiro consumidor entrou na onda 1**, e a onda 2 ficou so
+com a superficie de linha de comando.
 
 ## Acceptance Criteria
 
@@ -47,7 +53,7 @@ sentido depois de o comportamento existir.
 
 ### ML-1A — `src/citacao.mjs`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/citacao.mjs` (novo)
 **Acoes:**
 1. Tabela `LEIS` de apelidos declarados — `CPC`, `CC`, `CF`, `CLT`, `CTN`, `CDC`,
@@ -69,9 +75,27 @@ a mesma chave; `art. 5o da Lei 9.999/99` (lei fora da tabela, mas com numero) e
 reconhecido; `conforme o XYZ` nao produz nada.
 **Validacao:** `node -e "import('./src/citacao.mjs').then(m=>console.log(m.citacoesDe('art. 373, II, do CPC')))"`
 
-### ML-1B — Testes do extrator
+### ML-1B — `conferirTopicos`, o primeiro consumidor
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
+**Files affected:** `src/conferir.mjs`
+**Acoes:**
+1. `conferirTopicos(topicos, documentos)` — cinco comparacoes, no mesmo formato
+   de achado das outras quatro (`tipo`, `esquerda`, `direita`, `trecho`).
+2. `citacao-fora-do-contrato`: chave no texto ausente de `fundamento:`.
+3. `fundamento-nao-usado`: chave em `fundamento:` ausente do texto.
+4. `documento-nao-citado`: id em `documentos:` cujo id e cujo nome no canon nao
+   aparecem no texto.
+5. `topico-sem-texto`: contrato preenchido e prosa vazia ou irrisoria.
+6. Nada e corrigido, e `fundamento:` nunca e completado com o que se achou.
+
+**Aceite:** os quatro primeiros produzem par com os dois lados; `art. 373, II` no
+texto contra `art. 373` no contrato nao produz achado.
+**Validacao:** `npm run check`
+
+### ML-1C — Testes do extrator e do comparador
+
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Equivalencia entre apelido e forma por extenso, nas seis leis mais usadas.
@@ -88,26 +112,7 @@ reconhecido; `conforme o XYZ` nao produz nada.
 
 > Depende da onda 1. Toca `src/conferir.mjs` e `test/smoke.mjs`.
 
-### ML-2A — `conferirTopicos`
-
-**Status:** ⬜ Pendente
-**Files affected:** `src/conferir.mjs`
-**Acoes:**
-1. `conferirTopicos(topicos, documentos)` — cinco comparacoes, devolvendo
-   achados no mesmo formato das outras quatro (`tipo`, `esquerda`, `direita`,
-   `trecho`).
-2. `citacao-fora-do-contrato`: chave no texto ausente de `fundamento:`.
-3. `fundamento-nao-usado`: chave em `fundamento:` ausente do texto.
-4. `documento-nao-citado`: id em `documentos:` cujo id e cujo nome no canon nao
-   aparecem no texto.
-5. `topico-sem-texto`: contrato preenchido e prosa vazia ou irrisoria.
-6. Nada e corrigido, e `fundamento:` nunca e completado com o que se achou.
-
-**Aceite:** os quatro primeiros produzem par com os dois lados; `art. 373, II` no
-texto contra `art. 373` no contrato nao produz achado.
-**Validacao:** `npm run check`
-
-### ML-2B — `attorneyfw conferir` mostra a quinta
+### ML-2A — `attorneyfw conferir` mostra a quinta
 
 **Status:** ⬜ Pendente
 **Files affected:** `src/conferir.mjs`, `test/smoke.mjs`
@@ -128,7 +133,7 @@ achado nenhum.
 
 ## Wave 3 — O gate
 
-> Depende da onda 2 (consome `conferirTopicos`). Toca `src/validate.mjs` e
+> Depende da onda 1 (consome `conferirTopicos`). Toca `src/validate.mjs` e
 > `test/smoke.mjs` — sequencial com a onda 2 pelo segundo arquivo.
 
 ### ML-3A — Avisos por topico, e o erro do topico vazio

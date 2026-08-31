@@ -35,6 +35,7 @@ import { Erro, acharEscritorio, c, canon, entregas, exigirMateria, lista, rel } 
 import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
+import { citacoesDe, cobre } from './citacao.mjs';
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
@@ -332,6 +333,103 @@ function confereTranscricoes(texto, documentos) {
         trecho: parecido === undefined
           ? 'valor transcrito que a ficha do documento nao registra'
           : 'valor transcrito diverge do que a ficha registra — dentro das aspas',
+      });
+    }
+  }
+  return out;
+}
+
+// ------------------------------------------ texto do topico x contrato dele
+
+/**
+ * A quinta conferencia.
+ *
+ * As quatro primeiras comparam a peca com ela mesma e com a ficha do documento.
+ * Esta compara o texto do topico com o **contrato** declarado logo acima dele —
+ * e por isso e a unica que nao roda sobre o markdown do `build`: o contrato e
+ * removido de proposito antes de a peca sair.
+ *
+ * Cinco comparacoes:
+ *
+ * 1. citacao no texto que o contrato nao declara;
+ * 2. fundamento declarado que a prosa nao invoca;
+ * 3. documento declarado que o texto nao menciona;
+ * 4. contrato preenchido e prosa vazia;
+ * 5. e o caso em que nao ha o que comparar — que sai calado.
+ *
+ * O que ela **nao** confere e o mesmo que o extrator recusa: existencia,
+ * vigencia, superacao e pertinencia do dispositivo. As quatro sao leitura, e
+ * ficam com o agente de fundamento.
+ */
+const MIN_PALAVRAS_TOPICO = 25;
+
+export function conferirTopicos(topicos, documentos = []) {
+  const out = [];
+  const porId = new Map(documentos.map((d) => [String(d.id || '').toLowerCase(), d]));
+
+  for (const t of topicos || []) {
+    const quem = String(t.id || '?');
+    const declaradas = lista(t.fundamento)
+      .map((f) => ({ texto: f, cits: citacoesDe(f) }));
+    const todas = declaradas.flatMap((d) => d.cits);
+    const resumo = lista(t.fundamento).join('; ') || '(nada)';
+
+    // Contrato cheio e prosa vazia e uma promessa com nada atras dela. O gate
+    // contava palavras da entrega inteira, e um topico vazio se escondia atras
+    // de outro bem escrito.
+    if ((t.palavras || 0) < MIN_PALAVRAS_TOPICO) {
+      if (String(t.sustenta || '').trim() || todas.length) {
+        out.push({
+          tipo: 'topico-sem-texto', topico: quem,
+          esquerda: { rotulo: 'o contrato sustenta', valor: String(t.sustenta || '(preenchido)').trim() },
+          direita: { rotulo: 'o texto do topico tem', valor: `${t.palavras || 0} palavra(s)` },
+          trecho: 'contrato declarado e prosa vazia',
+        });
+      }
+      continue; // sem texto nao ha o que comparar: as outras quatro calam
+    }
+
+    const noTexto = citacoesDe(t.texto);
+    const leisDeclaradas = new Set(todas.map((c) => c.lei || c.chave));
+
+    for (const cit of noTexto) {
+      if (todas.some((d) => cobre(d, cit))) continue;
+      // Mencao a lei sem artigo so vira achado quando a lei inteira esta fora do
+      // contrato. "A Lei 9.610/98 protege..." depois de a lei ja ter sido
+      // declarada com artigo e mencao de passagem — e aviso que dispara sempre e
+      // aviso que ninguem le.
+      if (cit.tipo === 'lei' && leisDeclaradas.has(cit.chave)) continue;
+      out.push({
+        tipo: 'citacao-fora-do-contrato', topico: quem,
+        esquerda: { rotulo: 'o texto cita', valor: cit.rotulo },
+        direita: { rotulo: 'o fundamento declara', valor: resumo },
+        trecho: 'citacao que o contrato do topico nao declara',
+      });
+    }
+
+    for (const d of declaradas) {
+      // Declaracao que o extrator nao reconhece nao e comparada em direcao
+      // nenhuma. Silencio, e nao palpite.
+      if (!d.cits.length) continue;
+      if (d.cits.some((dc) => noTexto.some((ct) => cobre(dc, ct) || cobre(ct, dc)))) continue;
+      out.push({
+        tipo: 'fundamento-nao-usado', topico: quem,
+        esquerda: { rotulo: 'o fundamento declara', valor: d.texto },
+        direita: { rotulo: 'a prosa do topico', valor: 'nao o invoca' },
+        trecho: 'fundamento declarado e nao usado no texto',
+      });
+    }
+
+    const alvo = sa(t.texto);
+    for (const id of lista(t.documentos)) {
+      const d = porId.get(String(id).toLowerCase());
+      const apelidos = [id, ...(d ? [d.nome, ...(d.apelidos || [])] : [])].filter(Boolean);
+      if (apelidos.some((a) => alvo.includes(sa(a)))) continue;
+      out.push({
+        tipo: 'documento-nao-citado', topico: quem,
+        esquerda: { rotulo: 'o contrato declara', valor: `documentos: [${id}]` },
+        direita: { rotulo: 'a prosa do topico', valor: 'nao o menciona' },
+        trecho: 'documento declarado e nunca mencionado no texto',
       });
     }
   }

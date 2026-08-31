@@ -25,6 +25,7 @@ import { jurisprudenciaAdd, jurisprudenciaLista } from '../src/jurisprudencia.mj
 import { prognostico } from '../src/prognostico.mjs';
 import { anonimizar } from '../src/anonimizar.mjs';
 import { dados } from '../src/dados.mjs';
+import { conferir } from '../src/conferir.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -59,6 +60,7 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw status                     kanban da materia, ou a carteira na raiz
   attorneyfw context                    dump da governanca para LLM
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
+  attorneyfw conferir <entrega>         extenso x algarismo, soma x total, item x pedido
   attorneyfw dados <entrega>            o que tem formato de dado pessoal (so acusa)
   attorneyfw anonimizar --init          cria o mapa real -> ficticio da materia
   attorneyfw anonimizar <entrega>       aplica o mapa inteiro numa passada [--reverter]
@@ -176,6 +178,7 @@ try {
     case 'diagrama': diagrama(args); break;
     case 'anonimizar': anonimizar(args); break;
     case 'dados': dados(args); break;
+    case 'conferir': process.exitCode = conferir(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

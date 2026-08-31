@@ -21,10 +21,17 @@ montante por extenso costuma prevalecer sobre o algarismo — e o que saiu errad
 foi justamente a parte que o cartorio le com atencao.
 
 **2. Item alegado contra item pedido.** Numa declaratoria de inexistencia de
-debito, a narrativa alega **76** aparelhos. A lista numerada vai de 1 a 76 e tem
-**75 itens** — falta o de numero 35. Um dos numeros esta grafado com um
-ponto-e-virgula no meio dos digitos, e reaparece assim **dentro do pedido**. E o
-pedido inclui um numero que nao consta da lista dos fatos.
+debito, a narrativa alega **76** aparelhos e a lista numerada traz os 76. O item
+**72**, porem, esta grafado `98841;1749` — com um ponto-e-virgula no meio dos
+digitos —, e reaparece assim **dentro do pedido**.
+
+Este achado tem uma historia que vale mais que ele. Na primeira leitura, feita a
+mao, o relatorio dizia que faltava o item 35 e que o pedido trazia um numero
+ausente dos fatos. Estava errado: o regex da conferencia manual era estrito
+demais e derrubava tanto o item malformado quanto um item terminado por virgula.
+**Foi o proprio comparador, ja implementado, que corrigiu a analise humana** — e
+depois de ajustado para capturar o valor inteiro e classificar depois, passou a
+dizer a verdade: nenhum indice falta, um item esta malformado.
 
 O pedido e o que vira dispositivo da sentenca. Numero malformado ali nao casa com
 nenhuma linha da fatura, e a declaracao de inexistencia nao o alcanca — sobra

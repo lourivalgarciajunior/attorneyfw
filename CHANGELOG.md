@@ -6,6 +6,54 @@ Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
 A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
 pelo menos um defeito encontrado e conferido no corpus.
 
+### Adicionado — conferencia numerica
+
+- **`attorneyfw conferir <entrega>`**, com `--json`. Tres comparacoes mecanicas
+  sobre o markdown que o `build` gerou — conferir uma versao e protocolar outra
+  e pior que nao conferir:
+
+  | Verificacao | O que compara |
+  |---|---|
+  | extenso | os dois lados de `R$ 7.182,86 (sete mil ... e oitenta centavos)` |
+  | soma | as parcelas contra o total, quando a peca escreve "totalizando" |
+  | item | a lista enumerada nos fatos contra a lista no pedido |
+
+- Parser de valor por extenso em portugues, ate bilhoes, com centavos. Devolve
+  **nada** diante de palavra que nao conhece: numero "conferido" errado e pior
+  que numero nao conferido.
+
+### Decidido
+
+- **Divergencia sai sempre como par, com os dois lados a vista.** Nunca "valor
+  incorreto": a ferramenta nao sabe qual dos dois esta certo, e fingir que sabe
+  faria o advogado corrigir o lado errado. **Nada e corrigido automaticamente** —
+  nas tres pecas do corpus o lado certo foi diferente.
+
+- **A verificacao de item e extensao do que o gate ja faz.** Ele cobra
+  `fato → prova` e `pedido → topico`; passa a cobrar `item alegado → item
+  pedido`. Vale para linha telefonica, nota fiscal, parcela, matricula, lote.
+
+- **O valor do item e capturado inteiro e classificado depois.** Capturar so o
+  que ja tem a forma esperada faz o item malformado sumir da lista e virar
+  "indice faltante" — que e outro defeito, com outra correcao.
+
+- A janela da soma recua ate dois paragrafos, porque no alvara do corpus uma das
+  parcelas estava dois atras. Assim que alguma combinacao final fecha, para: erra
+  para o silencio, e nao para o alarme.
+
+### Corrigido — na analise, e nao no codigo
+
+- **A primeira leitura do corpus, feita a mao, estava errada num ponto.** Ela
+  dizia que a lista de uma declaratoria tinha 75 de 76 itens, faltando o de
+  numero 35, e que o pedido trazia um numero ausente dos fatos.
+
+  Nenhum indice falta. O regex da conferencia manual era estrito demais e
+  derrubava dois itens: o malformado (`98841;1749`, com ponto-e-virgula no meio
+  dos digitos) e um terminado por virgula em vez de ponto-e-virgula. **Foi o
+  comparador recem-implementado que corrigiu a analise humana**, rodando sobre as
+  pecas de verdade. O defeito real — e ele continua real — e o item malformado,
+  que aparece assim tambem dentro do pedido.
+
 ### Adicionado — anonimizacao por mapa
 
 - **`attorneyfw anonimizar --init`** cria `anonimizacao.yaml` na materia, com

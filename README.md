@@ -283,6 +283,30 @@ Duas recusas, ambas deliberadas:
 
 O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
 
+## Conferência numérica
+
+```bash
+attorneyfw conferir 1
+```
+
+Três comparações mecânicas sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
+
+| Verificação | O que compara |
+|---|---|
+| **extenso** | os dois lados de `R$ 7.182,86 (sete mil cento e oitenta e dois reais e oitenta centavos)` |
+| **soma** | as parcelas contra o total, quando a peça escreve "totalizando" |
+| **item** | a lista enumerada nos fatos contra a lista no pedido |
+
+Nenhuma interpreta. Todas apontam o par que diverge e param ali.
+
+**A divergência sai sempre como par, com os dois lados à vista** — nunca "valor incorreto". A ferramenta não sabe qual dos dois está certo, e fingir que sabe faria o advogado corrigir o lado errado. Pela mesma razão, **nada é corrigido automaticamente**.
+
+A verificação de item é extensão do que o gate já faz. Ele cobra `fato → prova` e `pedido → tópico`; agora cobra também `item alegado → item pedido`. Vale para linha telefônica, nota fiscal, parcela, matrícula, lote — qualquer conjunto que a peça enumera e depois pede. O pedido é o que vira dispositivo da sentença: item malformado ali não casa com nenhuma linha da cobrança, e a declaração de inexistência não o alcança.
+
+O valor do item é capturado **inteiro** e classificado depois. Capturar só o que já tem a forma esperada faria item malformado desaparecer da lista e virar "índice faltante" — que é outro defeito, com outra correção. Foi exatamente esse o erro da primeira conferência feita à mão sobre o corpus, e foi o comparador que o corrigiu.
+
+Fora do alcance, e declarado: número dentro de imagem anexada.
+
 ## Dado pessoal na peça
 
 ```bash

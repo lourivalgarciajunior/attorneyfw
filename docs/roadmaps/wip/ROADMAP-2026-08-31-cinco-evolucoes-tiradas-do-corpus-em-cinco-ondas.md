@@ -103,25 +103,39 @@ isso" — hoje ele confere que a linha do achado e uma linha de aviso.
 
 ### ML-2A — Os tres comparadores
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs` (novo)
 **Aceite:**
-- [ ] Extenso x algarismo, com parser de valor por extenso em portugues
-- [ ] Soma declarada x parcelas
-- [ ] Item alegado x item pedido, com faltante, malformado e orfao
-- [ ] Toda divergencia sai como **par**, com os dois lados
-- [ ] Nada e corrigido
+- [x] Extenso x algarismo, com parser de valor por extenso em portugues
+- [x] Soma declarada x parcelas
+- [x] Item alegado x item pedido, com faltante, malformado e orfao
+- [x] Toda divergencia sai como **par**, com os dois lados
+- [x] Nada e corrigido
 
 ### ML-2B — `attorneyfw conferir`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Roda sobre o markdown que o `build` gerou, e recostura se faltar
-- [ ] `--json`
-- [ ] Smoke reproduz os tres casos do corpus, conferidos a mao antes do teste
+- [x] Roda sobre o markdown que o `build` gerou, e recostura se faltar
+- [x] `--json`
+- [x] Smoke reproduz os tres casos do corpus, conferidos a mao antes do teste
 
 ---
+
+**Medido ao fim da onda:** 10 asserts, e o comparador rodado contra as **oito
+pecas do corpus**. Sobre elas ele aponta exatamente dois achados, e nenhum falso
+positivo: o extenso do alvara e o item malformado da declaratoria.
+
+**O que esta onda mediu de mais util nao foi um defeito na peca — foi um na
+analise.** A leitura manual dizia "falta o item 35" e "o pedido tem numero
+ausente dos fatos". Nenhum indice falta: o regex manual era estrito demais e
+derrubava o item malformado e um terminado por virgula. O comparador corrigiu a
+conferencia humana, e o codigo foi ajustado para capturar o valor inteiro e
+classificar depois — de modo que item malformado seja reportado como malformado,
+e nao como indice faltante.
+
+Os documentos de governanca e o relatorio ao escritorio foram corrigidos.
 
 ## Wave 3 — Canon na carteira
 

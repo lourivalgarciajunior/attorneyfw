@@ -331,6 +331,72 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// ------------------------------------------------------- conferencia numerica
+console.log('\nconferencia numerica');
+
+// Os tres casos vieram do corpus e foram conferidos a mao ANTES do teste.
+// 7.155,76 + 27,10 = 7.182,86; o extenso do alvara dizia "oitenta centavos".
+writeFileSync(entPath, ent.replace('texto '.repeat(200), [
+  'Foi depositada a quantia de R$ 7.155,76 (sete mil cento e cinquenta e cinco reais e setenta e seis centavos).',
+  '',
+  'Alem do deposito havia R$ 27,10 (vinte e sete reais e dez centavos), totalizando assim o saldo de R$ 7.182,86 (sete mil cento e oitenta e dois reais e oitenta centavos).',
+  '',
+  'Os aparelhos recebidos sem solicitacao foram:',
+  '',
+  '1- 988002419;',
+  '2- 988025333;',
+  '3- 988041029;',
+  '4- 98841;1749;',
+  '5- 988046595;',
+  '6- 988055574;',
+  '',
+  'Diante do exposto, requer seja declarada a inexistencia de debito dos numeros 988002419; 988025333; 988041029; 98841;1749; 988046595 e 988055574, referentes a fatura n. 114405363.',
+].join('\n')), 'utf8');
+emAcme('build', '1');
+
+const conf = emAcme('conferir', '1');
+ok('conferir sai com 1 quando ha divergencia', conf.codigo === 1);
+ok('extenso divergente do algarismo e apontado',
+  conf.saida.includes('7.182,86') && conf.saida.includes('7.182,80'));
+ok('a soma que fecha nao vira alarme', !conf.saida.includes('soma x total'));
+ok('item malformado e apontado como malformado, e nao como indice faltante',
+  conf.saida.includes('98841;1749') && conf.saida.includes('item 4') && !conf.saida.includes('falta'));
+ok('numero de fatura nao vira item do pedido', !conf.saida.includes('114405363'));
+ok('nada e corrigido', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return md.includes('oitenta centavos') && md.includes('98841;1749');
+})());
+ok('a divergencia sai como par, com os dois lados', conf.saida.includes('algarismo') && conf.saida.includes('por extenso'));
+ok('--json nao corrige', (() => {
+  const r = emAcme('conferir', '1', '--json');
+  try { const j = JSON.parse(r.saida); return j.corrigiu === false && j.achados.length >= 2; }
+  catch { return false; }
+})());
+
+// Soma que NAO fecha tem de acusar, e a janela recua paragrafo para achar a
+// parcela que ficou para tras — no alvara, uma delas estava dois atras.
+ok('soma que nao fecha e apontada', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), [
+    'Pagou-se R$ 100,00 (cem reais) na primeira parcela.',
+    '',
+    'E mais R$ 50,00 (cinquenta reais), totalizando R$ 160,00 (cento e sessenta reais).',
+  ].join('\n')), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.saida.includes('soma x total') && r.saida.includes('160,00');
+})());
+
+ok('peca sem divergencia passa limpa', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), totalizando R$ 150,00 (cento e cinquenta reais).'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.codigo === 0 && r.saida.includes('Nenhuma divergencia');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
 // ------------------------------------------------------- dado pessoal na peca
 console.log('\ndado pessoal');
 

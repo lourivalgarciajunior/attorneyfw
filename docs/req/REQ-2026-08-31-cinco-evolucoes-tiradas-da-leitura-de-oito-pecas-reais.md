@@ -38,7 +38,7 @@ ha aqui nenhuma funcionalidade proposta por parecer boa ideia.
 | # | O que | Caso encontrado |
 |---|---|---|
 | 1 | anonimizacao por mapa | tres pecas anonimizadas pela metade; numa delas sobrou o CPF de uma crianca ao lado do diagnostico |
-| 2 | conferencia numerica | extenso divergindo do algarismo num alvara; 76 itens alegados e 75 individualizados numa declaratoria |
+| 2 | conferencia numerica | extenso divergindo do algarismo num alvara; item de lista malformado, e assim tambem no pedido, numa declaratoria |
 | 3 | canon na carteira | o mesmo CNPJ e filial de Pernambuco numa peca e autora com inscricao no Parana noutra |
 | 4 | modelo por tipo de acao | oito tipos de acao no arquivo, cada um sabendo quais documentos foram juntados |
 | 5 | transcricao com lastro | valor transcrito errado **dentro das aspas** da citacao do auto de infracao |
@@ -67,6 +67,7 @@ processo e alcanca quem nao e parte de nada.
 - [ ] Confere **soma** quando a peca declara total a partir de parcelas
 - [ ] Confere **item alegado x item pedido** em lista enumerada
 - [ ] Aponta item faltante na sequencia, item malformado, e item no pedido ausente dos fatos
+- [ ] O valor do item e capturado **inteiro** e classificado depois — capturar so o que tem a forma esperada faz item malformado virar "indice faltante", que e outro defeito e outra correcao
 - [ ] Divergencia sai **sempre como par**, com os dois lados a vista — nunca "valor incorreto"
 - [ ] **Nao corrige nada automaticamente**, em nenhuma das tres verificacoes
 - [ ] `--json`

@@ -6,6 +6,40 @@ Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes
 anteriores tiraram do corpus os defeitos das pecas; esta tira delas o que elas
 tambem sao — o acervo que a ferramenta nao sabia ler.
 
+### Adicionado — style card
+
+- **`attorneyfw estilo --de <arquivos>`** deriva `estilo.yaml` das pecas do
+  proprio escritorio; **`attorneyfw estilo`** mostra o card em vigor.
+
+- Mede tratamento do juizo, formula de lastro documental, rotulo das partes,
+  ritmo de paragrafo e uso de caixa alta.
+
+### Decidido
+
+- **O card descreve, e nao prescreve.** Um card prescritivo — "chame a parte de
+  Requerente" — e mais acionavel e transforma uma medicao de oito pecas numa
+  regra de redacao. Oito pecas nao sustentam regra nenhuma, e corrigir o
+  advogado pela frequencia e a mesma familia da porcentagem de exito que esta
+  ferramenta recusa: numero pequeno com cara de norma.
+
+- **Cada traco sai com o `n`** — em quantas pecas apareceu, de quantas foram
+  lidas — e nenhuma linha diz "escreva assim".
+
+- **O unico gate que o card habilita e de consistencia interna**: peca que usa os
+  dois pares de rotulo para a mesma parte recebe aviso. Isso se verifica dentro
+  da peca e nao depende de o card estar certo. **Nao ha gate de aderencia a
+  voz** — estilo nao se reprova.
+
+- **Nao ha card de partida no CLI**, pela mesma razao que nao ha modelo de acao
+  de partida: seria opiniao sobre estilo juridico vinda de quem nao advoga.
+
+### Corrigido — num numero de documento, e nao no codigo
+
+- A leitura manual do corpus dizia que **quatro** das oito pecas alternavam
+  "Requerente" e "Autor" para a mesma parte. O comando, rodando sobre as mesmas
+  pecas, mede **tres** — a diferenca esta no que cada contagem aceita como "Ré".
+  A do comando e a que vale, porque e a que roda. ADR e REQ corrigidos.
+
 ### Adicionado — a porta de entrada
 
 - **`attorneyfw importar <arquivo.docx|.txt|.md>`**, com `--criar-materia` e

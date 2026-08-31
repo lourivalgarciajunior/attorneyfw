@@ -457,6 +457,57 @@ ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
   return violacoes(emAcme('validate')).length === antes;
 })());
 
+// ------------------------------------------------------------------ estilo
+console.log('\nstyle card');
+
+const amostraA = join(raiz, 'amostra-a.txt');
+const amostraB = join(raiz, 'amostra-b.txt');
+writeFileSync(amostraA, [
+  'Excelencia, a Requerente vem expor o que segue.',
+  'A Requerida foi notificada, conforme documento anexo.',
+  'Vejamos o que diz a norma. Excelencia, com o devido respeito, a Requerida errou.',
+].join('\n'), 'utf8');
+// A segunda amostra mistura os dois pares para a mesma parte — o achado do corpus.
+writeFileSync(amostraB, [
+  'A Requerente e parte legitima. O Autor juntou os documentos.',
+  'A Re foi citada e nao contestou.',
+].join('\n'), 'utf8');
+
+const est = run('estilo', '--de', `${amostraA},${amostraB}`);
+ok('deriva o card das amostras', est.codigo === 0 && existsSync(join(raiz, 'estilo.yaml')));
+
+const card = () => lerLF(raiz, 'estilo.yaml');
+ok('o card declara o n', card().includes('n: 2'));
+ok('cada traco traz em quantas apareceu', card().includes('em: 1/2') || card().includes('em: 2/2'));
+ok('o card diz que DESCREVE e nao prescreve', card().includes('DESCREVE, e nao prescreve'));
+ok('e diz por que a amostra nao sustenta regra', card().includes('porcentagem de exito'));
+ok('nenhuma linha manda escrever de um jeito', !/escreva assim|use "|prefira /i.test(card().replace(/^#.*$/gm, '')));
+ok('conta as pecas que misturam rotulo', card().includes('OS DOIS pares'));
+ok('o terminal avisa da mistura', est.saida.includes('usam OS DOIS pares'));
+
+ok('estilo sem --de mostra o card', run('estilo').saida.includes('derivado_em'));
+ok('sem card, manda derivar das pecas do escritorio', (() => {
+  const r = rodarEm(beta)('estilo');
+  return r.saida.includes('estilo.yaml') || r.codigo === 0;
+})());
+
+// O unico gate que o card habilita, e ele nao depende do card.
+ok('gate avisa quando a peca usa os dois rotulos', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'A Requerente pagou. O Autor juntou o comprovante. A Requerida nao contestou.'), 'utf8');
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('dois pares de rotulo'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+ok('peca com um rotulo so nao gera aviso', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'A Requerente pagou. A Requerida nao contestou.'), 'utf8');
+  return !emAcme('validate').saida.includes('dois pares de rotulo');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
 // ---------------------------------------------------------------- importar
 console.log('\nimportar peca arquivada');
 

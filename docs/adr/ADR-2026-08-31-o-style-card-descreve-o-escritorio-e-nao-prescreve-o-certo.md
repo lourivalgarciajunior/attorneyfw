@@ -27,7 +27,7 @@ do que se esperaria:
 | trechos em CAIXA ALTA usados como enfase | 82 |
 | formas distintas de enderecamento | 6, em 8 pecas |
 
-E mostrou tambem uma inconsistencia que ninguem percebe lendo: **quatro das oito
+E mostrou tambem uma inconsistencia que ninguem percebe lendo: **tres das oito
 pecas alternam "Requerente/Requerida" e "Autor/Ré" dentro de si**, para a mesma
 pessoa. No plano de saude sao 13 contra 8; na telefonia, 9 contra 19.
 
@@ -38,8 +38,8 @@ quem se fala e completa sozinho.
 Ha um risco de desenho, e ele decide a forma do artefato. Um card de estilo pode
 ser lido de dois jeitos:
 
-- **descritivo** — "este escritorio chama a parte de Requerente em 4 pecas e de
-  Autor em 3, e alterna dentro da mesma peca em 4 delas";
+- **descritivo** — "este escritorio chama a parte de Requerente em 7 pecas e de
+  Autor em 4, e alterna dentro da mesma peca em 3 delas";
 - **prescritivo** — "chame a parte de Requerente".
 
 O segundo e mais util e mais perigoso. Ele transforma uma medicao de oito pecas
@@ -90,7 +90,12 @@ que a amostra jurisprudencial diz o `n`.
 - A peca gerada passa a parecer do escritorio, que e a diferenca entre um
   rascunho aproveitavel e um rascunho reescrito.
 - A alternancia de rotulo dentro da peca deixa de ser invisivel — e ela e real
-  em metade do corpus.
+  em tres das oito do corpus.
+
+  Vale registrar como este numero se firmou: a contagem que eu tinha feito a mao
+  dizia quatro, e a do comando diz tres. A do comando e a que vale, porque e a
+  que roda — e a diferenca esta no que cada uma aceita como "Ré". Numero de
+  documento que a ferramenta contradiz nao fica no documento.
 - O card melhora com o arquivo: cada peca importada e uma amostra a mais.
 - Descrever em vez de prescrever mantem a ferramenta fora de uma discussao que
   nao e dela.

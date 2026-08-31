@@ -113,24 +113,37 @@ semanticamente morto, e nenhuma leitura do codigo o denunciaria — `Read` mostr
 
 ### ML-2A — A medicao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/estilo.mjs` (novo)
 **Aceite:**
-- [ ] Tratamento do juizo, rotulo das partes, formula de lastro, ritmo, caixa alta
-- [ ] **Cada traco com o `n`** — em quantas amostras, de quantas lidas
-- [ ] Nenhuma linha prescritiva
+- [x] Tratamento do juizo, rotulo das partes, formula de lastro, ritmo, caixa alta
+- [x] **Cada traco com o `n`** — em quantas amostras, de quantas lidas
+- [x] Nenhuma linha prescritiva
 
 ### ML-2B — O card, e o unico gate que ele habilita
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/estilo.mjs`, `src/validate.mjs`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] `estilo.yaml` na carteira; `attorneyfw estilo` sem `--de` mostra o card
-- [ ] Gate **avisa** quando a peca usa dois rotulos para a mesma parte
-- [ ] Nao ha gate de aderencia a voz
-- [ ] Smoke reproduz o caso do corpus
+- [x] `estilo.yaml` na carteira; `attorneyfw estilo` sem `--de` mostra o card
+- [x] Gate **avisa** quando a peca usa dois rotulos para a mesma parte
+- [x] Nao ha gate de aderencia a voz
+- [x] Smoke reproduz o caso do corpus
 
 ---
+
+**Medido ao fim da onda:** 12 asserts, e o card derivado das **oito pecas reais**.
+Ele reproduz a medicao manual em tudo — "Excelência" em 5/8, "conforme … anexo"
+em 6/8, mediana de 40 palavras — **menos num numero**: a mistura de rotulo, que a
+mao contava quatro e o comando conta tres.
+
+Os documentos foram corrigidos para o numero do comando. Numero de documento que
+a ferramenta contradiz nao fica no documento — e ja e a segunda vez nesta
+sequencia de REQs que a medicao automatica corrige a manual.
+
+**Um assert que vale mais que os outros:** `nenhuma linha manda escrever de um
+jeito` — ele varre o card por imperativo de redacao e reprova se algum aparecer.
+E a guarda de que o card continua descritivo quando alguem acrescentar um traco.
 
 ## Wave 3 — Formulas de peca
 

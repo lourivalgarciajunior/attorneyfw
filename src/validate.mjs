@@ -16,6 +16,7 @@ import {
 import { ARQUIVO_MAPA } from './anonimizar.mjs';
 import { tipoDocumento } from './parte.mjs';
 import { achar } from './dados.mjs';
+import { rotulosMisturados } from './estilo.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -307,6 +308,18 @@ function validarMateria(m, { raiz, esc, ctx }) {
       erro(`docs/canon/partes/${p.arquivo}`,
         `documento diverge da carteira — aqui "${docLocal}", em partes/${p.refSlug}.md "${p.ref.documento}"`);
     }
+  }
+
+  // ---- rotulo da parte, dentro da peca
+  // Metade das pecas do corpus alterna "Requerente" e "Autor" para a mesma
+  // pessoa, e ninguem percebe lendo: quem le sabe de quem se fala e completa
+  // sozinho. Aviso, e nunca violacao — ha caso legitimo, como peca que trata de
+  // dois processos com polos diferentes.
+  for (const e of es) {
+    const mix = rotulosMisturados(e.corpo);
+    if (!mix) continue;
+    aviso(rel(m.dir, e.caminho),
+      `usa os dois pares de rotulo para a parte — Requerente/Requerida ${mix.requerente}x e Autor/Re ${mix.autor}x`);
   }
 
   // ---- transcricao com lastro

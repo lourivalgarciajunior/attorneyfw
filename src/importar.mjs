@@ -40,7 +40,7 @@ import { achar } from './dados.mjs';
  * o `inflateRawSync` do proprio node resolve. Trazer uma biblioteca de zip para
  * abrir uma entrada seria dependencia de runtime, e o projeto tem zero.
  */
-function textoDoDocx(buf) {
+export function textoDoDocx(buf) {
   const ALVO = 'word/document.xml';
   const ASSINATURA_LOCAL = 0x04034b50;
 
@@ -249,7 +249,21 @@ function relatorio(origem, achado, texto) {
 
 // ----------------------------------------------------------------- comando
 
-const EXTENSOES = ['.docx', '.txt', '.md'];
+export const EXTENSOES = ['.docx', '.txt', '.md'];
+
+/** Texto de um arquivo que o projeto sabe ler. Usado tambem pelo `estilo`. */
+export function lerTexto(caminho) {
+  const ext = extname(caminho).toLowerCase();
+  if (ext === '.pdf') {
+    throw new Erro(
+      `${basename(caminho)}: PDF esta fora do escopo desta versao, e nao ha extracao parcial.
+`
+      + '  Converta para .docx, ou extraia o texto para .txt.',
+    );
+  }
+  if (!EXTENSOES.includes(ext)) throw new Erro(`nao sei ler "${ext}". Sei ler: ${EXTENSOES.join(', ')}`);
+  return ext === '.docx' ? textoDoDocx(readFileSync(caminho)) : readFileSync(caminho, 'utf8');
+}
 
 export async function importar(args) {
   const raiz = acharEscritorio();

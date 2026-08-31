@@ -193,6 +193,36 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## Style card — como este escritório escreve
+
+```bash
+attorneyfw estilo --de "peca1.docx,peca2.docx,peca3.docx"
+attorneyfw estilo
+```
+
+O `bookfw` já provou o mecanismo: a voz do autor sai das amostras dele, e a prosa passa a soar como ele em vez de soar como um modelo. Aqui o `adv-gaio` redigia com a voz que o modelo tem.
+
+**O card descreve, e não prescreve.** Um card prescritivo — "chame a parte de Requerente" — é mais acionável e transforma uma medição de oito peças numa regra de redação. Oito peças não sustentam regra nenhuma, e corrigir o advogado pela frequência é a mesma família da porcentagem de êxito que esta ferramenta recusa: número pequeno com cara de norma.
+
+Por isso **cada traço sai com o `n`** — em quantas peças apareceu, de quantas foram lidas — e nenhuma linha diz "escreva assim".
+
+Derivado das oito peças de um escritório real:
+
+| traço | |
+|---|---|
+| trata o juízo por "Excelência" | 5/8 |
+| aponta prova com "conforme … anexo" | 6/8 |
+| convida com "vejamos" | 4/8 |
+| rótulo Requerente/Requerida | 7/8 |
+| rótulo Autor/Ré | 4/8 |
+| mediana do parágrafo | 40 palavras |
+
+**O único gate que o card habilita é de consistência interna:** peça que usa os dois pares de rótulo para a mesma parte recebe aviso. Isso se verifica dentro da peça e não depende de o card estar certo — e é real em três das oito, onde a mesma pessoa é "Requerente" num parágrafo e "Autor" no seguinte.
+
+Aviso, e nunca violação: há caso legítimo, como peça que trata de dois processos com polos diferentes. E **não há gate de aderência à voz** — estilo não se reprova.
+
+Não existe card de partida no CLI, pela mesma razão que não existe modelo de ação de partida: seria opinião sobre estilo jurídico vinda de quem não advoga.
+
 ## A porta de entrada — importar peca arquivada
 
 ```bash

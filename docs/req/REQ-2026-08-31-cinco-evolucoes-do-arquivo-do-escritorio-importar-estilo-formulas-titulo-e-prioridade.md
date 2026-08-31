@@ -47,7 +47,7 @@ Medido nas oito pecas, e nao estimado:
 | "Excelência" | 14 ocorrencias, em 5 pecas |
 | "conforme … anexo" | 15 ocorrencias, em 6 pecas |
 | mediana do paragrafo | 39 palavras |
-| pecas que alternam Requerente/Autor **dentro de si** | **4 de 8** |
+| pecas que alternam Requerente/Autor **dentro de si** | **3 de 8** |
 | titulo que promete `c/c` e nao pede | 1 |
 | prioridade anunciada com idade que nao bate | 1 |
 | CPF de parte com digito verificador invalido | 1 |

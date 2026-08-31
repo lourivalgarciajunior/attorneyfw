@@ -193,6 +193,47 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+### A agenda tambem sai como contrato tipado
+
+```bash
+attorneyfw prazo --dias 15 --json
+```
+
+O hook `SessionStart` do plugin poe a carteira em foco quando a sessao abre dentro dela — e ate a 0.8.0 ele decidia se havia prazo vencido com `linha.includes('VENCIDO')`.
+
+Era o unico acoplamento deste repositorio cuja quebra e **silenciosa e cara**: reescrever aquele rotulo desligaria o unico alarme do plugin e **manteria a agenda impressa**. Nada falharia, nada avisaria, e o unico erro desta ferramenta que custa o caso do cliente ficaria sem sinal.
+
+Desde a 0.9.0 o sinal e campo:
+
+```json
+{
+  "versao": 1,
+  "hoje": "2026-08-31",
+  "ressalva": "conferencia, nao contagem oficial — o prazo que vale e o dos autos",
+  "vencidos": 1,
+  "prazos": [
+    {
+      "materia": "alfa", "entrega": 1, "titulo": "Contestacao", "estado": "minuta",
+      "fim": "2026-08-21", "restam": -6, "vencido": true, "fatal": true,
+      "regime": "processual", "divergencia": null, "erro": null,
+      "linha": "  2026-08-21  VENCIDO  6d  alfa/01   Contestacao   minuta  FATAL"
+    }
+  ]
+}
+```
+
+Tres decisoes moram nesse formato:
+
+**A ressalva e campo, e nao rodape.** Payload tipado e feito para programa consumir, e **programa nao le rodape**. Se a ressalva ficasse so na renderizacao de texto, o numero viajaria sozinho — e um prazo de conferencia chega ao consumidor com cara de contagem oficial, que e exatamente o defeito que o resto da ferramenta gasta esforco para nao cometer.
+
+**Cada entrada carrega a `linha` que o terminal imprimiria, sem ANSI.** Decide-se pelos campos, exibe-se pela linha: nenhum lado reimplementa o outro, e nao ha segunda renderizacao para envelhecer. O `c.*` do core sempre colore — nao ha teste de TTY —, e sem a linha limpa cada consumidor escreveria o proprio removedor de cor, cada um com um regex diferente.
+
+**Prazo mal declarado entra no payload**, com `erro` preenchido e os campos de data em `null`. Um consumidor que so lesse as entradas validas deixaria de fora justamente a materia cujo prazo ninguem consegue calcular — o pior silencio possivel aqui.
+
+O `versao` existe para que um consumidor possa **recusar** o que nao entende: sem ele, renomear um campo trocaria um acoplamento de texto por um acoplamento de forma, que quebra igual e sem aviso.
+
+O codigo de saida nao muda: `--json` continua saindo com 1 quando ha vencido. E a saida de terminal continua exatamente a mesma — o `--json` foi acrescentado, e nao trocado por ela.
+
 ## O que a peça anuncia sobre si mesma
 
 Duas coisas apareceram nas oito peças que não são erro de direito nem erro de conta: **promessas que a peça faz sobre si e não cumpre.** As duas passam despercebidas porque quem lê sabe do que se trata e completa sozinho.

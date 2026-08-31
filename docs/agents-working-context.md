@@ -24,7 +24,21 @@ Consulta a tribunal, download de intimacao, peticionamento, controle de horas,
 financeiro, CRM, terceiro tipo de materia, banco de dados. Esta no escopo
 negativo da REQ — nao invente por conta.
 
-## Ultimo trabalho fechado — 0.8.0, a sexta conferencia
+## Ultimo trabalho fechado — 0.9.0, o contrato tipado da agenda
+
+`attorneyfw prazo --json`. O hook do plugin decidia "ha prazo vencido?" lendo
+`linha.includes('VENCIDO')` — o unico acoplamento do repositorio cuja quebra era
+silenciosa e cara.
+
+**A regra que nao pode ser desfeita:** a **ressalva e campo do payload**, e nao
+rodape. Programa nao le rodape; se ela sair do JSON, o numero de conferencia
+viaja sozinho com cara de contagem oficial. Regra 16 do lint reprova o build se
+`src/prazo.mjs` deixar de atribuir `ressalva: AVISO`.
+
+Cada entrada carrega a `linha` sem ANSI: decide-se pelos campos, exibe-se pela
+linha. O `c.*` do core sempre colore — nao ha teste de TTY.
+
+## Trabalho anterior — 0.8.0, a sexta conferencia
 
 Continuidade de fato entre topicos. O template da cronologia prometia desde a
 0.1.0 que "e contra isto que se confere se a data citada no topico 4 bate com a
@@ -72,8 +86,6 @@ achando que faltava.
 
 ## Proximos passos plausiveis
 
-- **`--json` no `attorneyfw prazo`**, para o hook do plugin parar de depender do
-  texto da saida (acoplamento aceito e declarado em ADR).
 - **`attorneyfw publish` no npm** — nunca foi publicado; o `package.json` ja
   esta com `files` correto e o lint cobra.
 - **Feriados por tribunal** — hoje `docs/feriados.md` e um arquivo so por

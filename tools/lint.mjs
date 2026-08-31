@@ -191,6 +191,17 @@ for (const arq of ['README.md', 'src/conferir.mjs', 'templates/cronologia.md']) 
   }
 }
 
+// 16. A ressalva do prazo tem de estar DENTRO do payload tipado, e nao so no
+//     rodape do relatorio. Programa nao le rodape: se ela sair do JSON, o numero
+//     de conferencia passa a viajar sozinho para dentro de qualquer consumidor,
+//     com cara de contagem oficial. A regra 8 cobre o texto; esta cobre o dado.
+{
+  const t = ler('src', 'prazo.mjs');
+  if (!/ressalva:\s*AVISO/.test(t)) {
+    falha('ressalva-no-payload', 'src/prazo.mjs nao atribui a ressalva ao payload do --json (ressalva: AVISO)');
+  }
+}
+
 console.log(`attorneyfw ${pkg.version} | ${srcs.length} modulos | ${templates.length} templates | vocabulario ${a.size} chaves`);
 if (!existsSync(join(RAIZ, 'test', 'smoke.mjs'))) falha('teste', 'test/smoke.mjs sumiu');
 for (const e of erros) console.log(`  ERRO   ${e}`);

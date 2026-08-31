@@ -283,6 +283,84 @@ ok('entregue_em sai como YAML valido, com espaco', (() => {
   return t.includes(`entregue_em: ${HOJE}`);
 })());
 
+// --- o contrato tipado da agenda
+// O hook do plugin decidia "ha prazo vencido?" lendo a palavra VENCIDO na saida.
+// Reescrever aquele rotulo desligaria o unico alarme do plugin sem nada falhar.
+const agendaJson = (...extra) => {
+  const r = run('prazo', '--json', ...extra);
+  try { return { j: JSON.parse(r.saida), codigo: r.codigo }; } catch { return { j: null, codigo: r.codigo }; }
+};
+
+ok('prazo --json produz JSON valido e nada mais', agendaJson().j !== null);
+
+ok('o payload declara versao', agendaJson().j.versao === 1);
+
+// Programa nao le rodape: se a ressalva nao for dado, ela nao chega ao consumidor
+// e o numero de conferencia viaja com cara de contagem oficial.
+ok('a ressalva vai DENTRO do payload, igual a do terminal', (() => {
+  const { j } = agendaJson();
+  return typeof j.ressalva === 'string' && j.ressalva.includes('nao contagem oficial')
+    && run('prazo').saida.includes(j.ressalva);
+})());
+
+ok('o payload traz hoje, materias e a contagem de vencidos', (() => {
+  const { j } = agendaJson();
+  return /^\d{4}-\d{2}-\d{2}$/.test(j.hoje) && typeof j.materias === 'number'
+    && typeof j.vencidos === 'number' && Array.isArray(j.prazos);
+})());
+
+// Sem isto, cada consumidor escreve o proprio semCor() — cada um com um regex
+// diferente, cada um errando de um jeito.
+ok('nenhuma linha do payload carrega ANSI',
+  agendaJson().j.prazos.every((p) => !/\[/.test(p.linha)));
+
+ok('a entrada tem os campos do contrato', (() => {
+  const [p] = agendaJson().j.prazos;
+  return p && ['materia', 'entrega', 'titulo', 'estado', 'linha', 'erro', 'intimacao',
+    'dias', 'contagem', 'regime', 'inicio', 'fim', 'restam', 'vencido', 'fatal',
+    'divergencia'].every((k) => k in p);
+})());
+
+ok('vencido e campo, e nao a palavra VENCIDO', (() => {
+  emAcme('prazo', 'set', '1', '--intimacao', diasAtras(40), '--dias', '5');
+  const { j, codigo } = agendaJson();
+  const v = j.prazos.find((p) => p.vencido === true);
+  return v && v.restam < 0 && j.vencidos >= 1 && codigo === 1;
+})());
+
+ok('prazo mal declarado entra com erro, e nao some', (() => {
+  const p = join(acme, 'entregas', 'revisao', 'ent-01-peticao-inicial.md');
+  const antes = readFileSync(p, 'utf8');
+  writeFileSync(p, antes.replace(/^prazo_intimacao:.*$/m, 'prazo_intimacao: 28/08/2026'), 'utf8');
+  const { j } = agendaJson();
+  writeFileSync(p, antes, 'utf8');
+  const x = j.prazos.find((e) => e.erro);
+  return Boolean(x) && x.fim === null && x.linha.includes('???');
+})());
+
+ok('a divergencia do art. 210 sai como objeto com as duas datas', (() => {
+  emAcme('prazo', 'set', '2', '--intimacao', '2025-12-26', '--dias', '30', '--material');
+  const x = agendaJson().j.prazos.find((p) => p.divergencia);
+  return x && x.divergencia.adotada && x.divergencia.alternativa
+    && x.divergencia.adotada !== x.divergencia.alternativa
+    && x.divergencia.nota.includes('art. 210');
+})());
+
+ok('agenda vazia devolve prazos: [] e codigo 0', (() => {
+  const vazia = mkdtempSync(join(tmpdir(), 'vaz-'));
+  rodarEm(vazia)('init', '--nome', 'Vazia');
+  const r = rodarEm(vazia)('prazo', '--json');
+  const j = JSON.parse(r.saida);
+  return j.prazos.length === 0 && r.codigo === 0;
+})());
+
+// A saida de terminal nao pode ter mudado: o --json foi acrescentado, e nao
+// trocado por ele.
+ok('o terminal continua imprimindo a agenda como antes', (() => {
+  const s = run('prazo').saida;
+  return s.includes('agenda de prazos') && s.includes('conferencia') && /VENCIDO|d uteis/.test(s);
+})());
+
 // ------------------------------------------------------ leitura, saida e kanban
 console.log('\nleitura e saida');
 ok('brief monta o pacote do topico', emAcme('brief', '1').saida.includes('BRIEFING DE TOPICO'));

@@ -65,7 +65,9 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
                             (parte aceita --ref <slug> da carteira)
   attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos]
                             [--material] [--fatal]
-  attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
+  attorneyfw prazo [--dias N] [--json] agenda; na raiz, a carteira inteira.
+                            --json publica o contrato tipado, com a ressalva
+                            dentro do payload e a linha ja sem cor
   attorneyfw brief <entrega> [--topico N]  o pacote de quem redige — leva a voz
                             do escritorio e o que falta do checklist do tipo de acao,
                             as duas como observacao, e nenhuma como instrucao

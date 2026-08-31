@@ -1,6 +1,6 @@
 {
   "name": "attorneyfw",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Governanca de trabalho juridico — DEC -> tese/mapa de risco -> plano de entregas -> kanban -> peca protocolada.",
   "type": "module",
   "bin": {

@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.8.0 — 2026-08-31
+
+### Acrescentado
+
+- **A sexta conferencia: continuidade de fato entre topicos.**
+
+  O template da cronologia, escrito em toda materia nova desde a 0.1.0, promete
+  literalmente que *"e contra isto que se confere se a data citada no topico 4
+  bate com a do topico 9"*. **Nada conferia.** Quatro modulos liam a cronologia —
+  o diagrama, o briefing, a busca e o status — e nenhum comparava.
+
+  Tres comparacoes, cada uma com **ancora declarada**:
+
+  | Comparacao | Ancora |
+  |---|---|
+  | data no texto que a cronologia nao registra | a tabela da cronologia |
+  | datas sem interseccao em topicos que declaram o mesmo documento | o `documentos:` do contrato |
+  | grafia que nao e a declarada no canon | o nome canonico e seus apelidos |
+
+- `tabela()` subiu de `src/diagrama.mjs` para `src/core.mjs` — agora tem dois
+  leitores.
+
+### A regra que da forma a tudo
+
+**A ferramenta nunca infere que dois fatos sao o mesmo fato.** Casar a data do
+texto com o marco mais proximo da cronologia seria o achado que o advogado mais
+quer — e exige decidir que os dois falam do mesmo evento, que e leitura. Sem
+ancora declarada, ela cala. Regra 15 do lint reprova o build se essa recusa sumir
+de `README.md`, `src/conferir.mjs` ou `templates/cronologia.md`.
+
+Tres consequencias, todas deliberadas:
+
+- **Topico que declara dois documentos fica de fora** — atribuir a data a um
+  deles seria inferencia.
+- **Duas datas no mesmo topico nao sao divergencia** — contrato e aditivo
+  convivem. A comparacao exige topicos diferentes com **interseccao vazia**.
+- **Diferenca so de caixa em nome nao conta** — qualificacao em caixa alta e
+  forma normal de peca; o que se aponta e acento perdido.
+
+### Decidido, e nao esquecido
+
+- **Nada dentro de bloco de transcricao e conferido.** O que esta entre aspas e do
+  documento, e apontar seria pedir que se falsificasse a citacao para ela bater
+  com a cronologia.
+- **Ano solto nao e data.** `Lei 8.078, de 1990` nao vira marco.
+- **Data processual nao entra** — intimacao e prazo sao do `attorneyfw prazo`, que
+  tem ressalva propria.
+- **As tres sao aviso, e nenhuma reprova.** Ao contrario da quinta conferencia,
+  aqui nenhuma comparacao e sem excecao legitima: data de lei citada de passagem,
+  nome social de parte, documento com data de emissao e de vencimento.
+- **Cronologia vazia desliga a comparacao, e isso sai dito** — com a contagem de
+  datas que a peca cita. Nao e cobranca: relatorio calado sobre o que nao olhou e
+  lido como se tivesse olhado tudo.
+
+### Corrigido antes de sair
+
+A primeira versao da comparacao por documento agrupava datas soltas, e num topico
+que citava contrato e aditivo o par saia como `topico 1.1, 1.1` — uma divergencia
+"entre topicos" dentro de um topico so. Achado **rodando**, e nao lendo.
+
 ## 0.7.0 — 2026-08-31
 
 ### Acrescentado

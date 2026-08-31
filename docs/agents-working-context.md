@@ -24,7 +24,23 @@ Consulta a tribunal, download de intimacao, peticionamento, controle de horas,
 financeiro, CRM, terceiro tipo de materia, banco de dados. Esta no escopo
 negativo da REQ — nao invente por conta.
 
-## Ultimo trabalho fechado — 0.7.0, a voz e a lista no briefing
+## Ultimo trabalho fechado — 0.8.0, a sexta conferencia
+
+Continuidade de fato entre topicos. O template da cronologia prometia desde a
+0.1.0 que "e contra isto que se confere se a data citada no topico 4 bate com a
+do topico 9" — e nada conferia.
+
+**A regra que nao pode ser desfeita:** a ferramenta **nunca infere que dois fatos
+sao o mesmo fato**. Toda comparacao tem ancora declarada — a cronologia, o
+documento do contrato, o nome do canon — e fora delas ela cala. Casar a data do
+texto com o marco mais proximo e o achado que o advogado mais quer, e e leitura.
+Regra 15 do lint reprova o build se a frase sumir de `README`, `conferir.mjs` ou
+`templates/cronologia.md`.
+
+Tres consequencias com teste: topico que declara dois documentos fica de fora;
+duas datas no mesmo topico nao sao divergencia; diferenca so de caixa nao conta.
+
+## Trabalho anterior — 0.7.0, a voz e a lista no briefing
 
 O style card (0.5.0) e o checklist por tipo de acao (0.4.0) existiam e nao eram
 lidos na hora de escrever. O `brief` passou a costurar os dois.
@@ -56,9 +72,6 @@ achando que faltava.
 
 ## Proximos passos plausiveis
 
-- **Continuidade entre topicos da mesma peca.** O `conferir` compara numeros;
-  nao compara fatos. Data no topico 4 divergindo da do topico 9 e exatamente o
-  defeito que o canon existe para evitar, e ele so age quando alguem declara.
 - **`--json` no `attorneyfw prazo`**, para o hook do plugin parar de depender do
   texto da saida (acoplamento aceito e declarado em ADR).
 - **`attorneyfw publish` no npm** — nunca foi publicado; o `package.json` ja

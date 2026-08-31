@@ -11,7 +11,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { contarPrazo, diasUteisAte, feriadosNacionais, topicosDe } from '../src/core.mjs';
 import { citacoesDe, cobre, rotuloDe } from '../src/citacao.mjs';
-import { conferirTopicos } from '../src/conferir.mjs';
+import {
+  conferirTopicos, conferirContinuidade, continuidadeNaoConferida,
+  normalizarData, datasEmProsa, grafiasForaDoCanon,
+} from '../src/conferir.mjs';
 import { vozDoEscritorio } from '../src/estilo.mjs';
 import { checklistAberto } from '../src/modelo.mjs';
 
@@ -1093,8 +1096,10 @@ ok('peca que honra o contrato passa limpa nas cinco', (() => {
   return r.codigo === 0 && r.saida.includes('Nenhuma divergencia');
 })());
 
-ok('a recusa sai impressa mesmo sem achado nenhum',
-  emAcme('conferir', '1').saida.includes('esta em vigor'));
+ok('a recusa sai impressa mesmo sem achado nenhum', (() => {
+  const r = emAcme('conferir', '1').saida;
+  return r.includes('esta em vigor') && r.includes('nao infere que dois fatos sao o mesmo fato');
+})());
 
 ok('fundamento declarado e nao invocado sai no conferir', (() => {
   writeFileSync(entPath, ent.replace('texto '.repeat(200),
@@ -1237,6 +1242,147 @@ ok('o comparador nao corrige nem completa o contrato', (() => {
   return JSON.stringify(t[0].fundamento) === JSON.stringify(['art. 300 do CPC']);
 })());
 
+// --- continuidade de fato entre topicos
+const CRONO = [
+  '| Data | Fato | Documento | Fonte |',
+  '|---|---|---|---|',
+  '| 2024-03-12 | contrato assinado | D1 | fls. 10 |',
+  '| 2024-05-20 | notificacao enviada | D2 | fls. 22 |',
+  '',
+].join('\n');
+
+const topicoC = (campos, texto) => topicosDe(['```topico', ...campos, '```', '', texto, ''].join('\n'));
+const tiposC = (a) => a.map((x) => x.tipo).sort().join(' ');
+
+ok('as tres grafias de data dao a mesma chave',
+  normalizarData('12/03/2024') === '2024-03-12'
+  && normalizarData('12 de marco de 2024') === '2024-03-12'
+  && normalizarData('2024-03-12') === '2024-03-12');
+
+ok('ano solto nao e data', normalizarData('Lei 8.078, de 1990') === null);
+ok('dia impossivel nao e data', normalizarData('32/03/2024') === null);
+
+// O que esta entre aspas e do documento. Apontar seria pedir que se
+// falsificasse a citacao para ela bater com a cronologia.
+ok('data dentro de transcricao nao e extraida', (() => {
+  const d = datasEmProsa('Em 12/03/2024 houve.\n```transcricao D1\nEm 01/01/2000 o documento diz\n```\nfim.');
+  return d.length === 1 && d[0].chave === '2024-03-12';
+})());
+ok('data em trecho recuado nao e extraida',
+  datasEmProsa('> Em 01/01/2000 o documento diz').length === 0);
+
+ok('data que a cronologia registra nao vira achado',
+  conferirContinuidade(topicoC(['id: 1.1'], 'O contrato foi assinado em 12/03/2024 pelas partes.'), {}, CRONO).length === 0);
+
+ok('data fora da cronologia vira par', (() => {
+  const [a] = conferirContinuidade(topicoC(['id: 1.1'], 'O pagamento ocorreu em 03/07/2024 conforme extrato.'), {}, CRONO);
+  return a.tipo === 'data-fora-da-cronologia' && a.esquerda.valor === '03/07/2024'
+    && a.direita.valor.includes('2 marco(s)');
+})());
+
+// A unica comparacao verdadeiramente ENTRE topicos, e so existe porque os dois
+// lados apontaram para o mesmo D3.
+ok('datas diferentes em topicos que declaram o mesmo documento viram par', (() => {
+  const ts = [
+    ...topicoC(['id: 1.1', 'documentos: [D1]'], 'O contrato foi assinado em 12/03/2024.'),
+    ...topicoC(['id: 1.2', 'documentos: [D1]'], 'O mesmo contrato, de 15/03/2024, previa multa.'),
+  ];
+  const a = conferirContinuidade(ts, {}, CRONO).find((x) => x.tipo === 'data-divergente-do-documento');
+  return a && a.topico === '1.1, 1.2' && a.trecho.includes('D1');
+})());
+
+// Achado ao rodar, e nao ao ler: duas datas no MESMO topico sao legitimas —
+// contrato e aditivo — e dizer qual delas e a do documento seria inferencia. A
+// primeira versao saia com o par "topico 1.1, 1.1".
+ok('duas datas no mesmo topico nao viram divergencia entre topicos', (() => {
+  const ts = topicoC(['id: 1.1', 'documentos: [D1]'],
+    'O contrato de 12/03/2024 e o aditivo de 15/03/2024 estao juntados.');
+  return !conferirContinuidade(ts, {}, CRONO).some((x) => x.tipo === 'data-divergente-do-documento');
+})());
+
+// Interseccao vazia e a condicao: se um topico cita 12/03 e 15/03 e o outro cita
+// 15/03, eles concordam em alguma coisa, e nao ha o que apontar.
+ok('topicos que compartilham uma data nao viram par', (() => {
+  const ts = [
+    ...topicoC(['id: 1.1', 'documentos: [D1]'], 'Contrato de 12/03/2024 e aditivo de 15/03/2024.'),
+    ...topicoC(['id: 1.2', 'documentos: [D1]'], 'O aditivo de 15/03/2024 previa multa.'),
+  ];
+  return !conferirContinuidade(ts, {}, CRONO).some((x) => x.tipo === 'data-divergente-do-documento');
+})());
+
+ok('a ficha so acusa quando NENHUMA data do topico e a dela', (() => {
+  const cn = { documentos: [{ id: 'D1', nome: 'contrato', fm: { data: '2024-03-12' } }] };
+  const comADaFicha = topicoC(['id: 1.1', 'documentos: [D1]'], 'Contrato de 12/03/2024, aditado em 15/03/2024.');
+  const semADaFicha = topicoC(['id: 1.1', 'documentos: [D1]'], 'O contrato, de 15/03/2024, previa multa.');
+  return !conferirContinuidade(comADaFicha, cn, CRONO).some((x) => x.tipo === 'data-divergente-do-documento')
+    && conferirContinuidade(semADaFicha, cn, CRONO).some((x) => x.tipo === 'data-divergente-do-documento');
+})());
+
+ok('sem documento comum, datas diferentes nao viram par', (() => {
+  const ts = [
+    ...topicoC(['id: 1.1'], 'O contrato foi assinado em 12/03/2024.'),
+    ...topicoC(['id: 1.2'], 'A notificacao saiu em 20/05/2024.'),
+  ];
+  return !conferirContinuidade(ts, {}, CRONO).some((x) => x.tipo === 'data-divergente-do-documento');
+})());
+
+// Topico que declara DOIS documentos fica de fora: atribuir a data a um deles
+// seria inferencia, e inferencia nao mora aqui.
+ok('topico com dois documentos declarados nao entra na comparacao', (() => {
+  const ts = [
+    ...topicoC(['id: 1.1', 'documentos: [D1, D2]'], 'Contrato de 12/03/2024 e notificacao.'),
+    ...topicoC(['id: 1.2', 'documentos: [D1, D2]'], 'O mesmo de 15/03/2024.'),
+  ];
+  return !conferirContinuidade(ts, {}, CRONO).some((x) => x.tipo === 'data-divergente-do-documento');
+})());
+
+ok('data citada divergindo da ficha do documento vira par', (() => {
+  const cn = { documentos: [{ id: 'D1', nome: 'contrato', fm: { data: '2024-03-12' } }] };
+  const a = conferirContinuidade(
+    topicoC(['id: 1.1', 'documentos: [D1]'], 'O contrato, de 15/03/2024, previa multa.'), cn, CRONO,
+  ).find((x) => x.tipo === 'data-divergente-do-documento');
+  return a && a.direita.valor === '2024-03-12' && a.esquerda.valor === '15/03/2024';
+})());
+
+// Grafia: acento perdido acusa, caixa alta nao. Qualificacao em caixa alta e
+// forma normal de peca, e reclamar dela seria ruido em toda peca do mundo.
+const CN_PARTES = { partes: [{ nome: 'Construtora Álvares Ltda', apelidos: ['Construtora'] }] };
+
+ok('grafia sem acento vira par', (() => {
+  const [a] = grafiasForaDoCanon('A Construtora Alvares Ltda pagou.', ['Construtora Álvares Ltda']);
+  return a.grafia === 'Construtora Alvares Ltda' && a.declarada === 'Construtora Álvares Ltda';
+})());
+
+ok('diferenca so de caixa nao vira par',
+  grafiasForaDoCanon('CONSTRUTORA ÁLVARES LTDA e parte.', ['Construtora Álvares Ltda']).length === 0);
+
+ok('apelido declarado no canon nao vira par',
+  conferirContinuidade(topicoC(['id: 1.1'], 'A Construtora foi notificada nos autos do processo.'), CN_PARTES, CRONO)
+    .filter((x) => x.tipo === 'grafia-fora-do-canon').length === 0);
+
+ok('grafia divergente sai pelo comparador inteiro', (() => {
+  const a = conferirContinuidade(
+    topicoC(['id: 1.1'], 'A Construtora Alvares Ltda foi notificada.'), CN_PARTES, CRONO,
+  );
+  return tiposC(a) === 'grafia-fora-do-canon';
+})());
+
+// Sem cronologia nao ha ancora, e a comparacao nao roda. Isso sai dito — e nao
+// vira cobranca.
+ok('cronologia vazia desliga a comparacao de data', (() => {
+  const ts = topicoC(['id: 1.1'], 'O pagamento ocorreu em 03/07/2024 conforme extrato.');
+  return !conferirContinuidade(ts, {}, '').some((x) => x.tipo === 'data-fora-da-cronologia');
+})());
+
+ok('e a cronologia vazia sai declarada, com a contagem', (() => {
+  const ts = topicoC(['id: 1.1'], 'Houve pagamento em 03/07/2024 e outro em 04/08/2024.');
+  const linha = continuidadeNaoConferida(ts, '');
+  return linha.includes('2 data(s)') && linha.includes('cronologia esta vazia');
+})());
+
+ok('com cronologia preenchida a linha de nao conferido some',
+  continuidadeNaoConferida(topicoC(['id: 1.1'], 'Em 12/03/2024.'), CRONO) === '');
+
 // --- o gate
 // Materia propria, criada aqui: os tres casos mexem no estado da entrega, e
 // pendurar isso na fixture de outro bloco ja quebrou teste tres vezes nesta
@@ -1274,6 +1420,29 @@ ok('em pesquisa o contrato ainda esta sendo levantado, e nada e conferido', (() 
   emDelta('entrega', 'move', '1', 'pesquisa');
   writeFileSync(dPath('pesquisa'), lerLF(dPath('pesquisa')).replace(PROSA_CITANDO, ''), 'utf8');
   return !emDelta('validate').saida.includes('prosa vazia');
+})());
+
+// A sexta e sempre aviso: nenhuma das tres comparacoes e sem excecao legitima.
+ok('continuidade sai como aviso, e nao como violacao', (() => {
+  run('materia', 'new', 'Zeta — Continuidade', '--tipo', 'contencioso',
+    '--cliente', 'Zeta Ltda', '--juizo', '1a Vara Civel', '--slug', 'zeta');
+  const zeta = join(raiz, 'materias', 'zeta');
+  const emZeta = rodarEm(zeta);
+  emZeta('tese');
+  emZeta('plano');
+  emZeta('entrega', 'new', 'Peticao inicial');
+  emZeta('entrega', 'move', '1', 'minuta');
+  const crono = join(zeta, 'docs', 'canon', 'cronologia.md');
+  writeFileSync(crono, lerLF(crono).replace('|  |  |  |  |', '| 2024-03-12 | contrato | D1 | fls. 10 |'), 'utf8');
+  const p = join(zeta, 'entregas', 'minuta', 'ent-01-peticao-inicial.md');
+  writeFileSync(p, lerLF(p)
+    .replace('sustenta:', 'sustenta: a cobranca e inexigivel')
+    .replace('risco:', 'risco: o banco vai alegar contrato verbal')
+    .replace('<!-- o texto entra aqui, logo abaixo do contrato -->',
+      `O pagamento ocorreu em 03/07/2024, data que nao consta da cronologia da materia. ${PROSA}`), 'utf8');
+  const r = emZeta('validate');
+  return r.saida.includes('cronologia nao registra')
+    && !violacoes(r).some((l) => l.includes('cronologia nao registra'));
 })());
 
 ok('topico sem texto em revisao e violacao', (() => {

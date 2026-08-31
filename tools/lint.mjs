@@ -178,6 +178,19 @@ for (const arq of ['README.md', 'src/brief.mjs', 'src/estilo.mjs']) {
   }
 }
 
+// 15. A recusa em inferir e o que separa a sexta conferencia de opiniao
+//     automatizada. Casar a data do texto com o marco mais proximo e o achado
+//     que o advogado mais quer, e a proxima pessoa vai implementa-lo achando
+//     que faltava — a menos que esteja escrito por que nao.
+for (const arq of ['README.md', 'src/conferir.mjs', 'templates/cronologia.md']) {
+  const t = semAcento(arq === 'README.md' ? readme : ler(...arq.split('/')));
+  // Tolerante a quebra de linha: a frase esta em prosa reflowada, e exigir
+  // espaco unico faz a regra reprovar so por o paragrafo ter sido requebrado.
+  if (!/nao\s+infere\s+que\s+dois\s+fatos\s+sao\s+o\s+mesmo\s+fato/.test(t)) {
+    falha('recusa-inferencia', `${arq} nao declara que a continuidade nao infere que dois fatos sao o mesmo fato`);
+  }
+}
+
 console.log(`attorneyfw ${pkg.version} | ${srcs.length} modulos | ${templates.length} templates | vocabulario ${a.size} chaves`);
 if (!existsSync(join(RAIZ, 'test', 'smoke.mjs'))) falha('teste', 'test/smoke.mjs sumiu');
 for (const e of erros) console.log(`  ERRO   ${e}`);

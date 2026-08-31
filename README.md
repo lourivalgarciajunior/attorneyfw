@@ -467,7 +467,7 @@ O `aplicar` cria `docs/checklist-<tipo>.md` com itens **pendentes**, para confir
 attorneyfw conferir 1
 ```
 
-Cinco comparações mecânicas. As quatro primeiras rodam sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
+Seis comparações mecânicas. As quatro primeiras rodam sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
 
 | Verificação | O que compara |
 |---|---|
@@ -522,6 +522,38 @@ O tópico vazio reprova porque não tem exceção. O gate contava palavras da **
 
 **Sigla fora da tabela não vira citação.** Silêncio, e não palpite — a mesma disciplina do extenso, que devolve `null` diante de palavra desconhecida. Um fundamento "conferido" errado é pior que um fundamento não conferido.
 
+### Continuidade de fato entre tópicos
+
+O template da cronologia, escrito em toda matéria nova desde a 0.1.0, promete literalmente:
+
+> *"É daqui que sai a narrativa da peça, e é contra isto que se confere se a data citada no tópico 4 bate com a do tópico 9."*
+
+Até a 0.7.0 **nada conferia**. Quatro módulos liam a cronologia — o diagrama, o briefing, a busca e o status — e nenhum comparava. O canon guardava a grafia de cada nome, os documentos com ficha e a cronologia com uma linha por fato, tudo declarado e legível por máquina, e a comparação não existia.
+
+A pergunta que dá forma a esta conferência não é *"como conferir continuidade"*. É: **o que em continuidade é comparação?** Dizer que o tópico 4 fala do mesmo evento do tópico 9 é leitura, e leitura não mora aqui.
+
+Só é comparável o que tem **âncora declarada**:
+
+| Comparação | Âncora |
+|---|---|
+| data no texto que a cronologia não registra | a tabela da cronologia |
+| datas sem intersecção em tópicos que declaram o mesmo documento | o `documentos:` do contrato |
+| grafia que não é a declarada no canon | o nome canônico e seus apelidos |
+
+**A ferramenta nunca infere que dois fatos são o mesmo fato.** Casar a data do texto com o marco mais próximo da cronologia seria o achado que o advogado mais quer — e exige decidir que os dois falam do mesmo evento. Sem âncora declarada, ela cala.
+
+Três consequências dessa regra, todas deliberadas:
+
+- **Tópico que declara dois documentos fica de fora.** Atribuir a data a um deles seria inferência.
+- **Duas datas no mesmo tópico não são divergência.** Contrato e aditivo convivem, e dizer qual é a do documento seria inferência. A comparação exige tópicos diferentes com **intersecção vazia**.
+- **Diferença só de caixa em nome não conta.** Qualificação em caixa alta é forma normal de peça; o que se aponta é acento perdido.
+
+Nada dentro de bloco de transcrição é conferido: o que está entre aspas é do documento, e apontar seria pedir que se falsificasse a citação para ela bater com a cronologia. Ano solto também não é data — `Lei 8.078, de 1990` não vira marco.
+
+**As três são aviso, e nenhuma reprova.** Ao contrário da quinta conferência, aqui nenhuma comparação é sem exceção legítima: data de lei citada de passagem, nome social de parte, documento com data de emissão e de vencimento.
+
+Cronologia vazia desliga a comparação, e isso **sai dito**: uma linha informa quantas datas a peça cita e que nenhuma foi conferida contra ela. Não é cobrança — é a mesma disciplina do `importar`, que sempre termina dizendo o que não extraiu.
+
 ### O que a conferência não confere
 
 Fora do alcance, e declarado: número dentro de imagem anexada. E, no fundamento:
@@ -532,6 +564,8 @@ Fora do alcance, e declarado: número dentro de imagem anexada. E, no fundamento
 - **não julga se ele sustenta** o que o tópico afirma.
 
 As quatro são leitura, e ficam com o agente de fundamento. Uma ferramenta que dissesse "esse artigo não sustenta isso" estaria opinando sobre mérito com cara de gate — e gate em que se pode discordar é gate que se aprende a ignorar.
+
+E, na continuidade: ela **não infere que dois fatos são o mesmo fato**, e **não diz qual das duas datas está certa**.
 
 A recusa sai impressa em toda conferência, **com achado ou sem achado**: relatório que só lista o que achou é lido como se tivesse achado tudo.
 

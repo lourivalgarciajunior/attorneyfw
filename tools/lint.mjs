@@ -75,16 +75,22 @@ for (const [, cmd] of ajuda.matchAll(/attorneyfw ([a-z-]+)/g)) {
   }
 }
 
-// 8. A ressalva de que a contagem de prazo nao e a oficial nao pode sumir de
-//    lugar nenhum que o usuario le. E a unica coisa nesta ferramenta que, se
-//    for entendida errado, custa o caso do cliente.
+// 8. As ressalvas de que o numero gerado e conferencia nao podem sumir de lugar
+//    nenhum que o usuario le. Sao as unicas coisas nesta ferramenta que, se
+//    forem entendidas errado, custam o caso ou o dinheiro do cliente.
 // Acento nao pode decidir se a regra passa: o README escreve "conferência" e o
 // help escreve "CONFERENCIA", e as duas dizem a mesma coisa.
 const semAcento = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-for (const [arq, texto] of [['bin/attorneyfw.mjs', bin], ['README.md', readme], ['src/prazo.mjs', ler('src', 'prazo.mjs')]]) {
-  const t = semAcento(texto);
-  if (!(t.includes('contagem oficial') && /conferencia|nao substitui/.test(t))) {
-    falha('ressalva-prazo', `${arq} nao diz que a contagem de prazo e conferencia, nao a oficial`);
+const RESSALVAS = [
+  { assunto: 'a contagem de prazo', ancora: 'contagem oficial', onde: ['src/prazo.mjs'] },
+  { assunto: 'a correcao monetaria', ancora: 'calculo oficial', onde: ['src/atualizar.mjs'] },
+];
+for (const r of RESSALVAS) {
+  for (const arq of ['bin/attorneyfw.mjs', 'README.md', ...r.onde]) {
+    const t = semAcento(arq === 'README.md' ? readme : arq === 'bin/attorneyfw.mjs' ? bin : ler(...arq.split('/')));
+    if (!(t.includes(r.ancora) && /conferencia|nao substitui/.test(t))) {
+      falha('ressalva', `${arq} nao diz que ${r.assunto} e conferencia, nao a oficial`);
+    }
   }
 }
 

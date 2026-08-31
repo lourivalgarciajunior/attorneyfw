@@ -4,7 +4,7 @@
  *
  *   npm test
  */
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -330,6 +330,66 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   const t = readFileSync(join(beta, 'saida', 'ent-01-minuta-do-contrato.md'), 'utf8');
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
+
+// ------------------------------------------------------------------- dinheiro
+console.log('\ncorrecao monetaria');
+
+// Serie sintetica, com a aritmetica conferida a mao antes de escrever o teste:
+//   indice(2024-01) = 100      x 1,01  = 101
+//   indice(2024-02) = 101      x 1,02  = 103,02
+//   indice(2024-03) = 103,02   x 1,005 = 103,5351
+// Corrigir de 2024-01 para 2024-03 e 103,5351 / 101 = 1,02 x 1,005 = 1,0251 exato.
+// R$ 1.000,00 x 1,0251 = R$ 1.025,10.
+const SERIE_BOA = [
+  '# serie: inpc', '# unidade: variacao-mensal-pct', '# fonte: IBGE (sintetica, smoke)',
+  '# coletada_em: 2024-04-01', 'mes,valor',
+  '2024-01,1.00', '2024-02,2.00', '2024-03,0.50', '',
+].join('\n');
+mkdirSync(join(raiz, 'tabelas', 'indices'), { recursive: true });
+const serieArq = join(raiz, 'tabelas', 'indices', 'inpc.csv');
+writeFileSync(serieArq, SERIE_BOA);
+
+const corr = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20');
+ok('correcao bate com a conta feita a mao', corr.saida.includes('1.025,10'));
+ok('fator acumulado exato', corr.saida.includes('1.02510000'));
+ok('memoria sai sempre', corr.saida.includes('memoria de calculo') && corr.saida.includes('2024-03'));
+ok('mes do termo inicial e base, e nao linha da memoria',
+  corr.saida.split('memoria de calculo')[1].includes('2024-02')
+  && !corr.saida.split('memoria de calculo')[1].includes('2024-01  '));
+ok('procedencia sai junto', corr.saida.includes('procedencia') && corr.saida.includes('coletada'));
+ok('ressalva de conferencia na saida', corr.saida.includes('nao calculo oficial'));
+
+// 65 dias corridos de 15.01 a 20.03.2024 (ano bissexto) = 2,1666667 meses.
+// 1% ao mes sobre R$ 1.025,10 = R$ 22,21. Total R$ 1.047,31.
+const comJuros = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20', '--juros', '1');
+ok('juros simples pro rata die', comJuros.saida.includes('1.047,31'));
+
+ok('--json devolve o total em centavos', (() => {
+  const r = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20', '--juros', '1', '--json');
+  try { return JSON.parse(r.saida).total === 104731; } catch { return false; }
+})());
+
+// Estimar fora da cobertura e a forma mais facil de produzir numero errado com
+// aparencia de certo. O comando tem de parar, e dizer ate onde a serie vai.
+const foraDaSerie = run('atualizar', '1000,00', '--de', '2023-01-15', '--ate', '2024-03-20');
+ok('fora da cobertura falha', foraDaSerie.codigo === 1 && foraDaSerie.saida.includes('2024-01'));
+ok('a falha diz o que rodar', foraDaSerie.saida.includes('indice atualizar'));
+
+// Buraco no meio e pior que serie curta: a razao entre dois pontos passaria por
+// cima do mes faltante e devolveria fator menor, sem nenhum sinal.
+writeFileSync(serieArq, SERIE_BOA.replace('2024-02,2.00\n', ''));
+const comBuraco = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20');
+ok('buraco na serie falha em vez de silenciar', comBuraco.codigo === 1 && comBuraco.saida.includes('buraco'));
+writeFileSync(serieArq, SERIE_BOA);
+
+// Serie sem procedencia nao vai para peca.
+writeFileSync(serieArq, 'mes,valor\n2024-01,1.00\n2024-02,2.00\n2024-03,0.50\n');
+ok('serie sem fonte e sem data e recusada',
+  run('atualizar', '1000,00', '--de', '2024-01-15').codigo === 1);
+writeFileSync(serieArq, SERIE_BOA);
+
+ok('indice lista o que a carteira tem', run('indice').saida.includes('2024-01'));
+ok('serie desconhecida nao e adivinhada', run('atualizar', '10', '--de', '2024-01-15', '--serie', 'xpto').codigo === 1);
 
 // --------------------------------------------------------------- gate da carteira
 console.log('\ngate');

@@ -16,6 +16,8 @@ import { status, context } from '../src/status.mjs';
 import { validate } from '../src/validate.mjs';
 import { build } from '../src/build.mjs';
 import { docx } from '../src/docx.mjs';
+import { atualizar, indiceLista } from '../src/atualizar.mjs';
+import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
 const VERSAO = JSON.parse(
@@ -47,6 +49,10 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
   attorneyfw build <entrega>            costura a entrega em markdown
   attorneyfw docx <entrega>             a versao de protocolo (pede o pacote docx)
+  attorneyfw indice [atualizar [serie]] series de indice da carteira
+  attorneyfw atualizar <valor> --de AAAA-MM-DD [--ate AAAA-MM-DD]
+                       [--serie inpc|ipca|ipca-e|igp-m] [--juros N] [--juros-de D]
+                       [--selic] [--json]     correcao monetaria com memoria
 
 estados: backlog pesquisa minuta revisao entregue bloqueado abandonado
 --materia <slug> roda o comando numa materia sem entrar na pasta dela
@@ -55,7 +61,11 @@ regimes de prazo: processual (CPC) e material (art. 210 do CTN, --material)
 
 A contagem de prazo e CONFERENCIA, nao a contagem oficial: feriado do foro e
 suspensao de expediente entram a mao em docs/feriados.md. O prazo que vale e o
-dos autos.`;
+dos autos.
+
+A correcao monetaria tambem e CONFERENCIA, nao o calculo oficial: o valor que
+vale e o da memoria homologada nos autos. Serie de indice mora na carteira, em
+tabelas/indices/, e so o comando 'indice atualizar' toca a rede.`;
 
 function parse(argv) {
   const args = { _: [] };
@@ -117,6 +127,14 @@ try {
     case 'context': context(args); break;
     case 'validate': process.exitCode = validate(args); break;
     case 'build': build(args); break;
+    case 'indice': {
+      const sub = args._.shift();
+      if (sub === 'atualizar') await indiceAtualizar(args);
+      else if (sub === undefined) indiceLista();
+      else throw new Erro('Uso: attorneyfw indice [atualizar [serie]]');
+      break;
+    }
+    case 'atualizar': atualizar(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

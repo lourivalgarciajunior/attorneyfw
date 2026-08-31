@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.3.0 — 2026-08-31
+
+Ampliacao pedida por um escritorio usuario. Dez pedidos triados; tres ja
+existiam como estrutura obrigatoria, um foi recusado na forma pedida, e seis
+viraram trabalho.
+
+### Adicionado — correcao monetaria com memoria de calculo
+
+- **`attorneyfw atualizar <valor> --de DATA [--ate DATA]`**, com `--serie`,
+  `--juros N`, `--juros-de DATA`, `--selic` e `--json`. Corrige e, quando
+  pedido, acrescenta mora.
+
+  O ganho nao esta no numero final: esta na memoria. Valor corrigido sem memoria
+  a outra parte impugna e o juiz nao homologa, e o tempo economizado na minuta
+  volta a ser gasto na fase em que custa mais. Por isso a memoria e a
+  procedencia saem **sempre**, inclusive no modo resumido — que e justamente o
+  que acaba copiado para a peca.
+
+- **`attorneyfw indice atualizar [serie]`** busca INPC, IPCA, IGP-M e Selic no
+  SGS do Banco Central e grava em `tabelas/indices/<serie>.csv` na carteira.
+  **E o unico ponto do subsistema que toca a rede.** Calculo nunca busca nada:
+  funciona offline, e os mesmos arquivos devolvem o mesmo numero daqui a um ano.
+
+- **`attorneyfw indice`** lista o que a carteira ja tem, com cobertura e data de
+  coleta de cada serie.
+
+### Decidido
+
+- **O arquivo guarda a variacao mensal como a fonte publica**, e nao um
+  numero-indice ja calculado. O numero-indice e derivado na leitura. O motivo e
+  auditoria: cada linha do CSV continua conferivel contra a serie do Banco
+  Central, e quem duvidar do valor final refaz a conta a partir do dado bruto.
+
+- **Fora da cobertura da serie, o comando falha.** Nao extrapola, nao repete o
+  ultimo indice, nao interpola — a mensagem diz ate onde a serie vai e o que
+  rodar. Buraco no meio da serie tambem reprova: a razao entre dois pontos
+  passaria por cima do mes faltante e devolveria fator **menor**, sem nenhum
+  sinal de que algo faltou.
+
+- **Serie sem `# fonte:` e `# coletada_em:` e recusada.** Numero sem procedencia
+  nao vai para peca.
+
+- **O IPCA-E nao tem coleta automatica.** O codigo da serie no SGS nao foi
+  confirmado, e serie sem codigo confirmado nao e adivinhada: codigo errado
+  produz numero plausivel e errado, que e o pior resultado possivel aqui. O
+  comando manda preencher a mao e diz de onde.
+
+- Convencoes declaradas na saida porque nao sao as unicas defensaveis: correcao
+  por **mes cheio** com base no mes do termo inicial; juros simples **pro rata
+  die** sobre trinta dias; Selic **somada**, nao composta, exclusos o mes inicial
+  e o do pagamento, mais 1% no mes do pagamento.
+
+- Aritmetica em **centavos inteiros**, com um unico arredondamento no fim.
+  Ponto flutuante em dinheiro acumula residuo, e residuo em peca vira
+  impugnacao.
+
+### Mudado
+
+- A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser
+  uma tabela de ressalvas. Hoje cobre duas — contagem de prazo e correcao
+  monetaria —, e o build reprova se qualquer uma sumir do README, do help ou do
+  modulo que a produz.
+
 ## 0.2.0 — 2026-08-31
 
 Contagem de prazo material, separada da processual. Nasceu de um defeito medido

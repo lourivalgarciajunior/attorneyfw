@@ -76,6 +76,14 @@ attorneyfw docx 1                     # a versao de protocolo
 attorneyfw entrega move 1 entregue
 ```
 
+Dinheiro, na raiz da carteira:
+
+```bash
+attorneyfw indice atualizar           # busca INPC, IPCA, IGP-M e Selic
+attorneyfw indice                     # o que a carteira ja tem
+attorneyfw atualizar 8500,00 --de 2019-03-14 --juros 1
+```
+
 Consulta: `attorneyfw status` (na raiz, a carteira; dentro da matéria, o kanban dela), `attorneyfw prazo` (agenda; na raiz, de todas as matérias), `attorneyfw context` (dump da governança formatado para LLM), `attorneyfw materia list`.
 
 Todo comando de matéria aceita `--materia <slug>` para rodar da raiz sem entrar na pasta.
@@ -178,13 +186,34 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## Correção monetária
+
+```bash
+attorneyfw indice atualizar           # so este comando toca a rede
+attorneyfw atualizar 8500,00 --de 2019-03-14 --ate 2026-08-31 --serie inpc --juros 1
+attorneyfw atualizar 8500,00 --de 2019-03-14 --selic --json
+```
+
+O que sai daqui é **conferência, não o cálculo oficial**: o valor que vale é o da memória homologada nos autos, e a contadoria do juízo nem sempre adota a mesma convenção. A ferramenta serve para o valor chegar à minuta **com a memória junto** — nunca sozinho.
+
+Quatro regras de desenho, e cada uma responde a uma forma conhecida de produzir número indefensável:
+
+1. **A série mora na carteira, em `tabelas/indices/`, versionada.** O arquivo guarda a variação mensal *como a fonte publica* — não um número-índice já calculado —, para que cada linha continue conferível contra a série do Banco Central. O número-índice é derivado na leitura.
+2. **Só o `indice atualizar` faz requisição de rede.** O cálculo lê arquivo e nada mais. Ele funciona offline, e os mesmos arquivos devolvem o mesmo número daqui a um ano.
+3. **Fora da cobertura da série, o comando falha.** Não extrapola, não repete o último índice, não interpola. A mensagem diz até onde a série vai e o que rodar. Buraco no meio da série também é erro, e não silêncio: a razão entre dois pontos passaria por cima do mês faltante e devolveria fator menor sem avisar.
+4. **A saída traz sempre memória e procedência**, inclusive no modo resumido — que é justamente o que acaba copiado para a peça.
+
+Convenções adotadas, declaradas porque não são as únicas defensáveis: correção por **mês cheio**, com base no mês do termo inicial; juros simples **pro rata die** sobre trinta dias; e a Selic **somada**, não composta, excluídos o mês inicial e o do pagamento, mais 1% no mês do pagamento — que é como ela se aplica no art. 406 do Código Civil.
+
+O IPCA-E não tem coleta automática nesta versão: preenche-se à mão, e o comando diz isso em vez de buscar um código de série não confirmado. Código errado produz número plausível e errado, que é o pior resultado possível aqui.
+
 ## Desenvolvimento
 
 ```bash
 npm run check     # lint + smoke
 ```
 
-O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se a ressalva de que a contagem não é a oficial sumir do README, do help ou do módulo de prazo.
+O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre duas: a contagem de prazo e a correção monetária.
 
 ## Escopo negativo
 

@@ -56,7 +56,7 @@ Dentro de cada onda, os MLs sao sequenciais pelo mesmo motivo de arquivo.
 
 ### ML-1A — O nucleo do calculo
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/dinheiro.mjs` (novo)
 **Acoes:**
 1. Leitura de serie de indice em CSV (`mes,indice`), com validacao de cobertura.
@@ -65,14 +65,14 @@ Dentro de cada onda, os MLs sao sequenciais pelo mesmo motivo de arquivo.
 4. Fora da cobertura: erro que diz ate onde a serie vai. Nao extrapola.
 
 **Aceite:**
-- [ ] Aritmetica em inteiro de centavos — sem ponto flutuante em dinheiro
-- [ ] Memoria com mes, indice, fator acumulado e marco inicial de cada componente
-- [ ] Periodo fora de cobertura falha com mensagem acionavel
-- [ ] Nenhuma chamada de rede neste modulo
+- [x] Aritmetica em inteiro de centavos — sem ponto flutuante em dinheiro
+- [x] Memoria com mes, indice, fator acumulado e marco inicial de cada componente
+- [x] Periodo fora de cobertura falha com mensagem acionavel
+- [x] Nenhuma chamada de rede neste modulo
 
 ### ML-1B — `attorneyfw indice atualizar`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/indice.mjs` (novo), `bin/attorneyfw.mjs`
 **Acoes:**
 1. Buscar INPC, IPCA-E, IGP-M e Selic e gravar em `tabelas/indices/<serie>.csv`.
@@ -80,21 +80,35 @@ Dentro de cada onda, os MLs sao sequenciais pelo mesmo motivo de arquivo.
 3. Sem rede, falhar dizendo o que fazer — jamais gravar arquivo parcial.
 
 **Aceite:**
-- [ ] Este e o **unico** ponto do subsistema que toca a rede
-- [ ] Arquivo gravado de forma atomica; coleta interrompida nao corrompe a serie
-- [ ] Serie ja existente e estendida, nao substituida
+- [x] Este e o **unico** ponto do subsistema que toca a rede
+- [x] Arquivo gravado de forma atomica; coleta interrompida nao corrompe a serie
+- [x] Serie ja existente e estendida, nao substituida
 
 ### ML-1C — `attorneyfw atualizar` e a ressalva
 
-**Status:** ⬜ Pendente
-**Files affected:** `bin/attorneyfw.mjs`, `tools/lint.mjs`, `README.md`, `CHANGELOG.md`
+**Status:** ✅ Concluído
+**Files affected:** `src/atualizar.mjs` (novo — a superficie saiu do bin, que so roteia), `bin/attorneyfw.mjs`, `tools/lint.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`, `.gitignore`, `package.json`
 **Aceite:**
-- [ ] `--de`, `--ate`, `--juros`, `--juros-de`, `--selic`, `--serie`, `--json`
-- [ ] Saida sempre com memoria e procedencia, inclusive em modo resumido
-- [ ] Lint reprova se a ressalva de conferencia sumir da correcao monetaria
-- [ ] Smoke cobre um caso de correcao com aritmetica conferida a mao
+- [x] `--de`, `--ate`, `--juros`, `--juros-de`, `--selic`, `--serie`, `--json`
+- [x] Saida sempre com memoria e procedencia, inclusive em modo resumido
+- [x] Lint reprova se a ressalva de conferencia sumir da correcao monetaria
+- [x] Smoke cobre um caso de correcao com aritmetica conferida a mao
 
 ---
+
+
+**Medido ao fim da onda:**
+
+- Coleta real contra o SGS do Banco Central: INPC, IPCA e IGP-M de 1994-07 a
+  2026-07/08 (385 e 386 meses), Selic idem. IPCA-E ficou de fora, declarado.
+- Correcao real de R$ 8.500,00 de 14.03.2024 a 31.07.2026 pelo INPC: fator
+  1,10909835, corrigido R$ 9.427,34, com mora de 1% ao mes R$ 12.158,13.
+- 14 asserts novos no smoke, com a aritmetica conferida a mao antes de escrever
+  o teste (serie sintetica de fator exato 1,0251).
+
+**Defeito encontrado rodando, nao lendo:** backtick dentro do template literal
+do `AJUDA` quebrou o bin inteiro. O lint passou verde — ele nao parseia o bin —
+e quem pegou foi o smoke, na primeira asserção que roda o CLI.
 
 ## Wave 2 — Item 6: memoria de casos
 

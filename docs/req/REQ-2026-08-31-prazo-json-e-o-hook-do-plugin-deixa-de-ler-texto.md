@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-a-agenda-de-prazos-sai-tambem-como-contrato-tipado-com-a-ressalva-dentro-do-payload"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-prazo-json-e-o-hook-tipado-em-duas-ondas"
 
 # REQ: prazo --json, e o hook do plugin deixa de ler texto
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -19,7 +19,7 @@ e por que o rotulo `VENCIDO` nao pode ser sinal.
 ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-termo-inicial-sai-declarada.md`
 — a divergencia do art. 210 que passa a sair como objeto.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-prazo-json-e-o-hook-tipado-em-duas-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-prazo-json-e-o-hook-tipado-em-duas-ondas.md`
 
 ## Motivation
 
@@ -73,16 +73,16 @@ e o consumidor tambem.
 
 ## Acceptance criteria
 
-- [ ] `attorneyfw prazo --json` produz JSON valido, e nada mais no stdout.
-- [ ] O payload traz `ressalva` com o mesmo texto que o terminal imprime.
-- [ ] O payload traz `versao`.
-- [ ] Nenhuma `linha` do payload contem sequencia ANSI (``).
-- [ ] Entrada vencida traz `vencido: true` e `restam` negativo — e a palavra `VENCIDO` **nao** e o sinal.
-- [ ] Prazo mal declarado sai como entrada com `erro` preenchido, e nao some.
-- [ ] Divergencia do art. 210 sai como objeto com as duas datas.
-- [ ] `--json` sai com codigo 1 quando ha vencido, e 0 quando nao ha.
-- [ ] Agenda vazia produz `prazos: []`, e nao um texto.
-- [ ] A saida de terminal continua **byte a byte** a mesma de antes.
-- [ ] O hook nao contem mais `VENCIDO`, `nenhum prazo` nem `semCor`.
-- [ ] `npm run check` verde: 16 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `attorneyfw prazo --json` produz JSON valido, e nada mais no stdout.
+- [x] O payload traz `ressalva` com o mesmo texto que o terminal imprime.
+- [x] O payload traz `versao`.
+- [x] Nenhuma `linha` do payload contem sequencia ANSI (``).
+- [x] Entrada vencida traz `vencido: true` e `restam` negativo — e a palavra `VENCIDO` **nao** e o sinal.
+- [x] Prazo mal declarado sai como entrada com `erro` preenchido, e nao some.
+- [x] Divergencia do art. 210 sai como objeto com as duas datas.
+- [x] `--json` sai com codigo 1 quando ha vencido, e 0 quando nao ha.
+- [x] Agenda vazia produz `prazos: []`, e nao um texto.
+- [x] A saida de terminal continua **byte a byte** a mesma de antes.
+- [x] O hook nao contem mais `VENCIDO`, `nenhum prazo` nem `semCor`.
+- [x] `npm run check` verde: 16 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

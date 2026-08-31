@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-prazo-json-e-o-hook-do-plugin-deixa-de-ler-texto.md
 adr: docs/adr/ADR-2026-08-31-a-agenda-de-prazos-sai-tambem-como-contrato-tipado-com-a-ressalva-dentro-do-payload.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-a-agenda-de-prazos-sai-tambem-como-contrato-tipado-
 
 # Roadmap: prazo --json e o hook tipado, em duas ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -31,15 +31,15 @@ reavaliado.
 
 ## Acceptance Criteria
 
-- [ ] As duas ondas concluidas, cada uma com `npm run check` verde
-- [ ] A saida de terminal do `prazo` continua **byte a byte** a mesma
-- [ ] Nenhuma `linha` do payload carrega ANSI
-- [ ] A ressalva viaja dentro do payload, e nao so no rodape
-- [ ] Nenhuma linha de contagem, termo inicial ou feriado e tocada
-- [ ] O hook nao le mais texto para decidir nada
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
+- [x] As duas ondas concluidas, cada uma com `npm run check` verde
+- [x] A saida de terminal do `prazo` continua **byte a byte** a mesma
+- [x] Nenhuma `linha` do payload carrega ANSI
+- [x] A ressalva viaja dentro do payload, e nao so no rodape
+- [x] Nenhuma linha de contagem, termo inicial ou feriado e tocada
+- [x] O hook nao le mais texto para decidir nada
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
 
 ---
 
@@ -103,7 +103,7 @@ vazia devolve `prazos: []`.
 
 ### ML-2A — O hook para de ler texto
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `plugin-skill/plugins/attorneyfw/scripts/carteira-em-foco.mjs`
 **Acoes:**
 1. Chamar `prazo --dias N --json` e parsear.
@@ -120,7 +120,7 @@ sobre uma carteira de teste e imprime a agenda e o alarme.
 
 ### ML-2B — README, AJUDA, lint e publicacao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `bin/attorneyfw.mjs`, `tools/lint.mjs`, `CHANGELOG.md`, `package.json`, `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. README: o contrato, a `versao`, a `linha` sem cor, e por que a ressalva e
@@ -135,4 +135,25 @@ sobre uma carteira de teste e imprime a agenda e o alarme.
 
 **Aceite:** trocar `ressalva: AVISO` por outra coisa reprova `npm run lint`,
 provado com copia de backup **fora do git**.
+
+Medido contra `main` em `e45d497` (0.8.0): **384 -> 395 asserts**, 15 -> 16 regras
+de lint, 30 modulos e nenhum novo. Saida de terminal identica byte a byte,
+conferida contra captura previa numa fixture com os quatro casos.
+
+**Ganho que a REQ nao previa:** o hook passou a anunciar prazo **mal declarado**.
+Antes a linha `???` se perdia no meio da lista; com `erro` como campo, ela e
+contada e sai em destaque proprio — a entrega tem prazo e ninguem sabe qual e.
+
+**Caso de implantacao achado depois do primeiro publish, e corrigido na 0.9.1 do
+plugin.** Plugin novo com CLI 0.8.0 instalado globalmente: `--json` nao existe,
+o parse falha, e a primeira versao do script caia no silencio — o usuario perdia
+o banner inteiro sem saber por que. Agora ele diz que o CLI nao fala o contrato e
+manda atualizar. Adivinhar o formato continua fora de questao; calar sobre o que
+nao se conseguiu ler nao precisava estar.
+
+**Duas armadilhas de ferramenta nesta onda**, ambas ja conhecidas e ambas
+repetidas: crase dentro de string com aspas duplas no `git commit -m` comeu uma
+palavra do commit (corrigido com `-F` e arquivo), e um script de patch nao
+idempotente parou num anchor errado **depois** de ja ter gravado a versao.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

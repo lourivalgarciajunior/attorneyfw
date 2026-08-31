@@ -51,7 +51,7 @@ numerico da **onda 2** e da ficha de documento que a **onda 3** consolida; e a
 
 ### ML-1A — O mapa e a aplicacao total
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/anonimizar.mjs` (novo), `templates/anonimizacao.yaml` (novo)
 **Acoes:**
 1. Leitura do mapa `real: ficticio`, com recusa de par curto demais ou ambiguo.
@@ -60,30 +60,44 @@ numerico da **onda 2** e da ficha de documento que a **onda 3** consolida; e a
 4. Falha antes de gravar quando algum par nao pode ser aplicado.
 
 **Aceite:**
-- [ ] Nunca grava meia substituicao — e a propriedade central desta onda
-- [ ] A mesma pessoa recebe o mesmo nome ficticio em toda peca da materia
-- [ ] Ida e volta devolve o texto original, byte a byte
+- [x] Nunca grava meia substituicao — e a propriedade central desta onda
+- [x] A mesma pessoa recebe o mesmo nome ficticio em toda peca da materia
+- [x] Ida e volta devolve o texto original, byte a byte
 
 ### ML-1B — Deteccao que so acusa
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/dados.mjs` (novo), `bin/attorneyfw.mjs`
 **Aceite:**
-- [ ] CPF, CNPJ, RG, e-mail, telefone e cartao reconhecidos; **texto intacto**
-- [ ] CPF e CNPJ validados por digito verificador — reduz falso positivo
-- [ ] A saida declara que reconhece formato, e nao pessoa
-- [ ] Aponta o que esta fora do mapa, quando ha mapa
+- [x] CPF, CNPJ, RG, e-mail, telefone e cartao reconhecidos; **texto intacto**
+- [x] CPF e CNPJ validados por digito verificador — reduz falso positivo
+- [x] A saida declara que reconhece formato, e nao pessoa
+- [x] Aponta o que esta fora do mapa, quando ha mapa
 
 ### ML-1C — O gate, o `.gitignore` e a documentacao
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/validate.mjs`, `.gitignore`, `tools/lint.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Gate **avisa** (nao viola) sobre dado com formato reconhecivel fora do mapa
-- [ ] `anonimizacao.yaml` ignorado — e a chave que desfaz tudo de uma vez
-- [ ] Smoke cobre aplicacao total, recusa parcial, ida e volta, e deteccao sem substituicao
+- [x] Gate **avisa** (nao viola) sobre dado com formato reconhecivel fora do mapa
+- [x] `anonimizacao.yaml` ignorado — e a chave que desfaz tudo de uma vez
+- [x] Smoke cobre aplicacao total, recusa parcial, ida e volta, e deteccao sem substituicao
 
 ---
+
+**Medido ao fim da onda:** 16 asserts novos. Os que importam sao os quatro de
+**recusa** — o comando tem de falhar sem gravar — e o de **ida e volta byte a
+byte**, que e a propriedade que sustenta as outras.
+
+**Decisao autonoma:** so a forma declarada e a MAIUSCULA sao aceitas. Reconstruir
+caixa mista (`José da Silva`) quebraria a ida e volta, porque o `da` minusculo
+nao se recupera. Preferiu-se falhar dizendo qual par acrescentar a devolver texto
+quase igual ao original.
+
+**Correcao num teste, nao no codigo:** o assert do gate amarrava ao codigo de
+saida do `validate`, e por isso quebrava junto com qualquer violacao que a
+fixture tivesse por outro motivo. A propriedade e "avisa, e nao reprova por
+isso" — hoje ele confere que a linha do achado e uma linha de aviso.
 
 ## Wave 2 — Conferencia numerica
 

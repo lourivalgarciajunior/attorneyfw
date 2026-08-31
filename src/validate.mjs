@@ -5,12 +5,16 @@
  * sustenta, documento citado que nao esta no processo, topico sem
  * contra-argumento previsto, peca que saiu sem registro de quando saiu.
  */
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   ESTADOS_ATIVOS, RESULTADOS, acharEscritorio, acharMateria, artefatos, c, canon,
   contextoPrazo, dataValida, diasCorridosAte, entregas, estrategia, exigirMateria,
   lerEscritorio, linhasDoPlano, lista, materias, nomesDoCanon,
   pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel, slug, valor,
 } from './core.mjs';
+import { ARQUIVO_MAPA } from './anonimizar.mjs';
+import { achar } from './dados.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -279,6 +283,27 @@ function validarMateria(m, { raiz, esc, ctx }) {
   // ---- sigilo
   if (String(m.cfg.sigilo || '').toLowerCase() === 'true') {
     aviso('materia.yaml', 'materia em segredo de justica — confira antes de gerar saida ou compartilhar contexto');
+  }
+
+  // ---- dado pessoal na saida
+  // Aviso, e nunca violacao: peca de verdade TEM de conter o CPF da parte, e o
+  // CPF que qualifica o autor no processo dele nao e vazamento. Reprovar por
+  // isso transformaria a regra em ruido no primeiro dia, e regra ignorada nao
+  // protege ninguem. O que o gate faz e lembrar antes de o arquivo circular.
+  {
+    const dirSaida = join(m.dir, 'saida');
+    if (existsSync(dirSaida)) {
+      const temMapa = existsSync(join(m.dir, ARQUIVO_MAPA));
+      for (const arq of readdirSync(dirSaida).filter((f) => f.endsWith('.md') && !f.endsWith('-anonimizado.md'))) {
+        const achados = achar(readFileSync(join(dirSaida, arq), 'utf8'))
+          .filter((x) => x.confianca === 'alta');
+        if (!achados.length) continue;
+        const tipos = [...new Set(achados.map((x) => x.tipo))].join(', ');
+        aviso(`saida/${arq}`, temMapa
+          ? `${achados.length} dado(s) com formato reconhecivel (${tipos}) — confira o mapa antes de o arquivo circular`
+          : `${achados.length} dado(s) com formato reconhecivel (${tipos}) e a materia nao tem mapa de anonimizacao`);
+      }
+    }
   }
 
   // ---- desfecho

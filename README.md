@@ -283,6 +283,34 @@ Duas recusas, ambas deliberadas:
 
 O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
 
+## Dado pessoal na peça
+
+```bash
+attorneyfw dados 1                    # so acusa — nada e alterado
+attorneyfw anonimizar --init          # cria o mapa real -> ficticio
+attorneyfw anonimizar 1               # aplica o mapa inteiro numa passada
+attorneyfw anonimizar 1 --reverter
+```
+
+**A anonimização é um mapa, não uma varredura.** A diferença nasceu de três peças reais que tinham sido anonimizadas à mão antes de circular, e que saíram pela metade: numa ficou o CPF de uma criança ao lado do diagnóstico; noutra, quem foi anonimizado foi a falecida, e cinco pessoas vivas saíram com nome, CPF, RG e endereço; na terceira — um modelo, que vai ser reaproveitado — a substituição escapou num parágrafo do meio.
+
+O diagnóstico não é "faltou cuidado". É que **meia anonimização é pior que nenhuma**, e não pelo que deixa passar: pelo que faz acreditar. Arquivo marcado como anonimizado circula por e-mail, entra em pasta compartilhada e vira modelo — porque parece seguro. Arquivo não anonimizado ninguém manda.
+
+O escritório declara `real: ficticio` uma vez em `anonimizacao.yaml`, e a substituição é aplicada **numa passada só** sobre o texto inteiro. Não existe o caso "escapou um parágrafo". Quatro recusas acontecem antes de qualquer escrita:
+
+1. lado real com menos de quatro caracteres — acertaria dentro de outra palavra;
+2. lado fictício que já existe no texto — a volta trocaria ocorrência legítima pelo nome de outra pessoa;
+3. o mesmo termo sendo saída de um par e entrada de outro;
+4. o texto escrevendo o nome com outra caixa — só a forma declarada e a MAIÚSCULA voltam iguais, e o comando diz qual variação acrescentar.
+
+Qualquer impedimento **falha sem gravar nada**. A ida e volta devolve o original byte a byte.
+
+O `attorneyfw dados` reconhece CPF, CNPJ, e-mail, telefone, RG e cartão — CPF e CNPJ com dígito verificador, para não alarmar em cima de número de processo. Ele **não substitui**: serve para escrever o mapa. E reconhece **formato, não pessoa** — nome próprio, apelido, razão social e endereço não são detectados por forma nenhuma, e foi nome próprio que escapou nas três peças. A saída diz isso, porque ver "nada encontrado" não pode ser lido como "pode circular".
+
+O gate **avisa**, e nunca reprova: peça de verdade tem de conter o CPF da parte, e o CPF que qualifica o autor no processo dele não é vazamento.
+
+`anonimizacao.yaml` está no `.gitignore` — é a chave que desfaz a anonimização de todas as peças de uma vez.
+
 ## Visual law
 
 Três diagramas, e só três:

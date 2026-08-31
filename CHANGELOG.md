@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.4.0 — 2026-08-31
+
+Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
+A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
+pelo menos um defeito encontrado e conferido no corpus.
+
+### Adicionado — anonimizacao por mapa
+
+- **`attorneyfw anonimizar --init`** cria `anonimizacao.yaml` na materia, com
+  pares `real: ficticio`, e **`attorneyfw anonimizar <entrega>`** aplica todos
+  eles sobre todo o texto **numa passada so**. `--reverter` desfaz.
+
+- **`attorneyfw dados <entrega>`** reconhece CPF, CNPJ, e-mail, telefone, RG e
+  cartao — CPF e CNPJ com digito verificador — e **nao substitui nada**.
+
+### Decidido
+
+- **A anonimizacao e um mapa declarado, e nao uma deteccao.** Tres pecas do
+  corpus tinham sido anonimizadas a mao e as tres sairam pela metade: numa ficou
+  o CPF de uma crianca ao lado do diagnostico; noutra, quem foi anonimizado foi a
+  falecida, e cinco pessoas vivas sairam com nome, CPF, RG e endereco; na
+  terceira — um modelo, que vai ser reaproveitado — a substituicao escapou num
+  paragrafo do meio.
+
+  **Meia anonimizacao e pior que nenhuma**, e nao pelo que deixa passar: pelo que
+  faz acreditar. Arquivo marcado como anonimizado circula; nao anonimizado,
+  ninguem manda.
+
+- **Aplicar pela metade e impossivel.** Quatro recusas acontecem antes de
+  qualquer escrita: lado real curto demais, lado ficticio que ja existe no texto,
+  termo que e saida de um par e entrada de outro, e caixa nao declarada. Qualquer
+  impedimento falha **sem gravar nada**.
+
+- **So a forma declarada e a MAIUSCULA sao aceitas**, porque sao as duas que
+  voltam iguais. Outra variacao de caixa faz falhar dizendo qual par acrescentar.
+  A ida e volta devolve o original byte a byte, e isso e testado.
+
+- **A deteccao acusa, e nunca substitui.** Substituicao automatica por asterisco
+  produziria o mesmo falso "acabou" que o corpus mostrou — quem le "3 ocorrencias
+  tratadas" conclui que terminou.
+
+- **Reconhece formato, e nao pessoa.** Nome proprio foi o que escapou nas tres
+  pecas, e nenhum regex o acharia. A saida diz isso, porque ver "nada
+  encontrado" nao pode ser lido como "pode circular".
+
+- **O gate avisa, e nunca reprova.** Peca de verdade tem de conter o CPF da
+  parte, e o CPF que qualifica o autor no processo dele nao e vazamento.
+  Reprovar transformaria a regra em ruido no primeiro dia.
+
+- `anonimizacao.yaml` entrou no `.gitignore`: e a chave que desfaz a
+  anonimizacao de todas as pecas de uma vez.
+
 ## 0.3.0 — 2026-08-31
 
 Ampliacao pedida por um escritorio usuario. Dez pedidos triados; tres ja

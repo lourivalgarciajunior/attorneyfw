@@ -8,3 +8,7 @@ saida/*.pdf
 /escritorio.yaml
 /materias/
 /tabelas/
+
+# O mapa de anonimizacao e a CHAVE que desfaz a anonimizacao de todas as pecas
+# de uma materia de uma vez. E o pior arquivo possivel para vazar.
+anonimizacao.yaml

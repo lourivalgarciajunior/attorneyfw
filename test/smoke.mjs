@@ -331,6 +331,107 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// ------------------------------------------------------- dado pessoal na peca
+console.log('\ndado pessoal');
+
+// CPF e CNPJ validos, gerados para o teste. O reconhecedor confere digito
+// verificador justamente para nao alarmar em cima de numero de processo.
+const CPF_OK = '529.982.247-25';
+const CNPJ_OK = '11.222.333/0001-81';
+
+writeFileSync(entPath, ent.replace('texto '.repeat(200),
+  [`O autor JOSE CARLOS DE ALMEIDA, CPF ${CPF_OK}, contratou a`,
+   `Industria Zebra Ltda, CNPJ ${CNPJ_OK}, pelo e-mail contato@zebra.com.br.`,
+   'Jose Carlos de Almeida assinou o instrumento.',
+   'Processo n. 0001234-56.2020.8.16.0000 nao e telefone.'].join('\n')), 'utf8');
+emAcme('build', '1');
+const saidaMd = join(acme, 'saida', 'ent-01-peticao-inicial.md');
+
+const det = emAcme('dados', '1');
+ok('detecta CPF com digito verificador', det.saida.includes(CPF_OK));
+ok('detecta CNPJ e e-mail', det.saida.includes(CNPJ_OK) && det.saida.includes('zebra.com.br'));
+ok('numero de processo nao vira telefone nem cartao', !det.saida.includes('0001234'));
+ok('a saida diz que reconhece formato, e nao pessoa', det.saida.includes('FORMATO, e nao pessoa'));
+ok('deteccao nao altera o arquivo', (() => {
+  const antes = readFileSync(saidaMd, 'utf8');
+  emAcme('dados', '1');
+  return readFileSync(saidaMd, 'utf8') === antes;
+})());
+ok('sem mapa, manda criar o mapa', det.saida.includes('anonimizar --init'));
+
+ok('anonimizar --init cria o mapa', emAcme('anonimizar', '--init').codigo === 0);
+ok('--init nao sobrescreve', emAcme('anonimizar', '--init').codigo === 1);
+
+const mapa = join(acme, 'anonimizacao.yaml');
+const escreveMapa = (linhas) => writeFileSync(mapa, `${lerLF(mapa)}\n${linhas.join('\n')}\n`, 'utf8');
+const mapaBase = lerLF(mapa);
+
+// --- as quatro recusas, todas antes de gravar qualquer coisa
+const semGravar = () => readFileSync(saidaMd, 'utf8');
+const antesDeTudo = semGravar();
+
+ok('par curto demais e recusado', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJos: Ful\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('4 caracteres') && semGravar() === antesDeTudo;
+})());
+
+ok('ficticio que ja existe no texto e recusado', (() => {
+  writeFileSync(mapa, `${mapaBase}\nIndustria Zebra Ltda: Jose Carlos de Almeida\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('ja aparece no texto');
+})());
+
+ok('cascata entre pares e recusada', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJose Carlos de Almeida: Fulano de Tal\nFulano de Tal: Beltrano\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('resultado de um par');
+})());
+
+// A peca escreve o mesmo nome em MAIUSCULA e em caixa mista. As duas voltam
+// iguais, entao as duas passam.
+ok('a forma declarada e a MAIUSCULA sao aceitas juntas', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJose Carlos de Almeida: Fulano de Tal\n${CPF_OK}: 000.000.000-00\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  const anon = readFileSync(saidaMd.replace('.md', '-anonimizado.md'), 'utf8');
+  return r.codigo === 0
+    && anon.includes('FULANO DE TAL')            // veio de JOSE CARLOS DE ALMEIDA
+    && anon.includes('Fulano de Tal')            // veio de Jose Carlos de Almeida
+    && !anon.includes('Almeida')
+    && anon.includes('000.000.000-00');
+})());
+
+ok('caixa nao declarada falha dizendo qual acrescentar', (() => {
+  writeFileSync(saidaMd, `${antesDeTudo}\nJOSE carlos DE almeida compareceu.\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  writeFileSync(saidaMd, antesDeTudo, 'utf8');
+  return r.codigo === 1 && r.saida.includes('outra caixa');
+})());
+
+// A propriedade central: ida e volta byte a byte.
+ok('ida e volta devolve o original byte a byte', (() => {
+  const original = readFileSync(saidaMd, 'utf8');
+  emAcme('anonimizar', '1');
+  emAcme('anonimizar', '1', '--reverter');
+  return readFileSync(saidaMd, 'utf8') === original;
+})());
+
+ok('com o mapa, o detector marca o que esta dentro dele', (() => {
+  const r = emAcme('dados', '1');
+  return r.saida.includes('no mapa');
+})());
+// A propriedade e "avisa, e nao reprova" — nao "o gate passa". Amarrar ao
+// codigo de saida acoplaria este teste a toda violacao que a fixture tiver por
+// outro motivo, e ele passaria a quebrar sem que nada de errado acontecesse.
+ok('gate avisa sobre dado na saida, e nao reprova por isso', (() => {
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('formato reconhecivel'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
 // ------------------------------------------------------------------ diagramas
 console.log('\nvisual law');
 

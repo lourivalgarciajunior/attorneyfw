@@ -26,6 +26,14 @@ export const ESTADOS_ATIVOS = ['backlog', 'pesquisa', 'minuta', 'revisao', 'entr
 export const TIPOS = ['contencioso', 'consultivo'];
 
 /**
+ * Regime de contagem. `processual` segue o CPC — termo inicial no primeiro dia
+ * util seguinte. `material` segue o art. 210 do CTN — dia seguinte, util ou
+ * nao. Nao se infere um do outro: adivinhar prazo e o unico erro desta
+ * ferramenta que custa o caso. Ver ADR-2026-08-31.
+ */
+export const REGIMES = ['processual', 'material'];
+
+/**
  * O vocabulario muda com o tipo da materia, o codigo nao. Um topico de peticao
  * e uma clausula de contrato tem a mesma anatomia — sustenta algo, se apoia em
  * fundamento, tem um contra-argumento previsivel e uma resposta a ele — e o
@@ -308,26 +316,61 @@ function fabricaUtil(fer, recesso) {
  * autos: feriado local, suspensao de expediente e decisao que altera o termo
  * inicial nao chegam aqui sozinhos.
  */
-export function contarPrazo({ intimacao, dias, contagem = 'uteis', recesso = true, feriados: fer = new Set() }) {
+export function contarPrazo({
+  intimacao, dias, contagem = 'uteis', regime = 'processual',
+  recesso = true, feriados: fer = new Set(),
+}) {
   if (!dataValida(intimacao)) throw new Erro(`Data de intimacao invalida: "${intimacao}". Use AAAA-MM-DD.`);
   const n = Number(dias);
   if (!Number.isInteger(n) || n < 1) throw new Erro(`Prazo em dias invalido: "${dias}".`);
+  if (!REGIMES.includes(regime)) throw new Erro(`Regime "${regime}" nao existe. Use: ${REGIMES.join(', ')}`);
   const util = fabricaUtil(fer, recesso);
 
-  let cur = dt(intimacao);
-  do { cur = new Date(cur.getTime() + DIA); } while (!util(cur));
-  const inicio = iso(cur);
-
-  if (contagem === 'uteis') {
-    for (let restam = n - 1; restam > 0; restam--) {
-      do { cur = new Date(cur.getTime() + DIA); } while (!util(cur));
+  /** Do termo inicial ate o vencimento, prorrogando o que cair sem expediente. */
+  const correr = (partida) => {
+    let cur = new Date(partida);
+    if (contagem === 'uteis') {
+      for (let restam = n - 1; restam > 0; restam--) {
+        do { cur = new Date(cur.getTime() + DIA); } while (!util(cur));
+      }
+    } else {
+      cur = new Date(cur.getTime() + (n - 1) * DIA);
+      // art. 224 par. 1 do CPC e art. 210 par. unico do CTN: vencimento em dia
+      // sem expediente normal prorroga para o seguinte.
+      while (!util(cur)) cur = new Date(cur.getTime() + DIA);
     }
-  } else {
-    cur = new Date(cur.getTime() + (n - 1) * DIA);
-    // art. 224 par. 1: vencimento em dia sem expediente prorroga para o seguinte
+    return iso(cur);
+  };
+
+  const seguinte = new Date(dt(intimacao).getTime() + DIA);
+
+  if (regime === 'processual') {
+    // art. 224, par. 3: a contagem comeca no primeiro dia UTIL seguinte.
+    let cur = new Date(seguinte);
     while (!util(cur)) cur = new Date(cur.getTime() + DIA);
+    return { regime, inicio: iso(cur), fim: correr(cur) };
   }
-  return { inicio, fim: iso(cur) };
+
+  // Material — art. 210 do CTN. O caput exclui o dia do inicio e conta continuo
+  // a partir do dia seguinte, util ou nao. O paragrafo unico diz que os prazos
+  // "so se iniciam ou vencem em dia de expediente normal", e ha duas leituras:
+  // o deslocamento alcanca so o vencimento, ou tambem o termo inicial. No caso
+  // real que originou esta regra as duas dao datas diferentes, e nenhuma e
+  // obviamente errada — entao devolvemos as duas. Ver ADR-2026-08-31.
+  const inicio = iso(seguinte);
+  let porParagrafo = new Date(seguinte);
+  while (!util(porParagrafo)) porParagrafo = new Date(porParagrafo.getTime() + DIA);
+  const inicioAlternativo = iso(porParagrafo);
+
+  const fim = correr(seguinte);
+  const fimAlternativo = correr(porParagrafo);
+
+  // `fim` fica com a leitura do caput, que e sempre a data igual ou anterior.
+  // Entre duas leituras defensaveis, esta ferramenta nao pode ser a que concede
+  // folga: prazo curto demais faz trabalhar antes; longo demais perde o caso.
+  return inicio === inicioAlternativo
+    ? { regime, inicio, fim }
+    : { regime, inicio, fim, inicioAlternativo, fimAlternativo, divergencia: true };
 }
 
 /** Dias uteis entre duas datas, contando o dia final. Negativo quando ja venceu. */
@@ -364,19 +407,32 @@ export function prazoDe(entrega, ctx) {
   if (!Number.isInteger(dias) || dias < 1) return { erro: `prazo_dias "${bruto}" nao e um numero de dias` };
 
   const contagem = valor(fm.prazo_contagem) === 'corridos' ? 'corridos' : 'uteis';
-  const { inicio, fim } = contarPrazo({
-    intimacao, dias, contagem, recesso: ctx.recesso, feriados: ctx.feriados,
+  // Regime em branco e `processual` — o padrao da 0.1.0, para que entrega
+  // antiga continue lida do mesmo jeito. Regime escrito errado nao vira padrao
+  // em silencio: prazo contado pela regra errada e o defeito que esta correcao
+  // existe para acabar.
+  const regime = valor(fm.prazo_regime) || 'processual';
+  if (!REGIMES.includes(regime)) {
+    return { erro: `prazo_regime "${regime}" nao existe — use ${REGIMES.join(' ou ')}` };
+  }
+
+  const c = contarPrazo({
+    intimacao, dias, contagem, regime, recesso: ctx.recesso, feriados: ctx.feriados,
   });
   const hj = ctx.hoje || hoje();
   return {
     intimacao,
     dias,
     contagem,
-    inicio,
-    fim,
+    regime,
+    inicio: c.inicio,
+    fim: c.fim,
+    inicioAlternativo: c.inicioAlternativo,
+    fimAlternativo: c.fimAlternativo,
+    divergencia: Boolean(c.divergencia),
     fatal: valor(fm.prazo_fatal).toLowerCase() === 'true',
-    restam: diasUteisAte(hj, fim, ctx.feriados, ctx.recesso),
-    vencido: fim < hj,
+    restam: diasUteisAte(hj, c.fim, ctx.feriados, ctx.recesso),
+    vencido: c.fim < hj,
   };
 }
 

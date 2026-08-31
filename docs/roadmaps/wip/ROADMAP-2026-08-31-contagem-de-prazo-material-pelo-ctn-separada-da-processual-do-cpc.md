@@ -34,7 +34,7 @@ ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-t
 
 ### ML-0A — Fixar os casos de verdade antes de escrever a regra
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** nenhum (analise registrada aqui)
 **Acoes:**
 1. Calcular a mao os dois casos do ROC real e registrar o resultado esperado.
@@ -42,29 +42,29 @@ ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-t
 3. Declarar o residual: o que esta correcao **nao** cobre.
 
 **Aceite:**
-- [ ] Datas esperadas escritas antes de qualquer linha de implementacao
-- [ ] Direcao de erro inaceitavel declarada
+- [x] Datas esperadas escritas antes de qualquer linha de implementacao
+- [x] Direcao de erro inaceitavel declarada
 
 ## Wave 1 — O nucleo
 
 ### ML-1A — `contarPrazo` com regime
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/core.mjs`
 **Aceite:**
-- [ ] `regime: 'material'` conta pelo *caput* do art. 210
-- [ ] Vencimento prorroga nos dois regimes
-- [ ] Devolve `inicioAlternativo` e `fimAlternativo` quando as leituras divergem
-- [ ] `regime: 'processual'` produz exatamente o que produzia antes
+- [x] `regime: 'material'` conta pelo *caput* do art. 210
+- [x] Vencimento prorroga nos dois regimes
+- [x] Devolve `inicioAlternativo` e `fimAlternativo` quando as leituras divergem
+- [x] `regime: 'processual'` produz exatamente o que produzia antes
 
 ### ML-1B — `prazoDe` expondo a divergencia
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/core.mjs` (sequencial com ML-1A: mesmo arquivo)
 **Aceite:**
-- [ ] Le `prazo_regime` do frontmatter, com `processual` como padrao
-- [ ] `fim` recebe a data mais curta; `fimAlternativo` e `divergencia` acompanham
-- [ ] Regime invalido vira erro legivel, nao silencio
+- [x] Le `prazo_regime` do frontmatter, com `processual` como padrao
+- [x] `fim` recebe a data mais curta; `fimAlternativo` e `divergencia` acompanham
+- [x] Regime invalido vira erro legivel, nao silencio
 
 ## Wave 2 — As superficies
 

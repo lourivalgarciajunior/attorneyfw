@@ -102,12 +102,12 @@ ADR: `docs/adr/ADR-2026-08-31-prazo-material-conta-pelo-ctn-e-a-divergencia-do-t
 
 ### ML-3B — Documentacao e release
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `CHANGELOG.md`, `package.json`
 **Aceite:**
-- [ ] 0.2.0, com o defeito e a medida no CHANGELOG
-- [ ] README explicando os regimes e a divergencia
-- [ ] `npm run check` verde
+- [x] 0.2.0, com o defeito e a medida no CHANGELOG
+- [x] README explicando os regimes e a divergencia
+- [x] `npm run check` verde
 
 ### ML-3C — Skill e agente no plugin-skill
 

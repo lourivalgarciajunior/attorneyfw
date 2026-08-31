@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.2.0 — 2026-08-31
+
+Contagem de prazo material, separada da processual. Nasceu de um defeito medido
+conferindo um Recurso Ordinario Constitucional real, e nao de leitura de codigo.
+
+### Corrigido
+
+- **O CLI contava todo prazo com a regua do CPC.** O `contarPrazo` punha o termo
+  inicial no primeiro dia UTIL seguinte (art. 224, par. 3), inclusive com
+  `--corridos`, que so trocava a unidade. Prazo de direito material tem regra
+  propria: o art. 210, caput, do CTN exclui o dia do inicio e conta continuo a
+  partir do dia seguinte, util ou nao.
+
+  Medido: fato em sexta, 26.12.2025, prazo de 30 dias. A conta correta vence em
+  **26.01.2026**; a 0.1.0 devolvia **27.01.2026**. Errar prazo para MAIS e a
+  pior direcao — o advogado acredita ter folga que nao tem.
+
+- **O recesso do art. 220 nao suspende prazo material.** Ele e processual, e
+  prazo tributario corre entre 20/12 e 20/01 como em qualquer outro dia.
+  Encontrado rodando o CLI de ponta a ponta depois de implementar o regime: o
+  teste unitario passava `recesso: false` a mao e nunca exercitou o caminho. O
+  vencimento da leitura alternativa saltava de 29.12 para 21.01 — quase um mes
+  para frente. O teste agora passa `recesso: true` de proposito.
+
+### Adicionado
+
+- **`prazo_regime: processual | material`** no frontmatter da entrega, e
+  `--material` no `attorneyfw prazo set`. O regime e declarado, nunca inferido
+  do tipo da entrega ou da materia: adivinhar prazo e o unico erro desta
+  ferramenta que custa o caso. Entrega criada pela 0.1.0 recebe o campo na
+  primeira vez que o comando roda, em vez de ser recusada.
+
+- **A divergencia do art. 210, paragrafo unico, sai declarada.** O dispositivo
+  diz que os prazos "so se INICIAM ou vencem em dia de expediente normal", e ha
+  duas leituras: o deslocamento alcanca so o vencimento, ou tambem o termo
+  inicial. No caso medido elas dao 26.01 e 27.01, e nenhuma e obviamente errada.
+
+  O CLI devolve as duas e adota a mais curta — entre leituras defensaveis, a
+  ferramenta nunca pode ser a que concede folga. Quando o dia seguinte a
+  intimacao ja e util, as leituras coincidem e a saida volta a ser uma data so.
+  Ver ADR-2026-08-31.
+
+- **`--material` implica dias corridos**, e combina-lo com `--uteis` e recusado:
+  prazo material e continuo por definicao.
+
+- **Dois avisos novos no gate**: `prazo_regime` fora do vocabulario reprova; e
+  `prazo_contagem: corridos` com `prazo_regime: processual` avisa, porque essa
+  combinacao e quase sempre prazo material que ninguem marcou — que e
+  exatamente o defeito desta versao.
+
+- **A agenda, o `status` e o `context` mostram o regime** e, havendo, a data da
+  outra leitura. O regime so aparece quando nao e o padrao: coluna que repete
+  "processual" em toda linha vira ruido e para de ser lida.
+
+### Escopo negativo desta versao
+
+Nenhum outro regime. Prazo prescricional, decadencial, trabalhista e contratual
+tem regras que nao sao a do art. 210, e ficam de fora — quem precisar declara
+`material` e confere a mao. A ferramenta tambem nao escolhe entre as duas
+leituras do paragrafo unico: devolve as duas, e a decisao juridica e de quem
+assina.
+
 ## 0.1.0 — 2026-08-31
 
 Primeira versao. Nasce com o que o trackfw e o bookfw levaram tres anos para

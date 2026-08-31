@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-o-briefing-passa-a-carregar-o-style-card-e-o-checklist-do-tipo-de-acao.md
 adr: docs/adr/ADR-2026-08-31-o-briefing-carrega-a-voz-e-a-lista-do-tipo-de-acao-como-observacao-nunca-como-instrucao.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-o-briefing-carrega-a-voz-e-a-lista-do-tipo-de-acao-
 
 # Roadmap: A voz e a lista no briefing, em tres ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -33,16 +33,16 @@ a armadilha que reorganizou o roadmap anterior no meio da execucao.
 
 ## Acceptance Criteria
 
-- [ ] As tres ondas concluidas, cada uma com `npm run check` verde
-- [ ] Nenhuma linha da secao de voz dentro de `## Instrucoes`
-- [ ] Nenhuma regra de gate nova, e nenhuma cobranca de aderencia a voz
-- [ ] Traco abaixo do piso nao aparece; card fino diz por que calou
-- [ ] `trechos_em_caixa_alta` nao chega ao briefing
-- [ ] Checklist entra como diferenca, e nao repetido inteiro
-- [ ] O briefing e leitura: `docs/checklist-<tipo>.md` nao e alterado
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
+- [x] As tres ondas concluidas, cada uma com `npm run check` verde
+- [x] Nenhuma linha da secao de voz dentro de `## Instrucoes`
+- [x] Nenhuma regra de gate nova, e nenhuma cobranca de aderencia a voz
+- [x] Traco abaixo do piso nao aparece; card fino diz por que calou
+- [x] `trechos_em_caixa_alta` nao chega ao briefing
+- [x] Checklist entra como diferenca, e nao repetido inteiro
+- [x] O briefing e leitura: `docs/checklist-<tipo>.md` nao e alterado
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado, com a versao alinhada ao CLI
 
 ---
 
@@ -163,7 +163,7 @@ provado um de cada vez com copia de backup **fora do git**.
 
 ### ML-3B — CHANGELOG, versao e plugin
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `CHANGELOG.md`, `package.json`, `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. CHANGELOG 0.7.0.
@@ -175,4 +175,19 @@ provado um de cada vez com copia de backup **fora do git**.
 5. Publicar e conferir o cache com `diff -r`.
 
 **Aceite:** `claude plugin validate .` passa; `diff -r` do cache sai limpo.
+
+Medido contra `main` em `1c76cf1` (0.6.0): **335 -> 362 asserts**, 13 -> 14
+regras de lint, 30 modulos (nenhum novo — os dois leitores foram para modulos
+que o bin ja alcanca).
+
+**Publicacao limpa.** A versao 0.7.0 nunca tinha sido publicada, entao o cache
+nao tinha pasta dela e o `diff -r` saiu limpo de primeira — a regra que entrou
+no `CONTRIBUTING.md` do `plugin-skill` depois do tropeco da 0.6.0 valeu na
+primeira tentativa.
+
+**Pego pelo gate do plugin-skill:** escrevi "6 de 8 pecas" no `adv-gaio` como
+exemplo ilustrativo, e o lint reprovou por contagem sem fonte viva. A regra esta
+certa — exemplo com cara de medicao vira medicao na leitura seguinte. Reescrito
+sem numero.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

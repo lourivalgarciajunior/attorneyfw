@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-o-briefing-carrega-a-voz-e-a-lista-do-tipo-de-acao-como-observacao-nunca-como-instrucao"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-a-voz-e-a-lista-no-briefing-em-tres-ondas"
 
 # REQ: O briefing passa a carregar o style card e o checklist do tipo de acao
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -22,7 +22,7 @@ ADR: `docs/adr/ADR-2026-08-31-o-style-card-descreve-o-escritorio-e-nao-prescreve
 ADR: `docs/adr/ADR-2026-08-31-modelo-por-tipo-de-acao-sai-do-arquivo-do-escritorio-nunca-de-conhecimento-generico.md`
 — por que o item de checklist e pendencia, e nao verdade.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-a-voz-e-a-lista-no-briefing-em-tres-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-a-voz-e-a-lista-no-briefing-em-tres-ondas.md`
 
 ## Motivation
 
@@ -80,15 +80,15 @@ permaneceu de pe, com a solucao pronta ao lado.
 
 ## Acceptance criteria
 
-- [ ] `vozDoEscritorio` devolve `null` quando nao ha `estilo.yaml`, e o briefing sai sem a secao.
-- [ ] Traco presente em 2 de 8 pecas **nao** aparece; presente em 6 de 8 aparece com `6/8`.
-- [ ] Card com `n: 2` nao traz traco nenhum, e o briefing diz que a amostra e pequena demais.
-- [ ] Nenhuma linha da secao de voz aparece dentro de `## Instrucoes`.
-- [ ] `trechos_em_caixa_alta` nao chega ao briefing.
-- [ ] O par de rotulos vem dos topicos ja escritos quando ha texto anterior; do card quando nao ha.
-- [ ] `checklistAberto` ignora item ja marcado `- [x]`.
-- [ ] Fundamento que ja esta em `fundamento:` do topico **nao** aparece na lista do briefing.
-- [ ] Documento que ja esta no canon **nao** aparece na lista do briefing.
-- [ ] O briefing traz as tres instrucoes negativas, com essas palavras.
-- [ ] `npm run check` verde: 14 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `vozDoEscritorio` devolve `null` quando nao ha `estilo.yaml`, e o briefing sai sem a secao.
+- [x] Traco presente em 2 de 8 pecas **nao** aparece; presente em 6 de 8 aparece com `6/8`.
+- [x] Card com `n: 2` nao traz traco nenhum, e o briefing diz que a amostra e pequena demais.
+- [x] Nenhuma linha da secao de voz aparece dentro de `## Instrucoes`.
+- [x] `trechos_em_caixa_alta` nao chega ao briefing.
+- [x] O par de rotulos vem dos topicos ja escritos quando ha texto anterior; do card quando nao ha.
+- [x] `checklistAberto` ignora item ja marcado `- [x]`.
+- [x] Fundamento que ja esta em `fundamento:` do topico **nao** aparece na lista do briefing.
+- [x] Documento que ja esta no canon **nao** aparece na lista do briefing.
+- [x] O briefing traz as tres instrucoes negativas, com essas palavras.
+- [x] `npm run check` verde: 14 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

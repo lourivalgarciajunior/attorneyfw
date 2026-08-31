@@ -584,26 +584,42 @@ export function conferirContinuidade(topicos, cn = {}, cronologia = '') {
   }
   const fichaDe = new Map((cn.documentos || []).map((d) => [String(d.id), d]));
   for (const [id, citadas] of porDoc) {
-    const chaves = [...new Set(citadas.map((x) => x.chave))];
-    if (chaves.length > 1) {
-      const a = citadas.find((x) => x.chave === chaves[0]);
-      const b = citadas.find((x) => x.chave === chaves[1]);
-      out.push({
-        tipo: 'data-divergente-do-documento', topico: `${a.topico}, ${b.topico}`,
-        esquerda: { rotulo: `${m0(a.topico)} cita`, valor: a.grafia },
-        direita: { rotulo: `${m0(b.topico)} cita`, valor: b.grafia },
-        trecho: `datas diferentes em topicos que declaram ${id}`,
-      });
+    // Por TOPICO, e nao por data solta. Duas datas dentro do mesmo topico sao
+    // legitimas — contrato e aditivo —, e dizer qual delas e a do documento seria
+    // inferencia. A divergencia so existe entre topicos que **nao compartilham
+    // nenhuma** data: se um cita 12/03 e 15/03 e o outro cita 15/03, eles
+    // concordam em alguma coisa, e nao ha o que apontar.
+    const porTopico = new Map();
+    for (const x of citadas) {
+      if (!porTopico.has(x.topico)) porTopico.set(x.topico, []);
+      porTopico.get(x.topico).push(x);
     }
+    const tops = [...porTopico.entries()];
+    for (let i = 0; i < tops.length; i++) {
+      for (let j = i + 1; j < tops.length; j++) {
+        const [ta, da] = tops[i];
+        const [tb, db] = tops[j];
+        if (da.some((x) => db.some((y) => y.chave === x.chave))) continue;
+        out.push({
+          tipo: 'data-divergente-do-documento', topico: `${ta}, ${tb}`,
+          esquerda: { rotulo: `${m0(ta)} cita`, valor: da.map((x) => x.grafia).join(', ') },
+          direita: { rotulo: `${m0(tb)} cita`, valor: db.map((x) => x.grafia).join(', ') },
+          trecho: `datas sem interseccao em topicos que declaram ${id}`,
+        });
+      }
+    }
+
+    // Contra a ficha, so quando NENHUMA das datas do topico e a registrada: com
+    // a data da ficha presente ao lado de outra, o topico ja a cita.
     const daFicha = normalizarData(fichaDe.get(id)?.fm?.data || '');
     if (!daFicha) continue;
-    for (const x of citadas) {
-      if (x.chave === daFicha) continue;
+    for (const [top, ds] of porTopico) {
+      if (ds.some((x) => x.chave === daFicha)) continue;
       out.push({
-        tipo: 'data-divergente-do-documento', topico: x.topico,
-        esquerda: { rotulo: `${m0(x.topico)} cita`, valor: x.grafia },
+        tipo: 'data-divergente-do-documento', topico: top,
+        esquerda: { rotulo: `${m0(top)} cita`, valor: ds.map((x) => x.grafia).join(', ') },
         direita: { rotulo: `a ficha de ${id} registra`, valor: fichaDe.get(id).fm.data },
-        trecho: 'data citada diverge da ficha do documento declarado',
+        trecho: 'nenhuma data do topico e a que a ficha do documento registra',
       });
     }
   }
@@ -661,6 +677,9 @@ const ROTULO = {
   'fundamento-nao-usado': 'texto x contrato do topico',
   'documento-nao-citado': 'texto x contrato do topico',
   'topico-sem-texto': 'texto x contrato do topico',
+  'data-fora-da-cronologia': 'continuidade de fato',
+  'data-divergente-do-documento': 'continuidade de fato',
+  'grafia-fora-do-canon': 'continuidade de fato',
 };
 
 // A recusa vai impressa em toda conferencia, com achado ou sem achado. Relatorio
@@ -670,7 +689,16 @@ const NAO_CONFERIDO = [
   '  Nao foi conferido: se o dispositivo existe, se esta em vigor, se foi',
   '  superado, nem se sustenta o que o topico afirma. Isso e leitura, e nao',
   '  comparacao. Tambem nao confere numero dentro de imagem anexada.',
+  '  E a continuidade nao infere que dois fatos sao o mesmo fato: ela compara',
+  '  contra ancora declarada — a cronologia, o documento do contrato, o nome do',
+  '  canon — e cala fora delas. Nao diz qual das duas datas esta certa.',
 ];
+
+/** A cronologia da materia, ou vazio — a ancora da primeira comparacao. */
+const cronologiaDe = (m) => {
+  const arq = join(m.dir, 'docs', 'canon', 'cronologia.md');
+  return existsSync(arq) ? readFileSync(arq, 'utf8') : '';
+};
 
 export function conferir(args) {
   const m = exigirMateria(args);
@@ -685,28 +713,35 @@ export function conferir(args) {
   if (!existsSync(fonte)) build({ ...args, _: [String(e.numero)] });
   const texto = readFileSync(fonte, 'utf8');
 
-  const docs = canon(m, raiz).documentos;
+  const cn = canon(m, raiz);
+  const docs = cn.documentos;
+  const crono = cronologiaDe(m);
   const achados = [
     ...conferirTexto(texto, docs.map((d) => ({ id: d.id, valores: lista(d.fm.valores) }))),
-    // A quinta nao roda sobre o papel: o `build` remove o contrato de topico de
-    // proposito, e sem contrato nao ha com o que comparar o texto. Ela le a
-    // entrega na origem, onde os dois ainda estao lado a lado.
+    // A quinta e a sexta nao rodam sobre o papel: o `build` remove o contrato de
+    // topico de proposito, e sem contrato nao ha com o que comparar o texto nem a
+    // quem atribuir a data. As duas leem a entrega na origem.
     ...conferirTopicos(e.topicos, docs.map((d) => ({ id: d.id, nome: d.nome, apelidos: d.apelidos }))),
+    ...conferirContinuidade(e.topicos, cn, crono),
   ];
+  const naoConferida = continuidadeNaoConferida(e.topicos, crono);
 
   if (args.json) {
     console.log(JSON.stringify({
       arquivo: rel(raiz, fonte), achados, corrigiu: false,
       nota: 'divergencia sai como par; a ferramenta nao sabe qual lado esta certo',
-      naoConferido: ['existencia', 'vigencia', 'superacao', 'pertinencia do dispositivo'],
+      naoConferido: ['existencia', 'vigencia', 'superacao', 'pertinencia do dispositivo',
+        'qual das duas datas esta certa', 'que dois fatos sejam o mesmo fato'],
+      continuidade: naoConferida || 'conferida contra a cronologia',
     }, null, 2));
     return achados.length ? 1 : 0;
   }
 
   console.log(c.b(`conferencia — ${rel(raiz, fonte)}`));
   if (!achados.length) {
-    console.log(c.green('\n  Nenhuma divergencia nas cinco conferencias.'));
-    console.log(c.dim('  Extenso, soma, item, transcricao e texto x contrato do topico.\n'));
+    console.log(c.green('\n  Nenhuma divergencia nas seis conferencias.'));
+    console.log(c.dim('  Extenso, soma, item, transcricao, texto x contrato e continuidade.\n'));
+    if (naoConferida) console.log(c.yellow(naoConferida));
     for (const l of NAO_CONFERIDO) console.log(c.dim(l));
     return 0;
   }
@@ -721,6 +756,7 @@ export function conferir(args) {
   }
   console.log(c.dim('  Os dois lados estao a vista de proposito: a ferramenta nao sabe qual'));
   console.log(c.dim('  esta certo. Escolher qual prevalece e de quem assina.\n'));
+  if (naoConferida) console.log(c.yellow(naoConferida));
   for (const l of NAO_CONFERIDO) console.log(c.dim(l));
   return 1;
 }

@@ -120,7 +120,7 @@ nada; com `D3` declarado nos dois, produzem par nomeando os dois.
 
 ### ML-2A — `conferir` e o gate mostram a sexta
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`, `src/validate.mjs`
 **Acoes:**
 1. Rotulos no mapa `ROTULO`, achados no `--json`, contagem "seis conferencias".
@@ -133,9 +133,18 @@ nada; com `D3` declarado nos dois, produzem par nomeando os dois.
 sai com achado e sem achado.
 **Validacao:** `npm run check`
 
+**Defeito achado rodando, e nao lendo.** A primeira versao da comparacao 2
+agrupava por documento e comparava datas soltas — e num topico que citava
+contrato e aditivo o par saiu como `topico 1.1, 1.1`: uma divergencia "entre
+topicos" dentro de um topico so. Duas datas no mesmo topico sao legitimas, e
+dizer qual delas e a do documento seria inferencia. A comparacao passou a exigir
+topicos diferentes **sem interseccao de datas**, e a ficha so acusa quando
+nenhuma data do topico e a dela. Tres testes de regressao.
+
+
 ### ML-2B — Testes do relatorio e do gate
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Materia propria, criada no proprio teste.

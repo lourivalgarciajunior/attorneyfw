@@ -18,7 +18,13 @@ import { tipoDocumento } from './parte.mjs';
 import { achar } from './dados.mjs';
 import { rotulosMisturados } from './estilo.mjs';
 import { formulas } from './formulas.mjs';
-import { conferirTopicos } from './conferir.mjs';
+import { conferirTopicos, conferirContinuidade } from './conferir.mjs';
+
+/** A cronologia da materia, ou vazio — ancora da sexta conferencia. */
+const cronologiaDaMateria = (m) => {
+  const arq = join(m.dir, 'docs', 'canon', 'cronologia.md');
+  return existsSync(arq) ? readFileSync(arq, 'utf8') : '';
+};
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -292,6 +298,14 @@ function validarMateria(m, { raiz, esc, ctx }) {
     // deixa um topico vazio se esconder atras de outro bem escrito.
     if (!['backlog', 'pesquisa'].includes(e.estado)) {
       const docs = cn.documentos.map((d) => ({ id: d.id, nome: d.nome, apelidos: d.apelidos }));
+      // A sexta e sempre aviso: nenhuma das tres comparacoes e sem excecao
+      // legitima — data de lei citada de passagem, nome social de parte,
+      // documento com duas datas. O gate so reprova o que nao tem excecao.
+      const continuidade = conferirContinuidade(e.topicos, cn, cronologiaDaMateria(m));
+      for (const a of continuidade) {
+        aviso(`${rel(m.dir, e.caminho)} ${m.voc.topico} ${a.topico}`,
+          `${a.trecho} — ${a.esquerda.rotulo}: ${a.esquerda.valor} / ${a.direita.rotulo}: ${a.direita.valor}`);
+      }
       for (const a of conferirTopicos(e.topicos, docs)) {
         const tag = `${onde} ${m.voc.topico} ${a.topico}`;
         const par = `${a.esquerda.rotulo}: ${a.esquerda.valor} / ${a.direita.rotulo}: ${a.direita.valor}`;

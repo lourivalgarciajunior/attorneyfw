@@ -23,6 +23,11 @@ import { custas } from '../src/custas.mjs';
 import { relatorio } from '../src/relatorio.mjs';
 import { jurisprudenciaAdd, jurisprudenciaLista } from '../src/jurisprudencia.mjs';
 import { prognostico } from '../src/prognostico.mjs';
+import { anonimizar } from '../src/anonimizar.mjs';
+import { dados } from '../src/dados.mjs';
+import { conferir } from '../src/conferir.mjs';
+import { parteNew, parteList } from '../src/parte.mjs';
+import { modeloDestilar, modeloAplicar, modeloLista } from '../src/modelo.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -47,7 +52,11 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw entrega renumber <e> <n>   troca o numero, arquivo e frontmatter juntos
   attorneyfw entrega retitle <e> "T"    troca o titulo, arquivo e frontmatter juntos
   attorneyfw topico add <entrega>       novo contrato de topico ou clausula
-  attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento
+  attorneyfw parte new "Nome" --documento <CPF|CNPJ> [--matriz <slug>]
+                            ficha de parte da CARTEIRA — uma qualificacao so
+  attorneyfw parte list                 as partes da carteira
+  attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento da materia
+                            (parte aceita --ref <slug> da carteira)
   attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos]
                             [--material] [--fatal]
   attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
@@ -57,6 +66,14 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw status                     kanban da materia, ou a carteira na raiz
   attorneyfw context                    dump da governanca para LLM
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
+  attorneyfw modelo destilar <tipo> --de <slug,slug>
+                            destila o checklist do arquivo do escritorio
+  attorneyfw modelo aplicar <tipo>      cria o checklist PENDENTE na materia
+  attorneyfw modelo                     os modelos da carteira
+  attorneyfw conferir <entrega>         extenso x algarismo, soma x total, item x pedido
+  attorneyfw dados <entrega>            o que tem formato de dado pessoal (so acusa)
+  attorneyfw anonimizar --init          cria o mapa real -> ficticio da materia
+  attorneyfw anonimizar <entrega>       aplica o mapa inteiro numa passada [--reverter]
   attorneyfw diagrama <tipo> [--salvar] linha-do-tempo | partes | fato-prova
                             projecao do canon; na peca, <!-- diagrama: tipo -->
   attorneyfw build <entrega>            costura a entrega em markdown
@@ -134,6 +151,13 @@ try {
       else throw new Erro('Uso: attorneyfw topico add <entrega>');
       break;
     }
+    case 'parte': {
+      const sub = args._.shift();
+      if (sub === 'new') parteNew(args);
+      else if (sub === 'list') parteList(args);
+      else throw new Erro('Uso: attorneyfw parte new|list');
+      break;
+    }
     case 'canon': {
       const sub = args._.shift();
       if (sub === 'new') canonNew(args);
@@ -169,6 +193,16 @@ try {
     }
     case 'prognostico': process.exitCode = prognostico(args); break;
     case 'diagrama': diagrama(args); break;
+    case 'anonimizar': anonimizar(args); break;
+    case 'dados': dados(args); break;
+    case 'conferir': process.exitCode = conferir(args); break;
+    case 'modelo': {
+      const sub = args._[0] === 'destilar' || args._[0] === 'aplicar' ? args._.shift() : undefined;
+      if (sub === 'destilar') modeloDestilar(args);
+      else if (sub === 'aplicar') modeloAplicar(args);
+      else modeloLista(args);
+      break;
+    }
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

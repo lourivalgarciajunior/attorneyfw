@@ -76,7 +76,7 @@ const NAO_PROVADO = 'NAO PROVADO';
 function linhaDoTempo(m) {
   const arq = join(m.dir, 'docs', 'canon', 'cronologia.md');
   if (!existsSync(arq)) throw new Erro('sem docs/canon/cronologia.md — a linha do tempo sai dela, e nao da minuta');
-  const cn = canon(m);
+  const cn = canon(m, acharEscritorio());
   const idsDoc = new Set(cn.documentos.map((d) => String(d.id).toLowerCase()).filter(Boolean));
   const nomesDoc = new Map(cn.documentos.map((d) => [String(d.nome).toLowerCase(), d.id]));
 
@@ -113,7 +113,7 @@ function linhaDoTempo(m) {
 // ------------------------------------------------------------------- partes
 
 function organograma(m) {
-  const cn = canon(m);
+  const cn = canon(m, acharEscritorio());
   if (!cn.partes.length) {
     throw new Erro('canon de partes vazio — attorneyfw canon new parte "Nome" --papel autor');
   }
@@ -122,8 +122,11 @@ function organograma(m) {
   linhas.push(`  P0(["${rot(centro, 56)}"])`);
   cn.partes.forEach((p, i) => {
     const papel = valor(p.fm.papel) || 'papel nao declarado';
+    // Com `ref`, o nome sai da ficha da carteira: a figura nao pode grafar a
+    // parte de um jeito e a peca de outro.
+    const doc = p.documento ? `<br/><i>${rot(p.documento, 24)}</i>` : '';
     const apel = p.apelidos.length ? `<br/><i>${rot(p.apelidos.join(', '), 40)}</i>` : '';
-    linhas.push(`  A${i}["${rot(p.nome, 56)}${apel}"]`);
+    linhas.push(`  A${i}["${rot(p.nome, 56)}${doc}${apel}"]`);
     linhas.push(`  P0 -- "${rot(papel, 28)}" --> A${i}`);
     linhas.push(`  class A${i} ${valor(p.fm.papel) ? 'declarado' : 'pendente'}`);
   });
@@ -152,7 +155,7 @@ function fatoProva(m) {
         : `sem ${m.voc.artefato} — o mapa sai dela`,
     );
   }
-  const cn = canon(m);
+  const cn = canon(m, acharEscritorio());
   const nomeDoc = new Map(cn.documentos.map((d) => [String(d.id), d]));
   const topicos = entregas(m).flatMap((e) => e.topicos);
 

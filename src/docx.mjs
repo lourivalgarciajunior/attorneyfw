@@ -169,6 +169,18 @@ export async function markdownParaDocx({ raiz, esc, texto, titulo, alvo, rodape 
       }));
       continue;
     }
+    // Citacao em bloco — transcricao de documento, sobretudo — sai recuada e em
+    // corpo menor, e nao com o ">" do markdown a vista no papel.
+    if (/^>/.test(bloco)) {
+      const linhas = bloco.split(/\r?\n/).map((l) => l.replace(/^>[ \t]?/, '')).join(' ').trim();
+      filhos.push(new Paragraph({
+        spacing: { before: 200, after: 200, line: 276, lineRule: LineRuleType.AUTO },
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: 1418, firstLine: 0 },
+        children: [run(linhas.replace(/[*_]/g, ''), { size: 22 })],
+      }));
+      continue;
+    }
     const negrito = bloco.match(/^\*\*(.+)\*\*$/s);
     if (negrito) {
       filhos.push(new Paragraph({

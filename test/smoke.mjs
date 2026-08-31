@@ -27,6 +27,16 @@ const ok = (nome, cond) => {
 };
 
 /**
+ * As linhas de violacao do gate.
+ *
+ * Existe porque assert amarrado ao codigo de saida do `validate` ja quebrou duas
+ * vezes por motivo alheio: ele passa a depender de toda violacao que a fixture
+ * tenha por outra razao. A propriedade a testar e quase sempre "nao gera
+ * violacao DESTA regra", e nao "o gate passa".
+ */
+const violacoes = (r) => r.saida.split(/\r?\n/).filter((l) => l.includes('ERRO'));
+
+/**
  * Leitura normalizada para LF. O teste substitui trecho multilinha dentro de
  * arquivo gerado a partir de template; com CRLF no disco, a busca por um
  * trecho que atravessa quebra de linha nao casa, e o teste falha dizendo
@@ -330,6 +340,363 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   const t = readFileSync(join(beta, 'saida', 'ent-01-minuta-do-contrato.md'), 'utf8');
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
+
+// -------------------------------------------------- transcricao com lastro
+console.log('\ntranscricao com lastro');
+
+// O caso do corpus: a transcricao do auto de infracao diz ,21 e o resto da peca
+// usa ,25 — e a soma fecha com o ,25. O erro esta DENTRO das aspas.
+const fichaDoc = join(acme, 'docs', 'canon', 'documentos', 'fatura-contestada.md');
+// Um por linha, com hifen: em lista inline a virgula do valor parte o numero
+// em dois, e a comparacao passa a ser feita contra "344.568" e "25".
+writeFileSync(fichaDoc, lerLF(fichaDoc).replace(/^valores:.*$/m, ['valores:', '  - 344.568,25'].join('\n')), 'utf8');
+
+const comTranscricao = (id, valor) => ent.replace('texto '.repeat(200),
+  ['```transcricao ' + id,
+   `Utilizou-se indevidamente de creditos no valor total de R$ ${valor}.`,
+   '```'].join('\n'));
+
+writeFileSync(entPath, comTranscricao('D1', '344.568,21'), 'utf8');
+emAcme('build', '1');
+const trans = emAcme('conferir', '1');
+ok('valor transcrito divergente da ficha e apontado',
+  trans.saida.includes('344.568,21') && trans.saida.includes('344.568,25'));
+ok('a divergencia diz que esta dentro das aspas', trans.saida.includes('dentro das aspas'));
+ok('sai com o rotulo de transcricao', trans.saida.includes('transcricao x ficha'));
+
+ok('a transcricao vira citacao assinada na peca', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return md.includes('> Utilizou-se') && md.includes('_(D1)_') && !md.includes('```transcricao');
+})());
+
+ok('valor que bate com a ficha nao vira alarme', (() => {
+  writeFileSync(entPath, comTranscricao('D1', '344.568,25'), 'utf8');
+  emAcme('build', '1');
+  return !emAcme('conferir', '1').saida.includes('transcricao x ficha');
+})());
+
+ok('valor que a ficha nao registra sai como par, dizendo que ela nao registra', (() => {
+  writeFileSync(entPath, comTranscricao('D1', '9.999,00'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.saida.includes('9.999,00') && r.saida.includes('nao registra');
+})());
+
+ok('ficha sem valores nao gera comparacao', (() => {
+  const bom = lerLF(fichaDoc);
+  writeFileSync(fichaDoc, bom.replace(/^valores:\n {2}- .*$/m, 'valores:'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  writeFileSync(fichaDoc, bom, 'utf8');
+  return !r.saida.includes('transcricao x ficha');
+})());
+
+// O gate: transcricao tem de declarar a origem.
+ok('transcricao sem documento declarado reprova', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), '```transcricao\ntrecho qualquer\n```'), 'utf8');
+  return violacoes(emAcme('validate')).some((l) => l.includes('sem documento declarado'));
+})());
+ok('transcricao com origem fora do canon reprova', (() => {
+  writeFileSync(entPath, comTranscricao('D99', '10,00'), 'utf8');
+  return violacoes(emAcme('validate')).some((l) => l.includes('D99'));
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
+// --------------------------------------------------- modelo por tipo de acao
+console.log('\nmodelo por tipo de acao');
+
+ok('sem materia de origem nao ha modelo', (() => {
+  const r = run('modelo', 'destilar', 'cobranca');
+  return r.codigo === 1 && r.saida.includes('adv-ulpiano');
+})());
+ok('materia de origem inexistente e recusada',
+  run('modelo', 'destilar', 'cobranca', '--de', 'nao-existe').codigo === 1);
+ok('nome de tipo invalido e recusado',
+  run('modelo', 'destilar', 'Cobranca Civel', '--de', 'acme').codigo === 1);
+
+const dest = run('modelo', 'destilar', 'cobranca', '--de', 'acme,beta');
+ok('destila de duas materias', dest.codigo === 0 && dest.saida.includes('2 materia'));
+
+const modeloArq = join(raiz, 'modelos', 'cobranca.yaml');
+ok('grava o modelo na carteira', existsSync(modeloArq));
+ok('o modelo declara o n e as materias de origem', (() => {
+  const t = lerLF(modeloArq);
+  return t.includes('n: 2') && t.includes('materias: [acme, beta]');
+})());
+ok('cada linha carrega a procedencia', (() => {
+  const t = lerLF(modeloArq);
+  return /em: \d+\/2/.test(t) && /de: \[[a-z]/.test(t);
+})());
+ok('item visto uma vez so sai marcado', lerLF(modeloArq).includes('visto uma vez so'));
+ok('o modelo diz que nao e afirmacao sobre o direito',
+  lerLF(modeloArq).includes('NAO e uma afirmacao sobre o direito'));
+ok('amostra pequena e declarada', dest.saida.includes('pouco para destilar'));
+
+ok('modelo sem subcomando lista', run('modelo').saida.includes('cobranca'));
+
+ok('aplicar tipo inexistente e recusado', (() => {
+  const r = emAcme('modelo', 'aplicar', 'inventado');
+  return r.codigo === 1 && r.saida.includes('modelo destilar');
+})());
+
+const apl = emAcme('modelo', 'aplicar', 'cobranca');
+const checklist = join(acme, 'docs', 'checklist-cobranca.md');
+ok('aplicar cria o checklist', apl.codigo === 0 && existsSync(checklist));
+ok('os itens entram como PENDENTES', lerLF(checklist).includes('- [ ]'));
+ok('o checklist diz que e pendencia, e nao verdade',
+  lerLF(checklist).includes('pendencia, e nao verdade'));
+ok('o checklist carrega a procedencia de cada item', /_\(\d+\/2 — /.test(lerLF(checklist)));
+ok('o checklist declara o que nao sabe', lerLF(checklist).includes('nao conhece nada que o escritorio ainda nao fez'));
+
+// Nada e dado por provado porque o modelo disse: o gate segue igual.
+ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
+  const antes = violacoes(emAcme('validate')).length;
+  emAcme('modelo', 'aplicar', 'cobranca');
+  return violacoes(emAcme('validate')).length === antes;
+})());
+
+// -------------------------------------------------------- canon da carteira
+console.log('\ncanon da carteira');
+
+const CNPJ_MATRIZ = '11.222.333/0001-81';
+const CNPJ_FILIAL = '11.222.333/0002-62';
+
+ok('documento e obrigatorio', run('parte', 'new', 'Alfa Ltda').codigo === 1);
+ok('documento com digito verificador errado e recusado',
+  run('parte', 'new', 'Alfa Ltda', '--documento', '11.222.333/0001-99').codigo === 1);
+ok('parte nova na carteira',
+  run('parte', 'new', 'Industria Alfa Ltda', '--documento', CNPJ_MATRIZ, '--slug', 'alfa').codigo === 0);
+ok('documento repetido e recusado — uma qualificacao por documento', (() => {
+  const r = run('parte', 'new', 'Outra Razao Social', '--documento', CNPJ_MATRIZ, '--slug', 'outra');
+  return r.codigo === 1 && r.saida.includes('alfa');
+})());
+
+// Matriz e filial sao fichas distintas. Tratar filial como campo de endereco da
+// matriz foi o que produziu a divergencia que originou esta onda.
+ok('filial e ficha propria, ligada a matriz',
+  run('parte', 'new', 'Industria Alfa — filial', '--documento', CNPJ_FILIAL,
+    '--matriz', 'alfa', '--slug', 'alfa-filial').codigo === 0);
+ok('matriz inexistente e recusada',
+  run('parte', 'new', 'X Ltda', '--documento', '11.444.777/0001-61', '--matriz', 'nao-existe', '--slug', 'x').codigo === 1);
+ok('parte list mostra a filial como filial', run('parte', 'list').saida.includes('filial de alfa'));
+
+// A materia referencia em vez de redigitar.
+ok('canon new parte --ref liga a ficha da carteira', (() => {
+  const r = emAcme('canon', 'new', 'parte', 'Industria Alfa Ltda', '--papel', 'autor', '--ref', 'alfa');
+  return r.codigo === 0 && r.saida.includes('herdada');
+})());
+ok('--ref inexistente e recusado',
+  emAcme('canon', 'new', 'parte', 'Beta Ltda', '--ref', 'nao-existe').codigo === 1);
+
+const fichaAlfa = join(acme, 'docs', 'canon', 'partes', 'industria-alfa-ltda.md');
+ok('a ficha da materia guarda o ref', lerLF(fichaAlfa).includes('ref: alfa'));
+// A propriedade e "a ficha referenciada nao gera violacao" — nao "o gate passa".
+ok('ficha referenciada nao gera violacao', (() => {
+  const v = violacoes(emAcme('validate'));
+  if (!v.some((l) => /carteira|ref /.test(l))) return true;
+  console.log(v.map((l) => `       ${l}`).join('\n'));
+  return false;
+})());
+
+// O caso do corpus: o mesmo documento com duas qualificacoes. Aqui reprovar e o
+// certo — nao ha caso legitimo em que o mesmo CNPJ tenha duas sedes.
+ok('documento divergente da carteira reprova o gate', (() => {
+  const bom = lerLF(fichaAlfa);
+  writeFileSync(fichaAlfa, bom.replace(/^documento:.*$/m, `documento: ${CNPJ_FILIAL}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaAlfa, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('documento diverge da carteira');
+})());
+ok('a reprovacao mostra os dois lados', (() => {
+  const bom = lerLF(fichaAlfa);
+  writeFileSync(fichaAlfa, bom.replace(/^nome:.*$/m, 'nome: Industria Alfa S/A'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaAlfa, bom, 'utf8');
+  return r.saida.includes('Industria Alfa S/A') && r.saida.includes('Industria Alfa Ltda');
+})());
+
+// Ficha antiga, sem ref, continua carregando.
+ok('ficha sem ref carrega sem migracao', (() => {
+  emAcme('canon', 'new', 'parte', 'Parte Antiga Sem Ref', '--papel', 'reu');
+  return !violacoes(emAcme('validate')).some((l) => /carteira|ref /.test(l));
+})());
+
+ok('buscar acha a materia pelo nome da parte', run('buscar', 'Industria Alfa').saida.includes('acme'));
+ok('buscar acha pelo documento, com pontuacao', run('buscar', CNPJ_MATRIZ).saida.includes('acme'));
+ok('buscar acha pelo documento, sem pontuacao', run('buscar', '11222333000181').saida.includes('acme'));
+ok('o diagrama de partes usa o nome da carteira', (() => {
+  const r = emAcme('diagrama', 'partes');
+  return r.saida.includes('Industria Alfa Ltda') && r.saida.includes(CNPJ_MATRIZ);
+})());
+
+// ------------------------------------------------------- conferencia numerica
+console.log('\nconferencia numerica');
+
+// Os tres casos vieram do corpus e foram conferidos a mao ANTES do teste.
+// 7.155,76 + 27,10 = 7.182,86; o extenso do alvara dizia "oitenta centavos".
+writeFileSync(entPath, ent.replace('texto '.repeat(200), [
+  'Foi depositada a quantia de R$ 7.155,76 (sete mil cento e cinquenta e cinco reais e setenta e seis centavos).',
+  '',
+  'Alem do deposito havia R$ 27,10 (vinte e sete reais e dez centavos), totalizando assim o saldo de R$ 7.182,86 (sete mil cento e oitenta e dois reais e oitenta centavos).',
+  '',
+  'Os aparelhos recebidos sem solicitacao foram:',
+  '',
+  '1- 988002419;',
+  '2- 988025333;',
+  '3- 988041029;',
+  '4- 98841;1749;',
+  '5- 988046595;',
+  '6- 988055574;',
+  '',
+  'Diante do exposto, requer seja declarada a inexistencia de debito dos numeros 988002419; 988025333; 988041029; 98841;1749; 988046595 e 988055574, referentes a fatura n. 114405363.',
+].join('\n')), 'utf8');
+emAcme('build', '1');
+
+const conf = emAcme('conferir', '1');
+ok('conferir sai com 1 quando ha divergencia', conf.codigo === 1);
+ok('extenso divergente do algarismo e apontado',
+  conf.saida.includes('7.182,86') && conf.saida.includes('7.182,80'));
+ok('a soma que fecha nao vira alarme', !conf.saida.includes('soma x total'));
+ok('item malformado e apontado como malformado, e nao como indice faltante',
+  conf.saida.includes('98841;1749') && conf.saida.includes('item 4') && !conf.saida.includes('falta'));
+ok('numero de fatura nao vira item do pedido', !conf.saida.includes('114405363'));
+ok('nada e corrigido', (() => {
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return md.includes('oitenta centavos') && md.includes('98841;1749');
+})());
+ok('a divergencia sai como par, com os dois lados', conf.saida.includes('algarismo') && conf.saida.includes('por extenso'));
+ok('--json nao corrige', (() => {
+  const r = emAcme('conferir', '1', '--json');
+  try { const j = JSON.parse(r.saida); return j.corrigiu === false && j.achados.length >= 2; }
+  catch { return false; }
+})());
+
+// Soma que NAO fecha tem de acusar, e a janela recua paragrafo para achar a
+// parcela que ficou para tras — no alvara, uma delas estava dois atras.
+ok('soma que nao fecha e apontada', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), [
+    'Pagou-se R$ 100,00 (cem reais) na primeira parcela.',
+    '',
+    'E mais R$ 50,00 (cinquenta reais), totalizando R$ 160,00 (cento e sessenta reais).',
+  ].join('\n')), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.saida.includes('soma x total') && r.saida.includes('160,00');
+})());
+
+ok('peca sem divergencia passa limpa', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'Pagou-se R$ 100,00 (cem reais) e mais R$ 50,00 (cinquenta reais), totalizando R$ 150,00 (cento e cinquenta reais).'), 'utf8');
+  emAcme('build', '1');
+  const r = emAcme('conferir', '1');
+  return r.codigo === 0 && r.saida.includes('Nenhuma divergencia');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
+// ------------------------------------------------------- dado pessoal na peca
+console.log('\ndado pessoal');
+
+// CPF e CNPJ validos, gerados para o teste. O reconhecedor confere digito
+// verificador justamente para nao alarmar em cima de numero de processo.
+const CPF_OK = '529.982.247-25';
+const CNPJ_OK = '11.222.333/0001-81';
+
+writeFileSync(entPath, ent.replace('texto '.repeat(200),
+  [`O autor JOSE CARLOS DE ALMEIDA, CPF ${CPF_OK}, contratou a`,
+   `Industria Zebra Ltda, CNPJ ${CNPJ_OK}, pelo e-mail contato@zebra.com.br.`,
+   'Jose Carlos de Almeida assinou o instrumento.',
+   'Processo n. 0001234-56.2020.8.16.0000 nao e telefone.'].join('\n')), 'utf8');
+emAcme('build', '1');
+const saidaMd = join(acme, 'saida', 'ent-01-peticao-inicial.md');
+
+const det = emAcme('dados', '1');
+ok('detecta CPF com digito verificador', det.saida.includes(CPF_OK));
+ok('detecta CNPJ e e-mail', det.saida.includes(CNPJ_OK) && det.saida.includes('zebra.com.br'));
+ok('numero de processo nao vira telefone nem cartao', !det.saida.includes('0001234'));
+ok('a saida diz que reconhece formato, e nao pessoa', det.saida.includes('FORMATO, e nao pessoa'));
+ok('deteccao nao altera o arquivo', (() => {
+  const antes = readFileSync(saidaMd, 'utf8');
+  emAcme('dados', '1');
+  return readFileSync(saidaMd, 'utf8') === antes;
+})());
+ok('sem mapa, manda criar o mapa', det.saida.includes('anonimizar --init'));
+
+ok('anonimizar --init cria o mapa', emAcme('anonimizar', '--init').codigo === 0);
+ok('--init nao sobrescreve', emAcme('anonimizar', '--init').codigo === 1);
+
+const mapa = join(acme, 'anonimizacao.yaml');
+const escreveMapa = (linhas) => writeFileSync(mapa, `${lerLF(mapa)}\n${linhas.join('\n')}\n`, 'utf8');
+const mapaBase = lerLF(mapa);
+
+// --- as quatro recusas, todas antes de gravar qualquer coisa
+const semGravar = () => readFileSync(saidaMd, 'utf8');
+const antesDeTudo = semGravar();
+
+ok('par curto demais e recusado', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJos: Ful\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('4 caracteres') && semGravar() === antesDeTudo;
+})());
+
+ok('ficticio que ja existe no texto e recusado', (() => {
+  writeFileSync(mapa, `${mapaBase}\nIndustria Zebra Ltda: Jose Carlos de Almeida\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('ja aparece no texto');
+})());
+
+ok('cascata entre pares e recusada', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJose Carlos de Almeida: Fulano de Tal\nFulano de Tal: Beltrano\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  return r.codigo === 1 && r.saida.includes('resultado de um par');
+})());
+
+// A peca escreve o mesmo nome em MAIUSCULA e em caixa mista. As duas voltam
+// iguais, entao as duas passam.
+ok('a forma declarada e a MAIUSCULA sao aceitas juntas', (() => {
+  writeFileSync(mapa, `${mapaBase}\nJose Carlos de Almeida: Fulano de Tal\n${CPF_OK}: 000.000.000-00\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  const anon = readFileSync(saidaMd.replace('.md', '-anonimizado.md'), 'utf8');
+  return r.codigo === 0
+    && anon.includes('FULANO DE TAL')            // veio de JOSE CARLOS DE ALMEIDA
+    && anon.includes('Fulano de Tal')            // veio de Jose Carlos de Almeida
+    && !anon.includes('Almeida')
+    && anon.includes('000.000.000-00');
+})());
+
+ok('caixa nao declarada falha dizendo qual acrescentar', (() => {
+  writeFileSync(saidaMd, `${antesDeTudo}\nJOSE carlos DE almeida compareceu.\n`, 'utf8');
+  const r = emAcme('anonimizar', '1');
+  writeFileSync(saidaMd, antesDeTudo, 'utf8');
+  return r.codigo === 1 && r.saida.includes('outra caixa');
+})());
+
+// A propriedade central: ida e volta byte a byte.
+ok('ida e volta devolve o original byte a byte', (() => {
+  const original = readFileSync(saidaMd, 'utf8');
+  emAcme('anonimizar', '1');
+  emAcme('anonimizar', '1', '--reverter');
+  return readFileSync(saidaMd, 'utf8') === original;
+})());
+
+ok('com o mapa, o detector marca o que esta dentro dele', (() => {
+  const r = emAcme('dados', '1');
+  return r.saida.includes('no mapa');
+})());
+// A propriedade e "avisa, e nao reprova" — nao "o gate passa". Amarrar ao
+// codigo de saida acoplaria este teste a toda violacao que a fixture tiver por
+// outro motivo, e ele passaria a quebrar sem que nada de errado acontecesse.
+ok('gate avisa sobre dado na saida, e nao reprova por isso', (() => {
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('formato reconhecivel'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
 
 // ------------------------------------------------------------------ diagramas
 console.log('\nvisual law');

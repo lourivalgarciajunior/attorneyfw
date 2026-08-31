@@ -62,6 +62,25 @@ const MARCA_DIAGRAMA = /^```diagrama[ \t]*\n[ \t]*([a-z-]+)[ \t]*\n```[ \t]*$/gm
  * de figura nao pode impedir um protocolo, e o aviso no corpo e mais dificil de
  * ignorar do que uma linha no terminal.
  */
+/**
+ * Um bloco `transcricao D3` vira citacao recuada na peca, assinada com o id do
+ * documento.
+ *
+ * A assinatura fica **visivel**, e nao em comentario: comentario e removido
+ * antes de a peca sair, e o `conferir` roda sobre o markdown gerado. Com o id no
+ * corpo da citacao, a origem sobrevive ao `build` — e o leitor da peca tambem
+ * sabe de qual documento veio o trecho, que e o que uma transcricao deve dizer.
+ */
+function renderizarTranscricoes(texto) {
+  return texto.replace(
+    /^```transcricao[ \t]+([A-Za-z0-9-]+)[ \t]*\n([\s\S]*?)^```[ \t]*$/gm,
+    (_, id, corpo) => {
+      const linhas = corpo.trimEnd().split('\n').map((l) => `> ${l}`.trimEnd());
+      return [...linhas, '>', `> _(${id})_`].join('\n');
+    },
+  );
+}
+
 function embutirDiagramas(m, texto) {
   const diagramas = [];
   const avisos = [];
@@ -116,7 +135,7 @@ export function build(args) {
 
   // ---- topicos
   const bruto = textoFinal(e);
-  const { texto, diagramas, avisos } = embutirDiagramas(m, bruto);
+  const { texto, diagramas, avisos } = embutirDiagramas(m, renderizarTranscricoes(bruto));
   partes.push(texto || `> _[entrega ainda sem redacao — ${e.topicos.length} ${m.voc.topico}s planejados]_`);
 
   // ---- pedidos

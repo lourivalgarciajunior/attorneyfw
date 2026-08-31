@@ -193,6 +193,36 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## O canon da carteira
+
+```bash
+attorneyfw parte new "Industria Alfa Ltda" --documento 11.222.333/0001-81
+attorneyfw parte new "Industria Alfa — filial PE" --documento <cnpj-da-filial> --matriz industria-alfa-ltda
+attorneyfw parte list
+
+# na materia, a ficha referencia em vez de redigitar:
+attorneyfw canon new parte "Industria Alfa Ltda" --papel autor --ref industria-alfa-ltda
+```
+
+**Uma qualificação por parte, na carteira inteira.** Esta é a mudança que nasceu do achado mais consequente da leitura de oito peças reais: em quatro delas o cliente era o mesmo, e um CNPJ aparecia como filial de um estado numa ação e como a autora — com sede e inscrição estadual de outro — na ação vizinha.
+
+O gate não veria isso nem em cem execuções, e o motivo é estrutural: **o canon era por matéria, e a contradição estava entre duas**. Cliente recorrente é a regra num escritório, não a exceção.
+
+| | fica na carteira | fica na matéria |
+|---|---|---|
+| nome, documento, endereço, inscrições | ✓ | |
+| papel no processo, o que a parte afirma nos autos, procuração | | ✓ |
+
+A mesma empresa é autora num processo e ré noutro; o CNPJ não muda com isso. Misturar os dois níveis foi o que permitiu a divergência — cada matéria redigitava a qualificação inteira, e a segunda digitação discordava da primeira.
+
+**Matriz e filial são fichas distintas**, cada uma com seu CNPJ, ligadas por `matriz:`. Tratar filial como campo de endereço da matriz é exatamente o que produziu o erro observado, e em matéria tributária, trabalhista e previdenciária quem responde é o estabelecimento.
+
+O documento é obrigatório e validado por dígito verificador: é ele que distingue homônimo e é ele que o gate compara.
+
+Divergência entre a ficha da matéria e a da carteira é **violação**, não aviso — aqui reprovar é o certo, porque não há caso legítimo em que o mesmo documento tenha duas qualificações. Se a carteira estiver errada, corrige-se a carteira, num lugar só, e todas as matérias acompanham.
+
+Ficha antiga sem `ref` continua carregando, sem migração. A subida é oportunidade, não ruptura.
+
 ## A memória do escritório
 
 A carteira sempre foi a base de casos — uma pasta por matéria, com decisão, tese, fatos, provas e cronologia, em texto e versionada. Faltavam duas coisas para que ela respondesse perguntas.
@@ -211,7 +241,7 @@ O vocabulário é fechado — `ganho`, `ganho_parcial`, `perda`, `acordo`, `exti
 attorneyfw buscar "indeferimento da opcao" --resultado perda
 ```
 
-Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia e título de entrega — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
+Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia, título de entrega e as partes — por nome **e por documento**, com ou sem pontuação — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
 
 Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém pedir. Quem redige precisa saber que uma matéria irmã com a mesma tese terminou em perda, e essa é informação que só aparece se for empurrada.
 
@@ -282,6 +312,94 @@ Duas recusas, ambas deliberadas:
 2. **Tabela sem `conferido_em` não produz orçamento** sem `--provisorio` — e com ele, a saída sai marcada em vermelho como provisória. O `custas init` gera valores de exemplo; se ela pudesse orçar em silêncio, o exemplo viraria o orçamento de alguém.
 
 O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
+
+## Modelo por tipo de ação
+
+```bash
+attorneyfw modelo destilar plano-de-saude --de beta,gama,delta
+attorneyfw modelo aplicar plano-de-saude
+attorneyfw modelo
+```
+
+Este é o **checklist proativo de provas** — o que perguntar antes de existir tese —, entregue de um jeito que a ferramenta pode sustentar: **destilado do arquivo do próprio escritório, nunca gerado do nada.**
+
+A diferença não é de qualidade, é de responsabilidade. Um modelo genérico é uma afirmação sobre o direito, feita pela ferramenta, que ninguém conferiu. Um modelo destilado das próprias matérias é uma afirmação sobre **o que aquele escritório já fez** — que o advogado reconhece ou corrige.
+
+E há um risco prático que decide a questão: checklist genérico erra por **excesso**, manda juntar o que o caso não pede, e o advogado aprende a ignorar a lista. Lista ignorada é pior que lista ausente, porque ocupa o lugar da que seria lida.
+
+O `destilar` lê, das matérias indicadas, o que cada documento do canon prova, os `fundamento` declarados nos contratos de tópico, e os `risco` que a outra parte levantou. **Cada linha carrega de quantas matérias veio e de quais** — item visto uma vez só sai marcado, porque não é regra do escritório.
+
+**Sem matéria de origem, não há modelo.** Tipo que o escritório nunca trabalhou não ganha checklist: o comando diz isso e manda usar o agente de fundamento, que é onde essa pergunta pertence.
+
+O `aplicar` cria `docs/checklist-<tipo>.md` com itens **pendentes**, para confirmar ou descartar um a um. Nada é dado por provado nem por fundamentado porque o modelo disse — a tese e o gate continuam cobrando exatamente o que cobram hoje.
+
+## Conferência numérica
+
+```bash
+attorneyfw conferir 1
+```
+
+Três comparações mecânicas sobre o markdown que o `build` gerou — conferir uma versão e protocolar outra é pior que não conferir:
+
+| Verificação | O que compara |
+|---|---|
+| **extenso** | os dois lados de `R$ 7.182,86 (sete mil cento e oitenta e dois reais e oitenta centavos)` |
+| **soma** | as parcelas contra o total, quando a peça escreve "totalizando" |
+| **item** | a lista enumerada nos fatos contra a lista no pedido |
+
+Nenhuma interpreta. Todas apontam o par que diverge e param ali.
+
+**A divergência sai sempre como par, com os dois lados à vista** — nunca "valor incorreto". A ferramenta não sabe qual dos dois está certo, e fingir que sabe faria o advogado corrigir o lado errado. Pela mesma razão, **nada é corrigido automaticamente**.
+
+A verificação de item é extensão do que o gate já faz. Ele cobra `fato → prova` e `pedido → tópico`; agora cobra também `item alegado → item pedido`. Vale para linha telefônica, nota fiscal, parcela, matrícula, lote — qualquer conjunto que a peça enumera e depois pede. O pedido é o que vira dispositivo da sentença: item malformado ali não casa com nenhuma linha da cobrança, e a declaração de inexistência não o alcança.
+
+O valor do item é capturado **inteiro** e classificado depois. Capturar só o que já tem a forma esperada faria item malformado desaparecer da lista e virar "índice faltante" — que é outro defeito, com outra correção. Foi exatamente esse o erro da primeira conferência feita à mão sobre o corpus, e foi o comparador que o corrigiu.
+
+### Transcrição com lastro
+
+O pior achado do corpus estava **dentro das aspas**: numa anulatória fiscal, a transcrição do auto de infração dizia `R$ 344.568,21` e o parágrafo seguinte usava `R$ 344.568,25` — e a soma da própria peça fecha com o `,25`. A peça inteira sustenta que o Fisco errou; a Fazenda responde exibindo que a autora transcreveu errado o documento que ela mesma juntou.
+
+Por isso a transcrição declara de onde veio:
+
+````markdown
+```transcricao D3
+Beneficiou-se com a utilizacao de credito de ICMS no valor total de R$ 344.568,21...
+```
+````
+
+A ficha do documento registra, em `valores:`, os números que ele contém — conferidos uma vez na fonte. O `conferir` compara os dois. Valor transcrito com **a mesma parte inteira e centavos diferentes** sai como par: é digitação, não outro valor. Valor que a ficha simplesmente não registra sai como aviso, porque a ficha pode ainda não conhecê-lo.
+
+O `build` transforma o bloco em citação recuada, assinada com o id — a assinatura fica **visível**, e não em comentário, porque comentário é removido antes de a peça sair. O gate reprova transcrição sem origem declarada, ou com origem que o canon não conhece.
+
+Fora do alcance, e declarado: número dentro de imagem anexada.
+
+## Dado pessoal na peça
+
+```bash
+attorneyfw dados 1                    # so acusa — nada e alterado
+attorneyfw anonimizar --init          # cria o mapa real -> ficticio
+attorneyfw anonimizar 1               # aplica o mapa inteiro numa passada
+attorneyfw anonimizar 1 --reverter
+```
+
+**A anonimização é um mapa, não uma varredura.** A diferença nasceu de três peças reais que tinham sido anonimizadas à mão antes de circular, e que saíram pela metade: numa ficou o CPF de uma criança ao lado do diagnóstico; noutra, quem foi anonimizado foi a falecida, e cinco pessoas vivas saíram com nome, CPF, RG e endereço; na terceira — um modelo, que vai ser reaproveitado — a substituição escapou num parágrafo do meio.
+
+O diagnóstico não é "faltou cuidado". É que **meia anonimização é pior que nenhuma**, e não pelo que deixa passar: pelo que faz acreditar. Arquivo marcado como anonimizado circula por e-mail, entra em pasta compartilhada e vira modelo — porque parece seguro. Arquivo não anonimizado ninguém manda.
+
+O escritório declara `real: ficticio` uma vez em `anonimizacao.yaml`, e a substituição é aplicada **numa passada só** sobre o texto inteiro. Não existe o caso "escapou um parágrafo". Quatro recusas acontecem antes de qualquer escrita:
+
+1. lado real com menos de quatro caracteres — acertaria dentro de outra palavra;
+2. lado fictício que já existe no texto — a volta trocaria ocorrência legítima pelo nome de outra pessoa;
+3. o mesmo termo sendo saída de um par e entrada de outro;
+4. o texto escrevendo o nome com outra caixa — só a forma declarada e a MAIÚSCULA voltam iguais, e o comando diz qual variação acrescentar.
+
+Qualquer impedimento **falha sem gravar nada**. A ida e volta devolve o original byte a byte.
+
+O `attorneyfw dados` reconhece CPF, CNPJ, e-mail, telefone, RG e cartão — CPF e CNPJ com dígito verificador, para não alarmar em cima de número de processo. Ele **não substitui**: serve para escrever o mapa. E reconhece **formato, não pessoa** — nome próprio, apelido, razão social e endereço não são detectados por forma nenhuma, e foi nome próprio que escapou nas três peças. A saída diz isso, porque ver "nada encontrado" não pode ser lido como "pode circular".
+
+O gate **avisa**, e nunca reprova: peça de verdade tem de conter o CPF da parte, e o CPF que qualifica o autor no processo dele não é vazamento.
+
+`anonimizacao.yaml` está no `.gitignore` — é a chave que desfaz a anonimização de todas as peças de uma vez.
 
 ## Visual law
 

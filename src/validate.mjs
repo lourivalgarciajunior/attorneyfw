@@ -5,12 +5,17 @@
  * sustenta, documento citado que nao esta no processo, topico sem
  * contra-argumento previsto, peca que saiu sem registro de quando saiu.
  */
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import {
-  ESTADOS_ATIVOS, RESULTADOS, acharEscritorio, acharMateria, artefatos, c, canon,
+  ESTADOS_ATIVOS, RESULTADOS, acharEscritorio, acharMateria, artefatos, c, canon, soDigitos,
   contextoPrazo, dataValida, diasCorridosAte, entregas, estrategia, exigirMateria,
   lerEscritorio, linhasDoPlano, lista, materias, nomesDoCanon,
   pedidos as pedidosDa, pendencias, plano as planoEmVigor, prazoDe, rel, slug, valor,
 } from './core.mjs';
+import { ARQUIVO_MAPA } from './anonimizar.mjs';
+import { tipoDocumento } from './parte.mjs';
+import { achar } from './dados.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -82,7 +87,7 @@ function validarMateria(m, { raiz, esc, ctx }) {
   if (ests.length && !plans.length) erro('docs/plano', `${m.voc.artefato} sem plano de entregas — nao ha o que redigir`);
 
   const es = entregas(m);
-  const cn = canon(m);
+  const cn = canon(m, raiz);
   const nomes = nomesDoCanon(cn);
   const pend = pendencias(m);
   const peds = pedidosDa(m);
@@ -279,6 +284,68 @@ function validarMateria(m, { raiz, esc, ctx }) {
   // ---- sigilo
   if (String(m.cfg.sigilo || '').toLowerCase() === 'true') {
     aviso('materia.yaml', 'materia em segredo de justica — confira antes de gerar saida ou compartilhar contexto');
+  }
+
+  // ---- parte referenciada na carteira
+  // Aqui reprovar e o comportamento certo, ao contrario da regra de dado
+  // pessoal: nao ha caso legitimo em que o mesmo documento tenha duas
+  // qualificacoes. Se a carteira estiver errada, corrige-se a carteira — num
+  // lugar so, e todas as materias acompanham.
+  for (const p of cn.partes) {
+    if (!p.refSlug) continue;
+    if (!p.ref) {
+      erro(`docs/canon/partes/${p.arquivo}`, `ref "${p.refSlug}" nao existe em partes/ na raiz da carteira`);
+      continue;
+    }
+    const local = valor(p.fm.nome);
+    if (local && local !== p.ref.nome) {
+      erro(`docs/canon/partes/${p.arquivo}`,
+        `nome diverge da carteira — aqui "${local}", em partes/${p.refSlug}.md "${p.ref.nome}"`);
+    }
+    const docLocal = valor(p.fm.documento);
+    if (docLocal && soDigitos(docLocal) !== soDigitos(p.ref.documento)) {
+      erro(`docs/canon/partes/${p.arquivo}`,
+        `documento diverge da carteira — aqui "${docLocal}", em partes/${p.refSlug}.md "${p.ref.documento}"`);
+    }
+  }
+
+  // ---- transcricao com lastro
+  // Numero errado DENTRO das aspas e a pior posicao possivel para um erro de
+  // digitacao: a peca sustenta que a outra parte errou, e a resposta e que a
+  // transcricao e que esta errada. Por isso a transcricao declara a origem.
+  {
+    const idsDoc = new Set(cn.documentos.map((d) => String(d.id)).filter(Boolean));
+    for (const e of es) {
+      const onde = rel(m.dir, e.caminho);
+      for (const t of e.corpo.matchAll(/^```transcricao[ 	]*([A-Za-z0-9-]*)[ 	]*$/gm)) {
+        if (!t[1]) {
+          erro(onde, 'transcricao sem documento declarado — use ```transcricao <id> para o gate poder conferir os numeros');
+        } else if (!idsDoc.has(t[1])) {
+          erro(onde, `transcricao aponta o documento "${t[1]}", que nao esta no canon`);
+        }
+      }
+    }
+  }
+
+  // ---- dado pessoal na saida
+  // Aviso, e nunca violacao: peca de verdade TEM de conter o CPF da parte, e o
+  // CPF que qualifica o autor no processo dele nao e vazamento. Reprovar por
+  // isso transformaria a regra em ruido no primeiro dia, e regra ignorada nao
+  // protege ninguem. O que o gate faz e lembrar antes de o arquivo circular.
+  {
+    const dirSaida = join(m.dir, 'saida');
+    if (existsSync(dirSaida)) {
+      const temMapa = existsSync(join(m.dir, ARQUIVO_MAPA));
+      for (const arq of readdirSync(dirSaida).filter((f) => f.endsWith('.md') && !f.endsWith('-anonimizado.md'))) {
+        const achados = achar(readFileSync(join(dirSaida, arq), 'utf8'))
+          .filter((x) => x.confianca === 'alta');
+        if (!achados.length) continue;
+        const tipos = [...new Set(achados.map((x) => x.tipo))].join(', ');
+        aviso(`saida/${arq}`, temMapa
+          ? `${achados.length} dado(s) com formato reconhecivel (${tipos}) — confira o mapa antes de o arquivo circular`
+          : `${achados.length} dado(s) com formato reconhecivel (${tipos}) e a materia nao tem mapa de anonimizacao`);
+      }
+    }
   }
 
   // ---- desfecho

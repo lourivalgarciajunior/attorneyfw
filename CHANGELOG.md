@@ -1,5 +1,212 @@
 # Changelog
 
+## 0.4.0 — 2026-08-31
+
+Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
+A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
+pelo menos um defeito encontrado e conferido no corpus.
+
+### Adicionado — transcricao com lastro
+
+- Bloco `transcricao <id>` no corpo do topico declara de qual documento do canon
+  veio o trecho. O `build` o converte em citacao recuada **assinada com o id** —
+  visivel, e nao em comentario, porque comentario e removido antes de a peca
+  sair e o `conferir` roda sobre o markdown gerado.
+
+- A ficha do documento ganhou `valores:`, com os numeros que ele contem,
+  conferidos uma vez na fonte. O `conferir` compara os dois.
+
+- O `docx` passou a renderizar citacao em bloco recuada e em corpo menor, em vez
+  de deixar o `>` do markdown a vista no papel.
+
+### Decidido
+
+- **Numero errado dentro das aspas e a pior posicao possivel para um erro de
+  digitacao.** No corpus, a transcricao de um auto de infracao dizia `,21` e o
+  paragrafo seguinte usava `,25` — e a soma da propria peca fecha com o `,25`. A
+  peca inteira sustenta que o Fisco errou; a Fazenda responde exibindo que a
+  autora transcreveu errado o documento que ela mesma juntou.
+
+- **Mesma parte inteira e centavos diferentes vira par**; e digitacao, e nao
+  outro valor. Valor que a ficha simplesmente nao registra tambem sai, dizendo
+  que ela nao registra — a ficha pode ainda nao conhece-lo.
+
+- **Transcricao sem origem declarada reprova o gate**, e origem fora do canon
+  tambem. Uma citacao sem procedencia e o contrario do que uma transcricao e.
+
+- `valores:` e lista com hifen, **nunca entre colchetes**: valor em portugues tem
+  virgula, e a lista inline quebraria `344.568,25` em dois numeros. Descoberto no
+  smoke, e agora esta escrito no proprio template.
+
+### Adicionado — modelo por tipo de acao
+
+- **`attorneyfw modelo destilar <tipo> --de <slug,slug>`** produz
+  `modelos/<tipo>.yaml` a partir de materias que o escritorio ja trabalhou:
+  o que cada documento do canon prova, os `fundamento` declarados nos contratos
+  de topico, e os `risco` que a outra parte levantou.
+
+- **`attorneyfw modelo aplicar <tipo>`** cria `docs/checklist-<tipo>.md` na
+  materia, com itens **pendentes**. **`attorneyfw modelo`** lista o que a
+  carteira tem.
+
+### Decidido
+
+- **O modelo sai do arquivo do escritorio, nunca de conhecimento generico.** A
+  diferenca nao e de qualidade, e de responsabilidade: modelo generico e uma
+  afirmacao sobre o direito, feita pela ferramenta, que ninguem conferiu; modelo
+  destilado do proprio arquivo e uma afirmacao sobre o que aquele escritorio ja
+  fez, que o advogado reconhece ou corrige.
+
+- **Sem materia de origem, nao ha modelo.** Tipo que o escritorio nunca
+  trabalhou nao ganha checklist — o comando diz isso e manda usar o agente de
+  fundamento, que e onde essa pergunta pertence.
+
+- **Cada linha carrega de quantas materias veio e de quais**, e item visto uma
+  vez so sai marcado: nao e regra do escritorio, e uma vez.
+
+- **Aplicar cria pendencia, e nao verdade.** Nada e dado por provado ou por
+  fundamentado porque o modelo disse; a tese e o gate continuam cobrando o que
+  cobram. Ha teste que fixa isso — aplicar o modelo nao muda a contagem de
+  violacoes.
+
+- Checklist generico erra por **excesso**, manda juntar o que o caso nao pede, e
+  o advogado aprende a ignorar a lista. Lista ignorada e pior que lista ausente,
+  porque ocupa o lugar da que seria lida.
+
+### Adicionado — o canon sobe para a carteira
+
+- **`attorneyfw parte new "Nome" --documento <CPF|CNPJ> [--matriz <slug>]`** e
+  **`attorneyfw parte list`**: uma qualificacao por parte, em `partes/<slug>.md`
+  na raiz da carteira. Documento obrigatorio e validado por digito verificador.
+
+- **`attorneyfw canon new parte ... --ref <slug>`**: a materia referencia em vez
+  de redigitar. Redigitar era a origem mecanica da divergencia.
+
+- `attorneyfw buscar` acha materia pelo **nome ou pelo documento** da parte, com
+  ou sem pontuacao — "que processos essa empresa tem conosco?" era pergunta que a
+  carteira ja poderia responder e nao respondia.
+
+- `attorneyfw diagrama partes` passa a grafar a parte como a carteira a grafa, e
+  a mostrar o documento: a figura nao pode escrever a parte de um jeito e a peca
+  de outro.
+
+### Decidido
+
+- **A divergencia que motivou isto nao estava dentro de peca nenhuma.** Estava
+  entre duas materias do mesmo cliente: um CNPJ era filial de um estado numa
+  acao e a autora — com sede e inscricao estadual de outro — na acao vizinha. O
+  gate nao veria isso nem em cem execucoes, porque o canon era por materia.
+  Cliente recorrente era quatro de oito no corpus.
+
+- **Papel e da materia; qualificacao e da carteira.** A mesma empresa e autora
+  num processo e re noutro, e o CNPJ nao muda com isso.
+
+- **Matriz e filial sao fichas distintas**, cada uma com seu CNPJ, ligadas por
+  `matriz:`. Tratar filial como campo de endereco da matriz e exatamente o que
+  produziu o erro — e em materia tributaria, trabalhista e previdenciaria quem
+  responde e o estabelecimento.
+
+- **Divergencia entre a ficha da materia e a da carteira e violacao**, e nao
+  aviso. Aqui reprovar e o certo: nao ha caso legitimo em que o mesmo documento
+  tenha duas qualificacoes. A mensagem mostra os dois lados e nao escolhe.
+
+- **Ficha antiga sem `ref` carrega sem migracao.** A subida e oportunidade, nao
+  ruptura.
+
+### Adicionado — conferencia numerica
+
+- **`attorneyfw conferir <entrega>`**, com `--json`. Tres comparacoes mecanicas
+  sobre o markdown que o `build` gerou — conferir uma versao e protocolar outra
+  e pior que nao conferir:
+
+  | Verificacao | O que compara |
+  |---|---|
+  | extenso | os dois lados de `R$ 7.182,86 (sete mil ... e oitenta centavos)` |
+  | soma | as parcelas contra o total, quando a peca escreve "totalizando" |
+  | item | a lista enumerada nos fatos contra a lista no pedido |
+
+- Parser de valor por extenso em portugues, ate bilhoes, com centavos. Devolve
+  **nada** diante de palavra que nao conhece: numero "conferido" errado e pior
+  que numero nao conferido.
+
+### Decidido
+
+- **Divergencia sai sempre como par, com os dois lados a vista.** Nunca "valor
+  incorreto": a ferramenta nao sabe qual dos dois esta certo, e fingir que sabe
+  faria o advogado corrigir o lado errado. **Nada e corrigido automaticamente** —
+  nas tres pecas do corpus o lado certo foi diferente.
+
+- **A verificacao de item e extensao do que o gate ja faz.** Ele cobra
+  `fato → prova` e `pedido → topico`; passa a cobrar `item alegado → item
+  pedido`. Vale para linha telefonica, nota fiscal, parcela, matricula, lote.
+
+- **O valor do item e capturado inteiro e classificado depois.** Capturar so o
+  que ja tem a forma esperada faz o item malformado sumir da lista e virar
+  "indice faltante" — que e outro defeito, com outra correcao.
+
+- A janela da soma recua ate dois paragrafos, porque no alvara do corpus uma das
+  parcelas estava dois atras. Assim que alguma combinacao final fecha, para: erra
+  para o silencio, e nao para o alarme.
+
+### Corrigido — na analise, e nao no codigo
+
+- **A primeira leitura do corpus, feita a mao, estava errada num ponto.** Ela
+  dizia que a lista de uma declaratoria tinha 75 de 76 itens, faltando o de
+  numero 35, e que o pedido trazia um numero ausente dos fatos.
+
+  Nenhum indice falta. O regex da conferencia manual era estrito demais e
+  derrubava dois itens: o malformado (`98841;1749`, com ponto-e-virgula no meio
+  dos digitos) e um terminado por virgula em vez de ponto-e-virgula. **Foi o
+  comparador recem-implementado que corrigiu a analise humana**, rodando sobre as
+  pecas de verdade. O defeito real — e ele continua real — e o item malformado,
+  que aparece assim tambem dentro do pedido.
+
+### Adicionado — anonimizacao por mapa
+
+- **`attorneyfw anonimizar --init`** cria `anonimizacao.yaml` na materia, com
+  pares `real: ficticio`, e **`attorneyfw anonimizar <entrega>`** aplica todos
+  eles sobre todo o texto **numa passada so**. `--reverter` desfaz.
+
+- **`attorneyfw dados <entrega>`** reconhece CPF, CNPJ, e-mail, telefone, RG e
+  cartao — CPF e CNPJ com digito verificador — e **nao substitui nada**.
+
+### Decidido
+
+- **A anonimizacao e um mapa declarado, e nao uma deteccao.** Tres pecas do
+  corpus tinham sido anonimizadas a mao e as tres sairam pela metade: numa ficou
+  o CPF de uma crianca ao lado do diagnostico; noutra, quem foi anonimizado foi a
+  falecida, e cinco pessoas vivas sairam com nome, CPF, RG e endereco; na
+  terceira — um modelo, que vai ser reaproveitado — a substituicao escapou num
+  paragrafo do meio.
+
+  **Meia anonimizacao e pior que nenhuma**, e nao pelo que deixa passar: pelo que
+  faz acreditar. Arquivo marcado como anonimizado circula; nao anonimizado,
+  ninguem manda.
+
+- **Aplicar pela metade e impossivel.** Quatro recusas acontecem antes de
+  qualquer escrita: lado real curto demais, lado ficticio que ja existe no texto,
+  termo que e saida de um par e entrada de outro, e caixa nao declarada. Qualquer
+  impedimento falha **sem gravar nada**.
+
+- **So a forma declarada e a MAIUSCULA sao aceitas**, porque sao as duas que
+  voltam iguais. Outra variacao de caixa faz falhar dizendo qual par acrescentar.
+  A ida e volta devolve o original byte a byte, e isso e testado.
+
+- **A deteccao acusa, e nunca substitui.** Substituicao automatica por asterisco
+  produziria o mesmo falso "acabou" que o corpus mostrou — quem le "3 ocorrencias
+  tratadas" conclui que terminou.
+
+- **Reconhece formato, e nao pessoa.** Nome proprio foi o que escapou nas tres
+  pecas, e nenhum regex o acharia. A saida diz isso, porque ver "nada
+  encontrado" nao pode ser lido como "pode circular".
+
+- **O gate avisa, e nunca reprova.** Peca de verdade tem de conter o CPF da
+  parte, e o CPF que qualifica o autor no processo dele nao e vazamento.
+  Reprovar transformaria a regra em ruido no primeiro dia.
+
+- `anonimizacao.yaml` entrou no `.gitignore`: e a chave que desfaz a
+  anonimizacao de todas as pecas de uma vez.
+
 ## 0.3.0 — 2026-08-31
 
 Ampliacao pedida por um escritorio usuario. Dez pedidos triados; tres ja

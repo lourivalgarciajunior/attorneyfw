@@ -138,7 +138,7 @@ achado nenhum.
 
 ### ML-3A — Avisos por topico, e o erro do topico vazio
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/validate.mjs`, `test/smoke.mjs`
 **Acoes:**
 1. Rodar `conferirTopicos` por entrega fora de `backlog` e `pesquisa`.

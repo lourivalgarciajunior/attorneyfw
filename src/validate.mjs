@@ -18,6 +18,7 @@ import { tipoDocumento } from './parte.mjs';
 import { achar } from './dados.mjs';
 import { rotulosMisturados } from './estilo.mjs';
 import { formulas } from './formulas.mjs';
+import { conferirTopicos } from './conferir.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
@@ -279,6 +280,24 @@ function validarMateria(m, { raiz, esc, ctx }) {
 
     if (['revisao', 'entregue'].includes(e.estado) && e.palavras < 150) {
       erro(onde, `so ${e.palavras} palavras de texto — entrega em ${e.estado} sem redacao`);
+    }
+
+    // ---- o texto do topico contra o contrato que ele declara
+    // Nao roda em backlog nem em pesquisa: la o contrato ainda esta sendo
+    // levantado, de proposito. Quatro dos cinco achados sao aviso, porque a
+    // excecao legitima e diaria — citar o dispositivo da outra parte para
+    // refuta-lo e o exemplo de todo dia. So o topico vazio reprova, e so quando
+    // a entrega ja deveria estar escrita: contrato preenchido com prosa vazia e
+    // promessa com nada atras dela, e a contagem de palavras da entrega inteira
+    // deixa um topico vazio se esconder atras de outro bem escrito.
+    if (!['backlog', 'pesquisa'].includes(e.estado)) {
+      const docs = cn.documentos.map((d) => ({ id: d.id, nome: d.nome, apelidos: d.apelidos }));
+      for (const a of conferirTopicos(e.topicos, docs)) {
+        const tag = `${onde} ${m.voc.topico} ${a.topico}`;
+        const par = `${a.esquerda.rotulo}: ${a.esquerda.valor} / ${a.direita.rotulo}: ${a.direita.valor}`;
+        const grave = a.tipo === 'topico-sem-texto' && ['revisao', 'entregue'].includes(e.estado);
+        (grave ? erro : aviso)(tag, `${a.trecho} — ${par}`);
+      }
     }
   }
 

@@ -1043,6 +1043,50 @@ ok('o comparador nao corrige nem completa o contrato', (() => {
   return JSON.stringify(t[0].fundamento) === JSON.stringify(['art. 300 do CPC']);
 })());
 
+// --- o gate
+// Materia propria, criada aqui: os tres casos mexem no estado da entrega, e
+// pendurar isso na fixture de outro bloco ja quebrou teste tres vezes nesta
+// sequencia de REQs.
+run('materia', 'new', 'Delta — Gate do contrato', '--tipo', 'contencioso',
+  '--cliente', 'Delta Ltda', '--juizo', '1a Vara Civel', '--slug', 'delta');
+const delta = join(raiz, 'materias', 'delta');
+const emDelta = rodarEm(delta);
+emDelta('tese');
+emDelta('plano');
+emDelta('entrega', 'new', 'Peticao inicial');
+emDelta('entrega', 'move', '1', 'minuta');
+const dPath = (estado) => join(delta, 'entregas', estado, 'ent-01-peticao-inicial.md');
+const escreveDelta = (estado, fundamento, texto) => {
+  const p = dPath(estado);
+  writeFileSync(p, lerLF(p)
+    .replace('sustenta:', 'sustenta: a cobranca e inexigivel')
+    .replace('fundamento: []', `fundamento: [${fundamento}]`)
+    .replace('risco:', 'risco: o banco vai alegar contrato verbal')
+    .replace('resposta:', 'resposta: contrato bancario exige forma escrita')
+    .replace('<!-- o texto entra aqui, logo abaixo do contrato -->', texto), 'utf8');
+};
+
+// Aviso, e nao violacao: citar o dispositivo da outra parte para refuta-lo e o
+// caso legitimo de todo dia. O gate so reprova o que nao tem excecao.
+const PROSA_CITANDO = `${PROSA} Aplica-se ao caso o art. 373, II, do CPC.`;
+
+ok('citacao fora do contrato e aviso, e nao violacao', (() => {
+  escreveDelta('minuta', 'art. 300 do CPC', PROSA_CITANDO);
+  const r = emDelta('validate');
+  return r.saida.includes('nao declara') && !violacoes(r).some((l) => l.includes('nao declara'));
+})());
+
+ok('em pesquisa o contrato ainda esta sendo levantado, e nada e conferido', (() => {
+  emDelta('entrega', 'move', '1', 'pesquisa');
+  writeFileSync(dPath('pesquisa'), lerLF(dPath('pesquisa')).replace(PROSA_CITANDO, ''), 'utf8');
+  return !emDelta('validate').saida.includes('prosa vazia');
+})());
+
+ok('topico sem texto em revisao e violacao', (() => {
+  emDelta('entrega', 'move', '1', 'revisao');
+  return violacoes(emDelta('validate')).some((l) => l.includes('prosa vazia'));
+})());
+
 // ------------------------------------------------------- dado pessoal na peca
 console.log('\ndado pessoal');
 

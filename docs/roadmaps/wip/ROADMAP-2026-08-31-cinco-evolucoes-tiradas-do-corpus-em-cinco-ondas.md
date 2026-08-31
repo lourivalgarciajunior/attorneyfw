@@ -184,24 +184,38 @@ imprime as violacoes, para a proxima nao exigir investigacao.
 
 ### ML-4A — Destilar
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/modelo.mjs` (novo), `templates/modelo-acao.yaml` (novo)
 **Aceite:**
-- [ ] Destila documentos, fundamentos e objecoes de materias indicadas
-- [ ] Cada linha carrega os slugs de origem e a contagem
-- [ ] Item de uma materia so sai marcado
-- [ ] Sem materia de origem, **falha** — e manda usar o agente de fundamento
+- [x] Destila documentos, fundamentos e objecoes de materias indicadas
+- [x] Cada linha carrega os slugs de origem e a contagem
+- [x] Item de uma materia so sai marcado
+- [x] Sem materia de origem, **falha** — e manda usar o agente de fundamento
 
 ### ML-4B — Aplicar
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/modelo.mjs`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Cria itens **pendentes**; nada dado por provado ou fundamentado
-- [ ] A saida declara sempre o `n` de materias destiladas
-- [ ] O gate continua cobrando a tese exatamente como cobra hoje
+- [x] Cria itens **pendentes**; nada dado por provado ou fundamentado
+- [x] A saida declara sempre o `n` de materias destiladas
+- [x] O gate continua cobrando a tese exatamente como cobra hoje
 
 ---
+
+**Medido ao fim da onda:** 18 asserts. O que mais importa e o ultimo — aplicar o
+modelo **nao muda a contagem de violacoes do gate**. E a prova de que o que ele
+cria e pendencia, e nao verdade.
+
+**Desvio do plano, deliberado:** o `templates/modelo-acao.yaml` previsto nao foi
+criado. O arquivo do modelo e **inteiramente derivado** das materias de origem —
+nao ha parte fixa a preencher. Um template so para satisfazer a linha do plano
+seria template morto, e o lint reprova template que nenhum comando le. O formato
+esta documentado no cabecalho que o proprio `destilar` escreve.
+
+**Correcao estrutural no smoke:** o helper `violacoes()` subiu para o topo do
+arquivo, junto do `ok`. Ele tinha nascido no meio do bloco da onda 3, e a onda 4
+— inserida antes dele — nao o enxergava.
 
 ## Wave 5 — Transcricao com lastro
 

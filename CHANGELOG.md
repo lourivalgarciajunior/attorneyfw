@@ -6,6 +6,41 @@ Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
 A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
 pelo menos um defeito encontrado e conferido no corpus.
 
+### Adicionado — modelo por tipo de acao
+
+- **`attorneyfw modelo destilar <tipo> --de <slug,slug>`** produz
+  `modelos/<tipo>.yaml` a partir de materias que o escritorio ja trabalhou:
+  o que cada documento do canon prova, os `fundamento` declarados nos contratos
+  de topico, e os `risco` que a outra parte levantou.
+
+- **`attorneyfw modelo aplicar <tipo>`** cria `docs/checklist-<tipo>.md` na
+  materia, com itens **pendentes**. **`attorneyfw modelo`** lista o que a
+  carteira tem.
+
+### Decidido
+
+- **O modelo sai do arquivo do escritorio, nunca de conhecimento generico.** A
+  diferenca nao e de qualidade, e de responsabilidade: modelo generico e uma
+  afirmacao sobre o direito, feita pela ferramenta, que ninguem conferiu; modelo
+  destilado do proprio arquivo e uma afirmacao sobre o que aquele escritorio ja
+  fez, que o advogado reconhece ou corrige.
+
+- **Sem materia de origem, nao ha modelo.** Tipo que o escritorio nunca
+  trabalhou nao ganha checklist — o comando diz isso e manda usar o agente de
+  fundamento, que e onde essa pergunta pertence.
+
+- **Cada linha carrega de quantas materias veio e de quais**, e item visto uma
+  vez so sai marcado: nao e regra do escritorio, e uma vez.
+
+- **Aplicar cria pendencia, e nao verdade.** Nada e dado por provado ou por
+  fundamentado porque o modelo disse; a tese e o gate continuam cobrando o que
+  cobram. Ha teste que fixa isso — aplicar o modelo nao muda a contagem de
+  violacoes.
+
+- Checklist generico erra por **excesso**, manda juntar o que o caso nao pede, e
+  o advogado aprende a ignorar a lista. Lista ignorada e pior que lista ausente,
+  porque ocupa o lugar da que seria lida.
+
 ### Adicionado — o canon sobe para a carteira
 
 - **`attorneyfw parte new "Nome" --documento <CPF|CNPJ> [--matriz <slug>]`** e

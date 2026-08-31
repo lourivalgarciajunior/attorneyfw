@@ -27,6 +27,16 @@ const ok = (nome, cond) => {
 };
 
 /**
+ * As linhas de violacao do gate.
+ *
+ * Existe porque assert amarrado ao codigo de saida do `validate` ja quebrou duas
+ * vezes por motivo alheio: ele passa a depender de toda violacao que a fixture
+ * tenha por outra razao. A propriedade a testar e quase sempre "nao gera
+ * violacao DESTA regra", e nao "o gate passa".
+ */
+const violacoes = (r) => r.saida.split(/\r?\n/).filter((l) => l.includes('ERRO'));
+
+/**
  * Leitura normalizada para LF. O teste substitui trecho multilinha dentro de
  * arquivo gerado a partir de template; com CRLF no disco, a busca por um
  * trecho que atravessa quebra de linha nao casa, e o teste falha dizendo
@@ -331,6 +341,59 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// --------------------------------------------------- modelo por tipo de acao
+console.log('\nmodelo por tipo de acao');
+
+ok('sem materia de origem nao ha modelo', (() => {
+  const r = run('modelo', 'destilar', 'cobranca');
+  return r.codigo === 1 && r.saida.includes('adv-ulpiano');
+})());
+ok('materia de origem inexistente e recusada',
+  run('modelo', 'destilar', 'cobranca', '--de', 'nao-existe').codigo === 1);
+ok('nome de tipo invalido e recusado',
+  run('modelo', 'destilar', 'Cobranca Civel', '--de', 'acme').codigo === 1);
+
+const dest = run('modelo', 'destilar', 'cobranca', '--de', 'acme,beta');
+ok('destila de duas materias', dest.codigo === 0 && dest.saida.includes('2 materia'));
+
+const modeloArq = join(raiz, 'modelos', 'cobranca.yaml');
+ok('grava o modelo na carteira', existsSync(modeloArq));
+ok('o modelo declara o n e as materias de origem', (() => {
+  const t = lerLF(modeloArq);
+  return t.includes('n: 2') && t.includes('materias: [acme, beta]');
+})());
+ok('cada linha carrega a procedencia', (() => {
+  const t = lerLF(modeloArq);
+  return /em: \d+\/2/.test(t) && /de: \[[a-z]/.test(t);
+})());
+ok('item visto uma vez so sai marcado', lerLF(modeloArq).includes('visto uma vez so'));
+ok('o modelo diz que nao e afirmacao sobre o direito',
+  lerLF(modeloArq).includes('NAO e uma afirmacao sobre o direito'));
+ok('amostra pequena e declarada', dest.saida.includes('pouco para destilar'));
+
+ok('modelo sem subcomando lista', run('modelo').saida.includes('cobranca'));
+
+ok('aplicar tipo inexistente e recusado', (() => {
+  const r = emAcme('modelo', 'aplicar', 'inventado');
+  return r.codigo === 1 && r.saida.includes('modelo destilar');
+})());
+
+const apl = emAcme('modelo', 'aplicar', 'cobranca');
+const checklist = join(acme, 'docs', 'checklist-cobranca.md');
+ok('aplicar cria o checklist', apl.codigo === 0 && existsSync(checklist));
+ok('os itens entram como PENDENTES', lerLF(checklist).includes('- [ ]'));
+ok('o checklist diz que e pendencia, e nao verdade',
+  lerLF(checklist).includes('pendencia, e nao verdade'));
+ok('o checklist carrega a procedencia de cada item', /_\(\d+\/2 — /.test(lerLF(checklist)));
+ok('o checklist declara o que nao sabe', lerLF(checklist).includes('nao conhece nada que o escritorio ainda nao fez'));
+
+// Nada e dado por provado porque o modelo disse: o gate segue igual.
+ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
+  const antes = violacoes(emAcme('validate')).length;
+  emAcme('modelo', 'aplicar', 'cobranca');
+  return violacoes(emAcme('validate')).length === antes;
+})());
+
 // -------------------------------------------------------- canon da carteira
 console.log('\ncanon da carteira');
 
@@ -367,9 +430,6 @@ ok('--ref inexistente e recusado',
 const fichaAlfa = join(acme, 'docs', 'canon', 'partes', 'industria-alfa-ltda.md');
 ok('a ficha da materia guarda o ref', lerLF(fichaAlfa).includes('ref: alfa'));
 // A propriedade e "a ficha referenciada nao gera violacao" — nao "o gate passa".
-// Amarrar ao codigo de saida acopla o teste a toda violacao que a fixture tenha
-// por outro motivo, e ele quebra sem que nada de errado tenha acontecido.
-const violacoes = (r) => r.saida.split(/\r?\n/).filter((l) => l.includes('ERRO'));
 ok('ficha referenciada nao gera violacao', (() => {
   const v = violacoes(emAcme('validate'));
   if (!v.some((l) => /carteira|ref /.test(l))) return true;

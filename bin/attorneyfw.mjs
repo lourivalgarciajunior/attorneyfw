@@ -27,6 +27,7 @@ import { anonimizar } from '../src/anonimizar.mjs';
 import { dados } from '../src/dados.mjs';
 import { conferir } from '../src/conferir.mjs';
 import { parteNew, parteList } from '../src/parte.mjs';
+import { modeloDestilar, modeloAplicar, modeloLista } from '../src/modelo.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -65,6 +66,10 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw status                     kanban da materia, ou a carteira na raiz
   attorneyfw context                    dump da governanca para LLM
   attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
+  attorneyfw modelo destilar <tipo> --de <slug,slug>
+                            destila o checklist do arquivo do escritorio
+  attorneyfw modelo aplicar <tipo>      cria o checklist PENDENTE na materia
+  attorneyfw modelo                     os modelos da carteira
   attorneyfw conferir <entrega>         extenso x algarismo, soma x total, item x pedido
   attorneyfw dados <entrega>            o que tem formato de dado pessoal (so acusa)
   attorneyfw anonimizar --init          cria o mapa real -> ficticio da materia
@@ -191,6 +196,13 @@ try {
     case 'anonimizar': anonimizar(args); break;
     case 'dados': dados(args); break;
     case 'conferir': process.exitCode = conferir(args); break;
+    case 'modelo': {
+      const sub = args._[0] === 'destilar' || args._[0] === 'aplicar' ? args._.shift() : undefined;
+      if (sub === 'destilar') modeloDestilar(args);
+      else if (sub === 'aplicar') modeloAplicar(args);
+      else modeloLista(args);
+      break;
+    }
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;
     case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;

@@ -313,6 +313,26 @@ Duas recusas, ambas deliberadas:
 
 O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
 
+## Modelo por tipo de ação
+
+```bash
+attorneyfw modelo destilar plano-de-saude --de beta,gama,delta
+attorneyfw modelo aplicar plano-de-saude
+attorneyfw modelo
+```
+
+Este é o **checklist proativo de provas** — o que perguntar antes de existir tese —, entregue de um jeito que a ferramenta pode sustentar: **destilado do arquivo do próprio escritório, nunca gerado do nada.**
+
+A diferença não é de qualidade, é de responsabilidade. Um modelo genérico é uma afirmação sobre o direito, feita pela ferramenta, que ninguém conferiu. Um modelo destilado das próprias matérias é uma afirmação sobre **o que aquele escritório já fez** — que o advogado reconhece ou corrige.
+
+E há um risco prático que decide a questão: checklist genérico erra por **excesso**, manda juntar o que o caso não pede, e o advogado aprende a ignorar a lista. Lista ignorada é pior que lista ausente, porque ocupa o lugar da que seria lida.
+
+O `destilar` lê, das matérias indicadas, o que cada documento do canon prova, os `fundamento` declarados nos contratos de tópico, e os `risco` que a outra parte levantou. **Cada linha carrega de quantas matérias veio e de quais** — item visto uma vez só sai marcado, porque não é regra do escritório.
+
+**Sem matéria de origem, não há modelo.** Tipo que o escritório nunca trabalhou não ganha checklist: o comando diz isso e manda usar o agente de fundamento, que é onde essa pergunta pertence.
+
+O `aplicar` cria `docs/checklist-<tipo>.md` com itens **pendentes**, para confirmar ou descartar um a um. Nada é dado por provado nem por fundamentado porque o modelo disse — a tese e o gate continuam cobrando exatamente o que cobram hoje.
+
 ## Conferência numérica
 
 ```bash

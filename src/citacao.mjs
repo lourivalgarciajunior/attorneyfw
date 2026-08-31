@@ -27,6 +27,16 @@
  * vira citacao**. Silencio, e nao palpite — a mesma disciplina do extenso, que
  * devolve `null` diante de palavra desconhecida. Fundamento "conferido" errado e
  * pior que fundamento nao conferido.
+ *
+ * **Essa regra tem corpus de teste desde a 0.10.0, e o motivo importa.** Rodando
+ * contra as nove pecas reais do escritorio, o extrator a violava em dois lugares:
+ * `art. 1.048` virava dois artigos que nao existem, e `Lei nº 10.741 de 01 de
+ * Outubro de 2003` levava o **dia** como ano. Os dois inventavam.
+ *
+ * A causa era uma so: ele tinha sido medido contra as formas curtas que eu tinha
+ * em mente ao escreve-lo — `art. 373 do CPC` —, e as pecas usam as longas —
+ * `Art. 1.048, II, do Codigo de Processo Civil`. Por isso o teste hoje carrega as
+ * formas do arquivo real, e nao as da minha intencao.
  */
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
@@ -94,13 +104,36 @@ const ALT_NOMES = LEIS.flatMap((l) => l.nomes).sort((a, b) => b.length - a.lengt
   })).join('|');
 const ALT_SIGLAS = LEIS.flatMap((l) => l.siglas).sort((a, b) => b.length - a.length)
   .map((s) => s.replace(/\//g, '\\/')).join('|');
-const ALT_NUMERADA = '(?:Lei\\s+Complementar|Lei|Decreto[-\\s]Lei|Decreto)\\s+n?[\\u00ba\\u00b0.]{0,3}\\s*([\\d.]{3,12})\\s*[\\/de\\s]{1,5}\\s*(\\d{2,4})';
+/** Os meses por extenso, tambem usados pelo extrator de datas do `conferir`. */
+export const MESES = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho',
+  'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const ALT_MESES = MESES.map((x) => x.replace('c', '[cç]')).join('|');
 
-const RE_LEI = new RegExp(`(?:${ALT_NUMERADA})|\\b(${ALT_NOMES})\\b|\\b(${ALT_SIGLAS})(?![a-zA-Z])`, 'gi');
+/**
+ * Duas formas de datar a lei, e a ordem entre elas e o conserto.
+ *
+ * `Lei nº 10.741 de 01 de Outubro de 2003` casava a forma curta e levava o
+ * **dia** como ano — a lei de 2003 virava `lei-10741-2001`. E `Lei nº 9.279, de
+ * 14 de maio de 1996`, que e a forma mais comum em peca, nao casava de jeito
+ * nenhum por causa da virgula: 7 ocorrencias nas nove pecas do arquivo, nenhuma
+ * reconhecida.
+ *
+ * Por isso a forma com data por extenso vem **primeiro**, e o ano sai da data.
+ */
+const CABECA = '(?:Lei\\s+Complementar|Lei|Decreto[-\\s]Lei|Decreto)\\s+n?[\\u00ba\\u00b0.]{0,3}\\s*';
+const ALT_POR_EXTENSO = `${CABECA}([\\d.]{3,12}),?\\s*de\\s+\\d{1,2}\\s*[oaºª]?\\s+de\\s+(?:${ALT_MESES})\\s+de\\s+(\\d{4})`;
+const ALT_NUMERADA = `${CABECA}([\\d.]{3,12})\\s*[\\/de\\s]{1,5}\\s*(\\d{2,4})`;
+
+const RE_LEI = new RegExp(
+  `(?:${ALT_POR_EXTENSO})|(?:${ALT_NUMERADA})|\\b(${ALT_NOMES})\\b|\\b(${ALT_SIGLAS})(?![a-zA-Z])`,
+  'gi',
+);
 
 /** Resolve uma ocorrencia de `RE_LEI` na lei da tabela, ou numa lei por numero. */
 function leiDaOcorrencia(m) {
-  const [, numero, y, nome, sigla] = m;
+  const [, numExt, anoExt, numBarra, anoBarra, nome, sigla] = m;
+  const numero = numExt || numBarra;
+  const y = anoExt || anoBarra;
   if (numero) {
     const k = `${String(numero).replace(/\./g, '')}/${ano(y)}`;
     const conhecida = POR_NUMERO.get(k);
@@ -142,9 +175,20 @@ const RE_ARTIGOS_ANTES = new RegExp(`\\bart(?:igos?|s)?\\.?\\s*(\\d[\\d.]*[oaº�
  */
 const PARA_AQUI = /^(§|par[aá]grafos?|al[ií]neas?|caput)$/i;
 const PULA = /^([,;.]|e|inc|incisos?|[IVXLCivxlc]{1,7})$/i;
+
+/**
+ * O numero vem primeiro na alternacao, e com o separador de milhar dentro dele.
+ *
+ * Sem isso `1.048` quebra em `1` e `048`, e o extrator **inventa dois artigos que
+ * nao existem** — contra a regra que este modulo declara no cabecalho. Pega toda
+ * a familia importante: 1.015 (agravo), 1.022 (embargos), 1.048 (prioridade).
+ * Achado rodando contra as nove pecas reais do escritorio, e nao lendo.
+ */
+const RE_TOKEN = /§|\d+(?:\.\d{3})*[oaºª]?|[\wº°ª]+|[,;.]/g;
+
 function artigosDe(seg) {
   const out = [];
-  for (const tok of String(seg).match(/§|[\wº°ª]+|[,;.]/g) || []) {
+  for (const tok of String(seg).match(RE_TOKEN) || []) {
     if (/^\d/.test(tok)) { out.push(numArtigo(tok)); continue; }
     if (PARA_AQUI.test(tok) || !PULA.test(tok)) break;
   }

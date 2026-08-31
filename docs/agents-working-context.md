@@ -24,7 +24,26 @@ Consulta a tribunal, download de intimacao, peticionamento, controle de horas,
 financeiro, CRM, terceiro tipo de materia, banco de dados. Esta no escopo
 negativo da REQ — nao invente por conta.
 
-## Ultimo trabalho fechado — 0.9.0, o contrato tipado da agenda
+## Ultimo trabalho fechado — 0.10.0, o extrator medido contra o arquivo real
+
+Varredura contra as nove pecas reais de um escritorio achou tres defeitos no
+extrator de citacao e uma guarda fora de ordem no comparador de itens. **Tudo
+veio de rodar, e nada de ler.**
+
+**A licao que fica:** `src/citacao.mjs` declarava desde a 0.6.0 que forma nao
+reconhecida nao vira citacao — e violava isso em dois lugares, os dois
+inventando. A causa era uma so: o extrator tinha sido medido contra as formas
+curtas que eu tinha em mente, e as pecas usam as longas. Por isso o teste hoje
+carrega uma tabela das **formas reais do arquivo**. Quando aparecer forma nova,
+ela vira teste antes de virar defeito — e so numero de lei e de artigo entram,
+que sao direito publico.
+
+O comparador `item x pedido` continua rodando sobre texto nao declarado, por
+decisao do ADR: exigir bloco declarado mataria o unico dos seis que funciona
+sobre peca importada. O que mudou foi a direcao do erro — ele cala diante do que
+nao tem forma de inventario.
+
+## Trabalho anterior — 0.9.0, o contrato tipado da agenda
 
 `attorneyfw prazo --json`. O hook do plugin decidia "ha prazo vencido?" lendo
 `linha.includes('VENCIDO')` — o unico acoplamento do repositorio cuja quebra era

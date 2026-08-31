@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { contarPrazo, diasUteisAte, feriadosNacionais, topicosDe } from '../src/core.mjs';
 import { citacoesDe, cobre, rotuloDe } from '../src/citacao.mjs';
 import {
-  conferirTopicos, conferirContinuidade, continuidadeNaoConferida,
+  conferirTexto, conferirTopicos, conferirContinuidade, continuidadeNaoConferida,
   normalizarData, datasEmProsa, grafiasForaDoCanon,
 } from '../src/conferir.mjs';
 import { vozDoEscritorio } from '../src/estilo.mjs';
@@ -754,6 +754,45 @@ ok('peca com um rotulo so nao gera aviso', (() => {
 writeFileSync(entPath, ent, 'utf8');
 emAcme('build', '1');
 
+// --- a guarda do comparador de itens
+// Os dois casos vieram da varredura sobre as nove pecas reais em 2026-08-31.
+const soItens = (t) => conferirTexto(t, []).filter((x) => x.tipo === 'item');
+
+// Ementa numerada de acordao colada na peca. Antes: "lista de 1 a 10, falta o 2".
+const EMENTA = [
+  '1. O contribuinte pode, apos o vencimento da obrigacao, garantir o juizo.',
+  '3. E viavel a antecipacao dos efeitos que seriam obtidos com a penhora.',
+  '4. Deveras, nao pode ser imputado ao contribuinte solvente esse onus.',
+  '5. Mutatis mutandis o mecanismo assemelha-se ao previsto no revogado art. 570.',
+  '6. Outrossim, instigada a Fazenda pela caucao oferecida, pode ela iniciar.',
+  '7. In casu, verifica-se que a cautelar restou extinta sem resolucao de merito.',
+  '10. Recurso Especial parcialmente conhecido e, nesta parte, desprovido.',
+].join('\n');
+
+ok('ementa numerada nao vira lista de inventario', soItens(EMENTA).length === 0);
+
+// Lista de inventario de verdade, com buraco: continua acusando.
+const INVENTARIO = (extra = '') => [
+  '1- 988002419;', '2- 988025333;', '3- 988041029;',
+  '5- 988046595;', '6- 988055574;', '7- 988061234;', extra,
+].filter(Boolean).join('\n');
+
+ok('lista de inventario com buraco continua acusando', (() => {
+  const a = soItens(INVENTARIO()).find((x) => x.trecho.includes('lista enumerada'));
+  return Boolean(a) && a.direita.valor.includes('falta 4');
+})());
+
+// Titulo de secao varrido para dentro da lista: nao e item malformado.
+// Na telefonia real eram 6 titulos abafando o unico defeito de verdade.
+ok('titulo de secao nao vira item malformado',
+  !soItens(INVENTARIO('4- DOS DANOS MORAIS')).some((x) => x.trecho.includes('malformado')));
+
+// E o deformado de verdade continua saindo.
+ok('numero deformado continua sendo item malformado', (() => {
+  const a = soItens(INVENTARIO('8- 98841;1749')).find((x) => x.trecho.includes('malformado'));
+  return Boolean(a) && a.esquerda.valor === '98841;1749';
+})());
+
 // --- o card lido para quem escreve
 ok('o card real da fixture tem amostra fina demais para descrever voz', (() => {
   const v = vozDoEscritorio(raiz);   // n: 2
@@ -1243,6 +1282,49 @@ ok('o artigo de uma frase nao cola na lei da frase seguinte',
 ok('lei declarada sem artigo cobre qualquer artigo dela',
   cobre(citacoesDe('Lei 9.610/98')[0], citacoesDe('art. 5 da Lei 9.610/98')[0])
   && !cobre(citacoesDe('art. 5 da Lei 9.610/98')[0], citacoesDe('Lei 9.610/98')[0]));
+
+// --- as formas reais do arquivo do escritorio
+// Colhidas rodando o extrator contra as nove pecas reais em 2026-08-31. So
+// numero de lei e de artigo entram aqui: sao direito publico. Nenhum nome,
+// documento, valor ou data de peca.
+//
+// Esta tabela existe porque os tres defeitos daquela varredura vieram todos da
+// mesma causa: o extrator tinha sido medido so contra as formas curtas que eu
+// tinha em mente ao escreve-lo.
+const FORMAS_DO_ARQUIVO = [
+  // as que INVENTAVAM citacao, contra a regra do proprio modulo
+  ['Art. 1.048, II, do Codigo de Processo Civil', 'cpc#1048'],
+  ['art. 1.015, II, do CPC', 'cpc#1015'],
+  ['art. 1.022 do CPC', 'cpc#1022'],
+  ['Artigo 71 da Lei nº 10.741 de 01 de Outubro de 2003', 'estatuto-do-idoso#71'],
+  // a que CALAVA — forma mais comum do corpus, 7 ocorrencias em 9 pecas
+  ['Lei nº 9.279, de 14 de maio de 1996', 'lei-9279-1996'],
+  ['art. 210 da Lei nº 9.279, de 14 de maio de 1996', 'lei-9279-1996#210'],
+  ['Art. 152 § 1º da LEI Nº 8.069, DE 13 DE JULHO DE 1990', 'eca#152'],
+  // regressao: as formas curtas que ja funcionavam
+  ['art. 373, II, do CPC', 'cpc#373'],
+  ['art. 38 da Lei 6.830/80', 'lef#38'],
+  ['Lei 9.610/1998', 'lei-9610-1998'],
+  ['Sumula 509 do STJ', 'sumula:stj#509'],
+];
+
+ok('as formas reais do arquivo dao a chave certa', FORMAS_DO_ARQUIVO.map(([forma, esperada]) => {
+  const c = citacoesDe(forma);
+  const bateu = c.length === 1 && c[0].chave === esperada;
+  if (!bateu) console.log(`      ${forma} -> ${c.map((x) => x.chave).join(' | ') || '(nada)'}  esperado ${esperada}`);
+  return bateu;
+// `map` e nao `every`: com `every` a primeira forma que falha esconde todas as
+// seguintes, e o relatorio diz "um defeito" onde ha varios.
+}).every(Boolean));
+
+// O defeito mais caro: um artigo virava DOIS que nao existem, e a quinta
+// conferencia acusava "citacao fora do contrato" de um art. 048 inexistente.
+ok('artigo de quatro digitos e uma chave so, e nao duas',
+  citacoesDe('Art. 1.048, II, do CPC').length === 1);
+
+// E o segundo: o dia da data virava o ano da lei.
+ok('o ano da lei sai da data, e nao do dia',
+  !citacoesDe('Lei nº 10.741 de 01 de Outubro de 2003').some((c) => c.chave.includes('2001')));
 
 ok('rotuloDe devolve a forma legivel',
   rotuloDe('cpc#373') === 'art. 373 do CPC' && rotuloDe('sv#28') === 'Sumula Vinculante 28');

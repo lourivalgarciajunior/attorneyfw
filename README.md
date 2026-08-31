@@ -524,6 +524,16 @@ A verificação de item é extensão do que o gate já faz. Ele cobra `fato → 
 
 O valor do item é capturado **inteiro** e classificado depois. Capturar só o que já tem a forma esperada faria item malformado desaparecer da lista e virar "índice faltante" — que é outro defeito, com outra correção. Foi exatamente esse o erro da primeira conferência feita à mão sobre o corpus, e foi o comparador que o corrigiu.
 
+### A guarda: prosa numerada não é inventário
+
+Esta é a única das seis que roda sobre texto que ninguém declarou como lista — e vai continuar sendo, porque o defeito que ela acha só aparece em **peça importada**, onde não há declaração nenhuma. O que ela ganhou na 0.10.0 não foi âncora: foi direção de erro.
+
+A guarda de forma dominante — 70% dos itens com a mesma forma — já existia, mas ficava **depois** da checagem de buraco na sequência. Com isso qualquer sequência numerada virava lista: a ementa numerada de um acórdão do STJ, colada numa anulatória fiscal, saía como *"lista de 1 a 10, falta o item 2"*.
+
+E divergente só é item malformado se ainda for **majoritariamente dígito**, isto é, deformação da forma dominante. Sem isso, título de seção varrido para dentro da lista saía como item: numa peça de telefonia eram 7 achados, e 6 eram `4. DOS DANOS MORAIS` e afins, com o único defeito real — `98841;1749` — enterrado no meio.
+
+Sobre o corpus inteiro, de **9 achados de item para os 2 reais**.
+
 ### Transcrição com lastro
 
 O pior achado do corpus estava **dentro das aspas**: numa anulatória fiscal, a transcrição do auto de infração dizia `R$ 344.568,21` e o parágrafo seguinte usava `R$ 344.568,25` — e a soma da própria peça fecha com o `,25`. A peça inteira sustenta que o Fisco errou; a Fazenda responde exibindo que a autora transcreveu errado o documento que ela mesma juntou.
@@ -562,6 +572,18 @@ O tópico vazio reprova porque não tem exceção. O gate contava palavras da **
 **A comparação é por artigo.** `art. 373, II` e `art. 373` são o mesmo fundamento — por decisão, não por limitação. Distinguir incisos multiplicaria o aviso por cada refinamento de escrita, e aviso que dispara sempre é aviso que ninguém lê. `art. 38 da LEF` e `art. 38 da Lei 6.830/80` também são o mesmo, pela tabela declarada de leis.
 
 **Sigla fora da tabela não vira citação.** Silêncio, e não palpite — a mesma disciplina do extenso, que devolve `null` diante de palavra desconhecida. Um fundamento "conferido" errado é pior que um fundamento não conferido.
+
+**E essa regra tem corpus de teste.** Rodando o extrator contra as nove peças reais de um escritório, ele a violava em dois lugares — e violar para o lado de **inventar**, que é o pior:
+
+| Forma na peça | Devolvia | Certo |
+|---|---|---|
+| `Art. 1.048, II, do CPC` | `cpc#1` + `cpc#048` | `cpc#1048` |
+| `Lei nº 10.741 de 01 de Outubro de 2003` | ano 2001 | Estatuto do Idoso |
+| `Lei nº 9.279, de 14 de maio de 1996` | nada | `lei-9279-1996` |
+
+O do artigo é o mais caro: na quinta conferência produzia *"citação fora do contrato"* de um `art. 048` que não existe em lugar nenhum, e aviso falso é o que ensina a ignorar o aviso verdadeiro. Numa das peças ele mutilava o fundamento inteiro — os arts. 1.571, 1.583, 1.694 e 1.710 do Código Civil saíam como `art. 1`, `571`, `583`, `694` e `710`.
+
+A causa dos três era uma só: **o extrator tinha sido medido contra as formas que eu tinha em mente ao escrevê-lo.** Os testes usavam `art. 373 do CPC`; as peças usam `Art. 1.048, II, do Código de Processo Civil`. Por isso o teste hoje carrega uma tabela das formas reais do arquivo — só número de lei e de artigo, que são direito público.
 
 ### Continuidade de fato entre tópicos
 

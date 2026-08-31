@@ -11,9 +11,11 @@ import { join } from 'node:path';
 import {
   Erro, acharEscritorio, c, contextoPrazo, entregas, escrever, exigirMateria, hoje,
   lerEscritorio, lista, palavras, pedidos as pedidosDa, prazoDe, rel, textoDe,
+  valor as valorDe,
 } from './core.mjs';
 import { alvosDe } from './entrega.mjs';
 import { gerarDiagrama } from './diagrama.mjs';
+import { enderecamento, formulas, marcadoresVazios, preencher } from './formulas.mjs';
 
 /**
  * O texto final de uma entrega: os topicos costurados, ou o corpo limpo.
@@ -115,15 +117,31 @@ export function build(args) {
   const partes = [];
 
   // ---- enderecamento
+  // As formulas moram na carteira, e nao aqui: enderecamento muda por
+  // escritorio, por comarca e por foro, e o que muda assim nao pode estar
+  // compilado. Ver ADR "Formula de peca e dado da carteira".
+  const { f: form, semente, origem } = formulas(raiz);
+  const campos = {
+    juizo: valorDe(m.cfg.juizo),
+    comarca: valorDe(m.cfg.comarca) || valorDe(esc.comarca),
+    cliente: valorDe(m.cfg.cliente).toUpperCase(),
+    adverso: valorDe(m.cfg.adverso),
+    processo: valorDe(m.cfg.processo),
+    titulo: valorDe(e.fm.titulo).toUpperCase(),
+    advogado: valorDe(esc.advogado),
+    oab: valorDe(esc.oab),
+    hoje: hoje(),
+  };
+
   if (m.tipo === 'contencioso') {
-    partes.push(`EXCELENTISSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) ${String(m.cfg.juizo || '').toUpperCase()}`);
+    partes.push(enderecamento(form, valorDe(m.cfg.foro) || 'civel', campos));
     partes.push('');
-    if (m.cfg.processo) partes.push(`Processo n. ${m.cfg.processo}`);
-    partes.push(`${String(m.cfg.cliente || '').toUpperCase()}, ja qualificad${m.cfg.papel === 'autor' ? 'o(a) nos autos' : 'o(a)'}, vem, por seu advogado que esta subscreve, apresentar`);
+    if (m.cfg.processo) partes.push(`Processo n. ${campos.processo}`);
+    partes.push(preencher(form.qualificacao, campos));
     partes.push('');
-    partes.push(`**${String(e.fm.titulo || '').toUpperCase()}**`);
+    partes.push(`**${campos.titulo}**`);
     partes.push('');
-    partes.push(`em face de ${m.cfg.adverso || '(parte adversa)'}, pelas razoes de fato e de direito a seguir expostas.`);
+    partes.push(preencher(form.em_face, campos));
   } else {
     partes.push(`# ${e.fm.titulo || m.cfg.titulo}`);
     partes.push('');
@@ -158,13 +176,13 @@ export function build(args) {
 
   // ---- fecho
   partes.push('');
-  partes.push('Nestes termos,');
-  partes.push('pede deferimento.');
+  partes.push(preencher(form.fecho_primeira, campos));
+  partes.push(preencher(form.fecho_segunda, campos));
   partes.push('');
-  partes.push(`${esc.comarca || m.cfg.comarca || '(comarca)'}, ${hoje()}.`);
+  partes.push(preencher(form.local_e_data, campos));
   partes.push('');
-  partes.push(`${esc.advogado || '(advogado)'}`);
-  partes.push(`OAB ${esc.oab || '(oab)'}`);
+  partes.push(preencher('{advogado}', campos));
+  partes.push(preencher('OAB {oab}', campos));
 
   const alvo = join(m.dir, 'saida', `${e.fm.id || e.arquivo.replace('.md', '')}.md`);
   escrever(alvo, `${partes.join('\n')}\n`);
@@ -173,6 +191,18 @@ export function build(args) {
   console.log(`${c.green('entrega costurada')}  ${rel(raiz, alvo)}`);
   console.log(c.dim(`  ${e.topicos.length} ${m.voc.topico}s | ${total} palavras | estado ${e.estado}${p && !p.erro ? ` | prazo ${p.fim}` : ''}`));
   if (diagramas.length) console.log(c.dim(`  ${diagramas.length} diagrama(s): ${diagramas.join(', ')}`));
+  // Uma vez por execucao: quem nao sabe que esta usando a semente acha que a
+  // peca ja sai com a cara do escritorio.
+  if (semente) {
+    console.log(`  ${c.yellow('formulas')}  usando a ${origem} — o enderecamento nao e o do seu escritorio`);
+    console.log(c.dim('    substitua formulas.yaml pelas formulas das suas pecas'));
+  }
+  // Marcador sem valor sai visivel no papel de proposito; aqui ele e contado,
+  // para nao depender de alguem reparar.
+  const vazios = marcadoresVazios(partes.join('\n'));
+  if (vazios.length) {
+    console.log(`  ${c.yellow('sem valor')}  ${vazios.map((x) => `{${x}}`).join(', ')} — sai assim no papel`);
+  }
   // O aviso do diagrama vai para o terminal E para o corpo da peca. A figura
   // mostra o marco como nao provado; quem monta precisa saber disso antes.
   for (const a of avisos) console.log(`  ${c.yellow('diagrama')}  ${a}`);

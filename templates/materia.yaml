@@ -16,6 +16,12 @@ juizo: {{juizo}}
 comarca:
 vara:
 rito: comum
+# Foro, para escolher a formula de enderecamento em formulas.yaml:
+# civel | fazenda | familia | juizado | trabalho
+#
+# DECLARADO, e nunca inferido do texto de `juizo:`. Inferir acerta quase sempre,
+# e o que sobra enderecca a peca ao juizo errado.
+foro: {{foro}}
 valor_causa:
 
 # Segredo de justica: o gate avisa antes de gerar saida ou dump de contexto.

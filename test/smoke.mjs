@@ -457,7 +457,279 @@ ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
   return violacoes(emAcme('validate')).length === antes;
 })());
 
-// -------------------------------------------------------- canon da carteira
+// ------------------------------------- o que a peca anuncia sobre si mesma
+console.log('\ntitulo e prioridade');
+
+// O caso do corpus: o titulo anuncia "c/c pedido de tutela provisoria de
+// urgencia" e a peca nao formula o pedido de tutela.
+ok('titulo que promete c/c e o pedido nao menciona vira aviso', (() => {
+  emAcme('entrega', 'retitle', '1', 'Peticao inicial c/c pedido de tutela provisoria de urgencia');
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('o titulo promete'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+ok('a mensagem mostra o que o titulo prometeu', emAcme('validate').saida.includes('tutela'));
+ok('e nao reprova o gate por isso',
+  !violacoes(emAcme('validate')).some((l) => l.includes('titulo promete')));
+
+ok('titulo sem c/c nao gera aviso', (() => {
+  emAcme('entrega', 'retitle', '1', 'Peticao inicial');
+  return !emAcme('validate').saida.includes('o titulo promete');
+})());
+
+// Prioridade: a idade vem da ficha, e nao do texto.
+const nasc = (anos) => {
+  const d = new Date(Date.now() - anos * 365.25 * 86400000);
+  return d.toISOString().slice(0, 10);
+};
+// Ficha propria, criada aqui: depender de uma criada num bloco posterior
+// acopla este teste a ordem dos blocos, e a ordem muda a cada onda nova.
+emAcme('canon', 'new', 'parte', 'Parte Com Idade', '--papel', 'autor');
+const fichaIdosa = join(acme, 'docs', 'canon', 'partes', 'parte-com-idade.md');
+
+ok('sem nascimento, a regra da idade nao roda', (() => {
+  const r = emAcme('validate');
+  return !r.saida.includes('prioridade de tramitacao') && !r.saida.includes('nascimento');
+})());
+
+ok('parte de 60+ sem pedido de prioridade vira aviso', (() => {
+  const bom = lerLF(fichaIdosa);
+  writeFileSync(fichaIdosa, bom.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bom, 'utf8');
+  const linha = r.saida.split('\n').find((l) => l.includes('prioridade de tramitacao'));
+  return Boolean(linha) && linha.includes('aviso') && linha.includes('69 anos');
+})());
+
+ok('menor sem pedido de prioridade vira aviso', (() => {
+  const bom = lerLF(fichaIdosa);
+  writeFileSync(fichaIdosa, bom.replace(/^nascimento:.*$/m, `nascimento: ${nasc(4)}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bom, 'utf8');
+  return r.saida.includes('prioridade de tramitacao') && r.saida.includes('4 anos');
+})());
+
+// O caso exato do alvara: o cabecalho diz uma idade que nenhuma parte tem.
+ok('idade anunciada que nenhuma parte tem vira aviso, com os dois lados', (() => {
+  const bomF = lerLF(fichaIdosa);
+  const bomE = lerLF(entPath);
+  writeFileSync(fichaIdosa, bomF.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  writeFileSync(entPath, bomE.replace('texto '.repeat(200),
+    'Prioridade de tramitacao, autores com 64 anos de idade, na forma da lei.'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bomF, 'utf8');
+  writeFileSync(entPath, bomE, 'utf8');
+  return r.saida.includes('fala em 64 anos') && r.saida.includes('a mais velha tem 69');
+})());
+
+ok('idade anunciada que bate com a ficha nao gera aviso', (() => {
+  const bomF = lerLF(fichaIdosa);
+  const bomE = lerLF(entPath);
+  writeFileSync(fichaIdosa, bomF.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  writeFileSync(entPath, bomE.replace('texto '.repeat(200),
+    'Prioridade de tramitacao, autor com 69 anos de idade.'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bomF, 'utf8');
+  writeFileSync(entPath, bomE, 'utf8');
+  return !r.saida.includes('fala em');
+})());
+
+emAcme('build', '1');
+
+// ---------------------------------------------------------------- formulas
+console.log('\nformulas de peca');
+
+const formulasArq = join(raiz, 'formulas.yaml');
+ok('o init cria formulas.yaml na carteira', existsSync(formulasArq));
+ok('e ele vem marcado como semente', lerLF(formulasArq).includes('semente: true'));
+
+const buildAcme = emAcme('build', '1');
+ok('o build avisa que esta usando a semente', buildAcme.saida.includes('nao e o do seu escritorio'));
+
+const saidaAcme = () => readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+ok('o enderecamento sai da formula, e nao do codigo',
+  saidaAcme().includes('EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA')
+  && !saidaAcme().includes('EXCELENTISSIMO(A)'));
+
+// A formula da carteira manda. E ela some o aviso de semente.
+ok('formula da carteira substitui a semente', (() => {
+  const bom = lerLF(formulasArq);
+  writeFileSync(formulasArq, bom
+    .replace(/^semente:.*$/m, 'semente: false')
+    .replace(/^enderecamento_civel:.*$/m, 'enderecamento_civel: AO DOUTO JUIZO DA {juizo}, COMARCA DE {comarca}'), 'utf8');
+  const r = emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(formulasArq, bom, 'utf8');
+  return md.includes('AO DOUTO JUIZO DA') && !r.saida.includes('nao e o do seu escritorio');
+})());
+
+// Marcador sem valor tem de aparecer no papel.
+ok('marcador sem valor sai visivel, e nao em branco', (() => {
+  const bom = lerLF(formulasArq);
+  writeFileSync(formulasArq, `${bom}\nenderecamento_civel: JUIZO {inexistente} DE {comarca}\n`, 'utf8');
+  const r = emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(formulasArq, bom, 'utf8');
+  return md.includes('{inexistente}') && r.saida.includes('sem valor');
+})());
+
+// O foro e declarado. Foro invalido e erro, e nao palpite.
+ok('foro invalido e recusado com a lista', (() => {
+  const mat = join(acme, 'materia.yaml');
+  const bom = lerLF(mat);
+  writeFileSync(mat, bom.replace(/^foro:.*$/m, 'foro: penal'), 'utf8');
+  const r = emAcme('build', '1');
+  writeFileSync(mat, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('civel, fazenda, familia, juizado, trabalho');
+})());
+
+ok('foro juizado usa a formula do juizado', (() => {
+  const mat = join(acme, 'materia.yaml');
+  const bom = lerLF(mat);
+  writeFileSync(mat, bom.replace(/^foro:.*$/m, 'foro: juizado'), 'utf8');
+  emAcme('build', '1');
+  const md = saidaAcme();
+  writeFileSync(mat, bom, 'utf8');
+  emAcme('build', '1');
+  return md.includes('AO JUIZO DE DIREITO DO');
+})());
+
+// -------------------------------------------------------------------- estilo
+console.log('\nstyle card');
+
+const amostraA = join(raiz, 'amostra-a.txt');
+const amostraB = join(raiz, 'amostra-b.txt');
+writeFileSync(amostraA, [
+  'Excelencia, a Requerente vem expor o que segue.',
+  'A Requerida foi notificada, conforme documento anexo.',
+  'Vejamos o que diz a norma. Excelencia, com o devido respeito, a Requerida errou.',
+].join('\n'), 'utf8');
+// A segunda amostra mistura os dois pares para a mesma parte — o achado do corpus.
+writeFileSync(amostraB, [
+  'A Requerente e parte legitima. O Autor juntou os documentos.',
+  'A Re foi citada e nao contestou.',
+].join('\n'), 'utf8');
+
+const est = run('estilo', '--de', `${amostraA},${amostraB}`);
+ok('deriva o card das amostras', est.codigo === 0 && existsSync(join(raiz, 'estilo.yaml')));
+
+const card = () => lerLF(raiz, 'estilo.yaml');
+ok('o card declara o n', card().includes('n: 2'));
+ok('cada traco traz em quantas apareceu', card().includes('em: 1/2') || card().includes('em: 2/2'));
+ok('o card diz que DESCREVE e nao prescreve', card().includes('DESCREVE, e nao prescreve'));
+ok('e diz por que a amostra nao sustenta regra', card().includes('porcentagem de exito'));
+ok('nenhuma linha manda escrever de um jeito', !/escreva assim|use "|prefira /i.test(card().replace(/^#.*$/gm, '')));
+ok('conta as pecas que misturam rotulo', card().includes('OS DOIS pares'));
+ok('o terminal avisa da mistura', est.saida.includes('usam OS DOIS pares'));
+
+ok('estilo sem --de mostra o card', run('estilo').saida.includes('derivado_em'));
+ok('sem card, manda derivar das pecas do escritorio', (() => {
+  const r = rodarEm(beta)('estilo');
+  return r.saida.includes('estilo.yaml') || r.codigo === 0;
+})());
+
+// O unico gate que o card habilita, e ele nao depende do card.
+ok('gate avisa quando a peca usa os dois rotulos', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'A Requerente pagou. O Autor juntou o comprovante. A Requerida nao contestou.'), 'utf8');
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('dois pares de rotulo'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+ok('peca com um rotulo so nao gera aviso', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200),
+    'A Requerente pagou. A Requerida nao contestou.'), 'utf8');
+  return !emAcme('validate').saida.includes('dois pares de rotulo');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
+// ---------------------------------------------------------------- importar
+console.log('\nimportar peca arquivada');
+
+// CPF valido e CPF com digito que nao fecha, lado a lado. O invalido e o caso
+// do corpus: numa peca real, o CPF de um requerente nao existe — e importar sem
+// conferir o teria propagado para a ficha da carteira.
+const CPF_BOM = '529.982.247-25';
+const CPF_RUIM = '529.982.247-99';
+const pecaArquivada = join(raiz, 'peca-antiga.txt');
+writeFileSync(pecaArquivada, [
+  'EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA 2a VARA CIVEL DA COMARCA DE ARAPONGAS - PR',
+  '',
+  `JOAO DA SILVA SAURO, brasileiro, casado, inscrito no CPF ${CPF_BOM}, e`,
+  `MARIA DE SOUZA LIMA, brasileira, solteira, inscrita no CPF ${CPF_RUIM}, vem propor acao`,
+  'em face de INDUSTRIA ZEBRA LTDA, pessoa juridica de direito privado, CNPJ 11.222.333/0001-81.',
+  '',
+  'Em 14/03/2024 houve a cobranca de R$ 8.500,00, conforme fatura anexo.',
+  'Em 02/04/2024 a autora reclamou, conforme protocolo anexo.',
+].join('\n'), 'utf8');
+
+const imp = run('importar', pecaArquivada);
+const relImp = join(raiz, 'docs', 'importado-peca-antiga.md');
+ok('importa e grava o relatorio', imp.codigo === 0 && existsSync(relImp));
+
+const rel = () => lerLF(relImp);
+ok('CPF valido entra classificado', rel().includes(`${CPF_BOM}  _(CPF)_`));
+ok('CPF com digito que nao fecha entra MARCADO, e nao em silencio',
+  rel().includes(CPF_RUIM) && rel().includes('DIGITO VERIFICADOR NAO FECHA'));
+ok('o terminal tambem avisa do digito', imp.saida.includes('digito nao fecha'));
+ok('CNPJ valido entra', rel().includes('11.222.333/0001-81'));
+ok('enderecamento extraido', rel().includes('VARA CIVEL DA COMARCA DE ARAPONGAS'));
+ok('nomes candidatos extraidos', rel().includes('JOAO DA SILVA SAURO') && rel().includes('INDUSTRIA ZEBRA LTDA'));
+ok('datas extraidas', rel().includes('2024-03-14') && rel().includes('2024-04-02'));
+ok('valores extraidos', rel().includes('R$ 8.500,00'));
+ok('trecho que aponta anexo extraido', rel().toLowerCase().includes('conforme'));
+
+// A propriedade central: nada e afirmado.
+// So as secoes de extracao: a secao final "o que NAO extraiu" tambem tem
+// bullets, e eles sao texto explicativo, nao item pendente.
+ok('TUDO o que foi extraido entra como pendente', (() => {
+  const corpo = rel().split('## O que esta importacao NAO extraiu')[0];
+  const linhas = corpo.split('\n').filter((l) => l.startsWith('- ') && !l.startsWith('- _'));
+  return linhas.length > 5 && linhas.every((l) => l.startsWith('- [ ] '));
+})());
+ok('a secao do que NAO foi extraido esta la', rel().includes('O que esta importacao NAO extraiu'));
+ok('e ela diz que a tese nao sai por regra', rel().includes('a tese'));
+ok('e que a lista de nomes pode estar incompleta', rel().includes('pode estar incompleta'));
+
+// Ficha da carteira e sugerida, e nunca gravada — ela e a fonte de todas as
+// pecas seguintes.
+ok('a ficha da carteira e sugerida, e nao criada', (() => {
+  const sugere = rel().includes('attorneyfw parte new "JOAO DA SILVA SAURO"');
+  const naoCriou = !existsSync(join(raiz, 'partes', 'joao-da-silva-sauro.md'));
+  return sugere && naoCriou;
+})());
+ok('o relatorio diz que os comandos nao foram executados', rel().includes('nao foram executados'));
+
+// Nada toca tese, plano ou contrato de topico.
+ok('a importacao nao cria tese nem plano', (() => {
+  const antes = violacoes(emAcme('validate')).length;
+  emAcme('importar', pecaArquivada);
+  return violacoes(emAcme('validate')).length === antes
+    && !existsSync(join(acme, 'docs', 'tese', 'importado.md'));
+})());
+
+ok('o arquivo de origem nao e alterado', (() => {
+  const t = lerLF(pecaArquivada);
+  run('importar', pecaArquivada);
+  return lerLF(pecaArquivada) === t;
+})());
+
+ok('PDF e recusado com instrucao', (() => {
+  const pdf = join(raiz, 'x.pdf');
+  writeFileSync(pdf, '%PDF-1.4', 'utf8');
+  const r = run('importar', pdf);
+  return r.codigo === 1 && r.saida.includes('fora do escopo');
+})());
+ok('extensao desconhecida e recusada', (() => {
+  const odd = join(raiz, 'x.rtf');
+  writeFileSync(odd, 'nada', 'utf8');
+  return run('importar', odd).codigo === 1;
+})());
+ok('arquivo inexistente e recusado', run('importar', join(raiz, 'nao-existe.txt')).codigo === 1);
+
+// --------------------------------------------------------- canon da carteira
 console.log('\ncanon da carteira');
 
 const CNPJ_MATRIZ = '11.222.333/0001-81';

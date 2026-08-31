@@ -1,5 +1,167 @@
 # Changelog
 
+## 0.5.0 — 2026-08-31
+
+Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes
+anteriores tiraram do corpus os defeitos das pecas; esta tira delas o que elas
+tambem sao — o acervo que a ferramenta nao sabia ler.
+
+### Adicionado — o gate cobra o que a peca anuncia sobre si mesma
+
+- **Aviso quando o titulo anuncia `c/c X` e o pedido nao menciona X.** No corpus,
+  uma anulatoria fiscal anuncia "c/c pedido de tutela provisoria de urgencia" e
+  nao formula o pedido de tutela. E a remissao vazia que o gate ja persegue no
+  corpo, agora no lugar mais visivel da peca.
+
+- **`nascimento:` na ficha de parte**, e a idade passou a ser **derivada**. Idade
+  escrita a mao envelhece no dia seguinte e nao se confere contra nada.
+
+- **Aviso quando ha parte com 60+ ou menor e a peca nao pede prioridade**, e
+  **aviso quando a idade anunciada nao bate com a ficha**, com os dois lados a
+  vista. No corpus, um alvara anuncia "autores com 64 anos" e o mais velho dos
+  cinco requerentes tem 69.
+
+### Decidido
+
+- **Aviso, e nunca violacao**, nas tres regras: as tres tem caso legitimo, e o
+  gate so reprova o que nao tem excecao — e por isso o que ele reprova e levado
+  a serio.
+
+- **Sem `nascimento:`, a regra da idade nao roda**, e nao ha aviso de campo
+  faltando. Campo que a materia nao precisa nao vira cobranca.
+
+- **A regra vale ate onde a comparacao alcanca**, e a mensagem diz isso: o gate
+  afirma que a peca anuncia e nao cumpre, e nao que a tutela era cabivel ou que a
+  prioridade e devida. Estender alem disso seria o gate opinando sobre merito.
+
+- O reconhecimento do `c/c` e conservador: quando a regra nao entende o cumulo,
+  ela **cala**. Errar para o silencio e a direcao certa num aviso.
+
+### Adicionado — as formulas saem do codigo
+
+- **`formulas.yaml` na carteira**, com enderecamento por foro, qualificacao e
+  fecho. O `attorneyfw init` a cria, marcada como **semente**.
+
+- **`foro:` no `materia.yaml`** — `civel`, `fazenda`, `familia`, `juizado` ou
+  `trabalho` —, e `--foro` no `materia new`.
+
+### Decidido
+
+- **O `build` emitia um enderecamento que nao aparecia em nenhuma das oito pecas
+  reais.** Ele fora escrito para ser neutro — sem acento, com o genero entre
+  parenteses —, e as oito usavam a forma cheia, que varia com o foro: seis formas
+  distintas em oito pecas. O `build` emitia uma setima, que nao era de ninguem.
+
+- **O que muda por escritorio, por comarca e por ano nao pode estar compilado.**
+  Mesmo padrao ja decidido para a serie de indice e para a tabela de custas.
+
+- **O foro e declarado, e nunca inferido** do texto de `juizo:`. Inferir
+  acertaria em quase todos os casos do corpus, e o que sobra enderecca a peca ao
+  juizo errado — mesma familia da recusa de inferir o polo do cliente.
+
+- **Marcador sem valor sai visivel no papel**, como `{comarca}`, e nao como
+  espaco em branco: peca com buraco tem de parecer peca com buraco. O `build`
+  ainda os conta, para nao depender de alguem reparar.
+
+- **Sem `formulas.yaml` o `build` nao falha** — peca tem de sair. Usa a semente e
+  avisa uma vez que o enderecamento nao e o do escritorio.
+
+### Adicionado — style card
+
+- **`attorneyfw estilo --de <arquivos>`** deriva `estilo.yaml` das pecas do
+  proprio escritorio; **`attorneyfw estilo`** mostra o card em vigor.
+
+- Mede tratamento do juizo, formula de lastro documental, rotulo das partes,
+  ritmo de paragrafo e uso de caixa alta.
+
+### Decidido
+
+- **O card descreve, e nao prescreve.** Um card prescritivo — "chame a parte de
+  Requerente" — e mais acionavel e transforma uma medicao de oito pecas numa
+  regra de redacao. Oito pecas nao sustentam regra nenhuma, e corrigir o
+  advogado pela frequencia e a mesma familia da porcentagem de exito que esta
+  ferramenta recusa: numero pequeno com cara de norma.
+
+- **Cada traco sai com o `n`** — em quantas pecas apareceu, de quantas foram
+  lidas — e nenhuma linha diz "escreva assim".
+
+- **O unico gate que o card habilita e de consistencia interna**: peca que usa os
+  dois pares de rotulo para a mesma parte recebe aviso. Isso se verifica dentro
+  da peca e nao depende de o card estar certo. **Nao ha gate de aderencia a
+  voz** — estilo nao se reprova.
+
+- **Nao ha card de partida no CLI**, pela mesma razao que nao ha modelo de acao
+  de partida: seria opiniao sobre estilo juridico vinda de quem nao advoga.
+
+### Corrigido — num numero de documento, e nao no codigo
+
+- A leitura manual do corpus dizia que **quatro** das oito pecas alternavam
+  "Requerente" e "Autor" para a mesma parte. O comando, rodando sobre as mesmas
+  pecas, mede **tres** — a diferenca esta no que cada contagem aceita como "Ré".
+  A do comando e a que vale, porque e a que roda. ADR e REQ corrigidos.
+
+### Adicionado — a porta de entrada
+
+- **`attorneyfw importar <arquivo.docx|.txt|.md>`**, com `--criar-materia` e
+  `--materia`. Produz `docs/importado-<slug>.md` com **tudo em `- [ ]`**.
+
+- Leitura de `.docx` **sem dependencia nenhuma**: o pacote e um zip e o corpo
+  esta em `word/document.xml`, com deflate cru que o `inflateRawSync` do proprio
+  node resolve.
+
+### Decidido
+
+- **A importacao assiste, e nao preenche.** A 0.4.0 decidiu que o modelo de acao
+  sai das materias ja trabalhadas — e um escritorio com quinhentas pecas no disco
+  tem **zero** materias na carteira. Sem porta de entrada, o `destilar` destila
+  do vazio.
+
+  Mas **nada entra na tese, no plano nem em contrato de topico**. Peca importada
+  e material bruto, e a cadeia continua comecando pela DEC. E a terceira vez que
+  esta forma e recusada, depois do modelo de acao e da amostra jurisprudencial —
+  e a mais tentadora das tres, porque o resultado pareceria trabalho pronto.
+
+- **O que e mecanico entra classificado por confianca**: documento com digito
+  verificador e enderecamento em `alta`; data e valor em `forma` — alta na forma
+  e **nenhuma** no significado; nome de parte e trecho de anexo em `media`.
+
+- **Secao fixa "o que esta importacao NAO extraiu"**, sempre presente, listando o
+  que so a leitura resolve. Silencio sobre o que faltou seria a importacao se
+  apresentando como completa.
+
+- **Documento com digito que nao fecha entra marcado**, e nao em silencio. Foi
+  assim que, rodando contra as oito pecas reais, apareceu um CPF de requerente
+  que nao existe — importar sem conferir o teria propagado para a ficha da
+  carteira, que e a fonte de todas as pecas seguintes.
+
+- **Ficha da carteira e sugerida, e nunca gravada.** O relatorio imprime o
+  `attorneyfw parte new` correspondente e diz que nao o executou.
+
+- **A peca importada nao e alterada nem movida.** PDF fica fora, declarado.
+
+### Corrigido — tudo encontrado rodando contra as oito pecas
+
+- O reconhecedor de CPF e CNPJ era uma **segunda implementacao**, com regex
+  proprio que nao casava CPF nenhum. Passou a ser o mesmo do `attorneyfw dados`.
+  Duas implementacoes do mesmo reconhecimento divergem sempre.
+
+- O padrao de nome usava `\s`, e com isso **atravessava a quebra de linha**:
+  comecava no enderecamento em caixa alta da linha de cima e ia ate a
+  qualificacao da primeira parte, que era entao descartada inteira pelo filtro
+  de cabecalho. O efeito era perder **a primeira parte de cada peca**, em
+  silencio. Agora e `[ \t]`.
+
+- O padrao de nome tambem nao previa o parentese com nome fantasia entre o nome
+  e a virgula, nem a barra em razao social — perdia todas as partes de uma peca
+  e a re de outra.
+
+- O trecho de anexo capturava so o que vinha **antes** de "conforme" — e e
+  depois dela que o documento e nomeado.
+
+- Um `\b` escrito por heredoc virou **caractere backspace** dentro de um regex,
+  e o padrao deixou de casar qualquer coisa em silencio. Encontrado comparando a
+  saida com o mesmo regex rodado a parte.
+
 ## 0.4.0 — 2026-08-31
 
 Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.

@@ -9,6 +9,12 @@ papel: {{papel}}
 # re noutro, e o documento nao muda com isso.
 ref:
 documento:
+# Data de nascimento, AAAA-MM-DD. Com ela a idade e derivada, e nao digitada —
+# idade escrita a mao envelhece no dia seguinte e nao se confere contra nada.
+#
+# Habilita o aviso de prioridade de tramitacao. Sem ela, a regra simplesmente
+# nao roda: campo que a materia nao precisa nao vira cobranca.
+nascimento:
 criado: {{data}}
 ---
 

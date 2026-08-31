@@ -193,6 +193,102 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## O que a peça anuncia sobre si mesma
+
+Duas coisas apareceram nas oito peças que não são erro de direito nem erro de conta: **promessas que a peça faz sobre si e não cumpre.** As duas passam despercebidas porque quem lê sabe do que se trata e completa sozinho.
+
+**O título promete um pedido que a peça não formula.** Numa anulatória fiscal, o título diz *"c/c pedido de tutela provisória de urgência"*, o art. 300 aparece na qualificação — e o pedido de tutela não é feito. É a mesma remissão vazia que o gate já persegue no corpo, agora no lugar mais visível da peça.
+
+**A prioridade anunciada não bate com a idade declarada.** Num alvará, o cabeçalho diz *"prioridade de tramitação, autores com 64 anos"*; entre os cinco requerentes, o mais velho tem 69 e três passam de 60. O número escolhido não é o do mais velho nem o do limite legal.
+
+Por isso a ficha de parte ganhou `nascimento:`, e **a idade passou a ser derivada, nunca digitada** — idade escrita à mão envelhece no dia seguinte e não se confere contra nada.
+
+O gate **avisa**, e não reprova, em três situações:
+
+- o título anuncia `c/c X` e o pedido não menciona X;
+- há parte com 60+ ou menor, e a peça não pede prioridade;
+- a peça fala numa idade que nenhuma parte da ficha tem — mostrando os dois lados.
+
+As três têm caso legítimo, e por isso nenhuma reprova. **Sem `nascimento:` na ficha, a regra da idade simplesmente não roda** — e não há aviso de campo faltando: campo que a matéria não precisa não vira cobrança.
+
+O limite é claro e a mensagem o respeita: o gate diz que a peça **anuncia e não cumpre**. Não diz que a tutela era cabível nem que a prioridade é devida — isso é leitura, e fica com o agente de fundamento.
+
+## As fórmulas da peça
+
+O `build` montava o endereçamento com uma linha escrita no código, feita para ser neutra: sem acento e com o gênero entre parênteses. Medida contra oito peças reais de um escritório, **ela não aparecia em nenhuma.** As oito usavam a forma cheia, com acento e gênero resolvido, e ela variava com o foro — seis formas distintas em oito peças. O `build` emitia uma sétima, que não era de ninguém.
+
+Endereçamento é a primeira coisa que o juízo lê. Sair numa forma que o escritório não usa denuncia a peça antes do primeiro argumento.
+
+Agora as fórmulas moram em `formulas.yaml`, na carteira — o mesmo padrão já decidido para a série de índice e para a tabela de custas: **o que muda por escritório, por comarca e por ano não pode estar compilado.**
+
+```yaml
+enderecamento_civel: EXCELENTISSIMO SENHOR DOUTOR JUIZ DE DIREITO DA {juizo} DA COMARCA DE {comarca}
+enderecamento_juizado: AO JUIZO DE DIREITO DO {juizo} DA COMARCA DE {comarca}
+```
+
+O foro vem de `foro:` no `materia.yaml` — `civel`, `fazenda`, `familia`, `juizado` ou `trabalho` —, e é **declarado, nunca inferido** do texto de `juizo:`. Inferir acertaria em quase todos os casos do corpus, e o que sobra endereça a peça ao juízo errado.
+
+**Marcador sem valor sai visível no papel**, como `{comarca}`, e não como espaço em branco: peça com buraco tem de parecer peça com buraco, e espaço em branco ninguém nota na revisão. O `build` também conta quantos ficaram.
+
+Sem `formulas.yaml`, o `build` **não falha** — peça tem de sair. Usa a semente do CLI e avisa, uma vez por execução, que o endereçamento não é o do escritório.
+
+## Style card — como este escritório escreve
+
+```bash
+attorneyfw estilo --de "peca1.docx,peca2.docx,peca3.docx"
+attorneyfw estilo
+```
+
+O `bookfw` já provou o mecanismo: a voz do autor sai das amostras dele, e a prosa passa a soar como ele em vez de soar como um modelo. Aqui o `adv-gaio` redigia com a voz que o modelo tem.
+
+**O card descreve, e não prescreve.** Um card prescritivo — "chame a parte de Requerente" — é mais acionável e transforma uma medição de oito peças numa regra de redação. Oito peças não sustentam regra nenhuma, e corrigir o advogado pela frequência é a mesma família da porcentagem de êxito que esta ferramenta recusa: número pequeno com cara de norma.
+
+Por isso **cada traço sai com o `n`** — em quantas peças apareceu, de quantas foram lidas — e nenhuma linha diz "escreva assim".
+
+Derivado das oito peças de um escritório real:
+
+| traço | |
+|---|---|
+| trata o juízo por "Excelência" | 5/8 |
+| aponta prova com "conforme … anexo" | 6/8 |
+| convida com "vejamos" | 4/8 |
+| rótulo Requerente/Requerida | 7/8 |
+| rótulo Autor/Ré | 4/8 |
+| mediana do parágrafo | 40 palavras |
+
+**O único gate que o card habilita é de consistência interna:** peça que usa os dois pares de rótulo para a mesma parte recebe aviso. Isso se verifica dentro da peça e não depende de o card estar certo — e é real em três das oito, onde a mesma pessoa é "Requerente" num parágrafo e "Autor" no seguinte.
+
+Aviso, e nunca violação: há caso legítimo, como peça que trata de dois processos com polos diferentes. E **não há gate de aderência à voz** — estilo não se reprova.
+
+Não existe card de partida no CLI, pela mesma razão que não existe modelo de ação de partida: seria opinião sobre estilo jurídico vinda de quem não advoga.
+
+## A porta de entrada — importar peca arquivada
+
+```bash
+attorneyfw importar "peticao.docx"
+attorneyfw importar "peticao.docx" --criar-materia "Cliente — Assunto"
+```
+
+A 0.4.0 decidiu que o modelo de ação sai das matérias que o escritório já trabalhou. Encostando isso na realidade aparece o problema: **um escritório com quinhentas peças no disco tem zero matérias na carteira.** Ninguém redigita. Sem porta de entrada, o `modelo destilar` destila do vazio e a memória institucional acumula em anos.
+
+**A importação assiste, e não preenche.** Ela produz `docs/importado-<slug>.md` com tudo em `- [ ]`, para confirmar ou descartar item a item. **Nada entra na tese, no plano ou em contrato de tópico** — peça importada é material bruto, e a cadeia continua começando pela DEC.
+
+O que sai por regra, classificado por confiança:
+
+| | confiança | |
+|---|---|---|
+| CPF e CNPJ | **alta** | conferidos por dígito verificador |
+| endereçamento | **alta** | a primeira linha |
+| datas e valores | **forma** | alta na forma, **nenhuma** no significado |
+| trechos que apontam anexo | média | dizem que há prova, não qual |
+| nomes de parte | média | pegam cabeçalho, e **podem faltar** |
+
+**Documento com dígito que não fecha entra marcado**, e não em silêncio. Rodando contra oito peças reais, foi assim que apareceu um CPF de requerente que não existe — e importar sem conferir teria propagado o erro para a ficha da carteira, que é a fonte de todas as peças seguintes.
+
+Partes viram **sugestão** de `attorneyfw parte new`, e nunca ficha gravada. `.docx` é lido sem dependência nenhuma — o pacote é um zip e o corpo está em `word/document.xml`. PDF está fora do escopo, e o comando diz isso.
+
+O relatório termina sempre com uma seção fixa — **"o que esta importação NÃO extraiu"** — listando o que só a leitura resolve: qual fato é controvertido, qual documento prova o quê, qual fundamento sustenta qual pedido, e a tese. Silêncio sobre o que faltou seria a importação se apresentando como completa.
+
 ## O canon da carteira
 
 ```bash

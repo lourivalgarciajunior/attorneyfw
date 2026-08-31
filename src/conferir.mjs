@@ -36,6 +36,7 @@ import { alvosDe } from './entrega.mjs';
 import { build } from './build.mjs';
 import { centavos, emReais } from './dinheiro.mjs';
 import { MESES, citacoesDe, cobre } from './citacao.mjs';
+import { lerTexto } from './importar.mjs';
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
@@ -722,7 +723,100 @@ const cronologiaDe = (m) => {
   return existsSync(arq) ? readFileSync(arq, 'utf8') : '';
 };
 
+/**
+ * As tres que comparam a peca com ela mesma, e as tres que precisam de
+ * declaracao — com o que falta para cada uma.
+ *
+ * A lista das ausentes nao e cortesia: e a razao de o modo arquivo poder
+ * existir. Ver `conferirArquivo`.
+ */
+const NO_ARQUIVO = ['extenso x algarismo', 'soma x total', 'item x pedido'];
+const SO_NA_MATERIA = [
+  ['transcricao x ficha do documento', 'ficha do documento no canon (attorneyfw canon new documento)'],
+  ['texto x contrato do topico', 'contrato de topico (attorneyfw topico add)'],
+  ['continuidade de fato', 'cronologia e canon da materia'],
+];
+
+/**
+ * `attorneyfw conferir --arquivo <peca>` — a peca que ja esta no arquivo do
+ * escritorio, sem virar materia.
+ *
+ * Existe porque as seis conferencias rodavam so sobre entrega de materia, e um
+ * escritorio com quinhentas pecas no disco nao transforma cada uma em materia
+ * para conferir um extenso. Em 2026-08-31 foi preciso escrever um script para
+ * conferir nove pecas reais — e ele achou divergencia em cinco.
+ *
+ * **Rodam tres das seis, e o relatorio diz isso na primeira linha.** As outras
+ * tres comparam contra algo declarado — a ficha do documento, o contrato de
+ * topico, a cronologia — e sem materia nao ha ancora. Inventar ancora e o que o
+ * `importar` recusa desde a 0.5.0.
+ *
+ * A contagem nunca diz "seis". O modo de materia termina com "nenhuma
+ * divergencia nas seis conferencias"; dizer isso depois de rodar tres mentiria na
+ * direcao que causa dano, porque quem le entende "peca conferida" e protocola.
+ * **Meia conferencia apresentada como conferencia e pior que nenhuma.**
+ */
+export function conferirArquivo(args) {
+  // `--arquivo <caminho>` deixa o primeiro caminho em `args.arquivo` e os demais
+  // em `args._`. Sem valor, `args.arquivo` vem `true` — e ai nao ha alvo.
+  const alvos = [args.arquivo === true ? null : args.arquivo, ...args._].filter(Boolean);
+  if (!alvos.length) throw new Erro('Uso: attorneyfw conferir --arquivo <peca.docx|.txt|.md> [<peca>...]');
+
+  let houve = 0;
+  const relatorios = [];
+
+  for (const alvo of alvos) {
+    if (!existsSync(alvo)) throw new Erro(`nao achei o arquivo ${alvo}`);
+    // `documentos: []` desliga a conferencia de transcricao por FALTA DE FICHA, e
+    // nao por acaso — e e por isso que ela sai declarada como nao rodada.
+    const achados = conferirTexto(lerTexto(alvo), []);
+    if (achados.length) houve = 1;
+    relatorios.push({ arquivo: alvo, achados });
+  }
+
+  if (args.json) {
+    console.log(JSON.stringify({
+      versao: 1,
+      modo: 'arquivo',
+      conferencias: NO_ARQUIVO,
+      naoRodaram: SO_NA_MATERIA.map(([nome, precisa]) => ({ conferencia: nome, precisa })),
+      nota: 'tres das seis; divergencia sai como par e nada foi corrigido',
+      relatorios,
+    }, null, 2));
+    return houve;
+  }
+
+  // Um relatorio por arquivo, e nenhuma comparacao entre eles: dizer que duas
+  // pecas divergem entre si exigiria saber que falam do mesmo fato.
+  relatorios.forEach((r, i) => {
+    if (i) console.log('');
+    console.log(c.b(`conferencia de arquivo — ${r.arquivo}`));
+    console.log(c.dim('tres das seis conferencias: extenso, soma e item x pedido\n'));
+    if (!r.achados.length) {
+      console.log(c.green('  Nenhuma divergencia nas TRES que rodaram.'));
+    } else {
+      console.log(c.dim(`${r.achados.length} divergencia(s) — nada foi corrigido\n`));
+      for (const a of r.achados) {
+        console.log(`  ${c.yellow(ROTULO[a.tipo])}  ${c.dim(a.trecho)}`);
+        console.log(`    ${a.esquerda.rotulo.padEnd(22)} ${c.b(a.esquerda.valor)}`);
+        console.log(`    ${a.direita.rotulo.padEnd(22)} ${c.b(a.direita.valor)}`);
+        console.log('');
+      }
+    }
+  });
+
+  console.log('');
+  console.log(c.yellow('  TRES conferencias NAO rodaram — peca de arquivo nao declara nada:'));
+  for (const [nome, precisa] of SO_NA_MATERIA) {
+    console.log(c.dim(`    ${nome.padEnd(34)} precisaria de ${precisa}`));
+  }
+  console.log(c.dim('  Verde aqui nao e peca conferida: e um terco da conferencia.\n'));
+  for (const l of NAO_CONFERIDO) console.log(c.dim(l));
+  return houve;
+}
+
 export function conferir(args) {
+  if (args.arquivo) return conferirArquivo(args);
   const m = exigirMateria(args);
   const raiz = acharEscritorio();
   const pedido = args._[0];

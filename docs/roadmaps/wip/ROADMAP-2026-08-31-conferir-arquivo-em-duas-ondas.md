@@ -50,7 +50,7 @@ Ha uma dependencia de import que vale registrar: `conferir.mjs` passa a importar
 
 ### ML-1A — `conferirArquivo`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`
 **Acoes:**
 1. Confirmar que nao ha ciclo de import antes de escrever
@@ -68,7 +68,7 @@ dois arquivos dao dois relatorios independentes.
 
 ### ML-1B — O relatorio que declara o que nao rodou
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`, `bin/attorneyfw.mjs`
 **Acoes:**
 1. Cabecalho e contagem dizendo **"tres das seis"**, nunca seis.
@@ -86,7 +86,7 @@ o rodape nomeia as tres ausentes com achado e sem achado.
 
 ### ML-1C — Testes
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Fixture `.txt` com extenso divergente: sai com 1 e mostra o par.

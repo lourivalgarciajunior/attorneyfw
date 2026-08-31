@@ -24,7 +24,22 @@ Consulta a tribunal, download de intimacao, peticionamento, controle de horas,
 financeiro, CRM, terceiro tipo de materia, banco de dados. Esta no escopo
 negativo da REQ — nao invente por conta.
 
-## Ultimo trabalho fechado — 0.6.0, a quinta conferencia
+## Ultimo trabalho fechado — 0.7.0, a voz e a lista no briefing
+
+O style card (0.5.0) e o checklist por tipo de acao (0.4.0) existiam e nao eram
+lidos na hora de escrever. O `brief` passou a costurar os dois.
+
+**A decisao que da forma a tudo, e que nao pode ser desfeita:** as duas secoes
+ficam **acima** de `## Instrucoes`, e nunca dentro. Traco lido como instrucao
+vira norma, e o texto passa a imitar tique. Ha teste comparando os indices, e a
+regra 14 do lint reprova o build se a frase sumir de `README`, `brief.mjs` ou
+`estilo.mjs`.
+
+Piso do traco: `n >= 3` e presenca em mais da metade. Caixa alta **nao** vai ao
+briefing, por decisao — ha teste negativo. O checklist entra como **diferenca**,
+nunca repetido inteiro.
+
+## Trabalho anterior — 0.6.0, a quinta conferencia
 
 O gate cobrava que o contrato de topico **existisse**; nao cobrava que o texto o
 **honrasse**. `fundamento:` era uma lista branca de citacoes escrita, parseada e
@@ -44,9 +59,6 @@ achando que faltava.
 - **Continuidade entre topicos da mesma peca.** O `conferir` compara numeros;
   nao compara fatos. Data no topico 4 divergindo da do topico 9 e exatamente o
   defeito que o canon existe para evitar, e ele so age quando alguem declara.
-- **O briefing nao carrega a voz nem o checklist.** O `brief` monta contrato,
-  canon e cronologia, e nao le o `estilo.yaml` nem o `modelo` do tipo de acao —
-  os dois existem desde a 0.4.0 e ninguem os le na hora de escrever.
 - **`--json` no `attorneyfw prazo`**, para o hook do plugin parar de depender do
   texto da saida (acoplamento aceito e declarado em ADR).
 - **`attorneyfw publish` no npm** — nunca foi publicado; o `package.json` ja

@@ -264,6 +264,36 @@ Aviso, e nunca violação: há caso legítimo, como peça que trata de dois proc
 
 Não existe card de partida no CLI, pela mesma razão que não existe modelo de ação de partida: seria opinião sobre estilo jurídico vinda de quem não advoga.
 
+### O card chega em quem escreve
+
+Até a 0.6.0 ele não chegava. O card era medido, gravado e nunca aberto na hora de redigir — o `brief` montava contrato, canon e cronologia e não lia `estilo.yaml`. A 0.7.0 fechou esse laço, e a forma como ela fecha é a decisão inteira:
+
+**A seção de voz não entra em `## Instrucoes`.** Um traço que diz `em 6/8` colocado dentro de um pacote de instruções deixa de ser descrição no instante em que é lido: quem redige trata a frequência como norma, e o resultado é uma peça que imita tique. Em `## Instrucoes` entra apenas o oposto — `Nao force traco de estilo`.
+
+**Piso: `n ≥ 3` e presença em mais da metade.** Traço visto em 2 de 8 é ruído, e ruído repetido em todo briefing vira estilo da casa em duas semanas — sem que ninguém lembre que era ruído. Metade exata também não passa: 4 de 8 não descreve nada.
+
+**Ênfase em caixa alta fica de fora, por decisão.** É o único traço medido que se imita em excesso sem esforço, e excesso de caixa alta é defeito de peça, não voz de escritório. Está escrito aqui para não ser acrescentado depois como "faltava".
+
+**O rótulo das partes sai da peça antes de sair do card.** Se os tópicos já escritos usam um par, o briefing diz esse — o gate cobra consistência dentro da peça, e não a escolha do par. O card só entra quando não há texto anterior.
+
+E **continua sem existir gate de aderência à voz**. O card habilita uma regra, a de consistência interna, e nenhuma outra.
+
+### O checklist chega como diferença
+
+O `docs/checklist-<tipo>.md` do `modelo aplicar` também não era lido por ninguém. Ele entra no briefing filtrado ao que **falta**:
+
+| bloco | o que aparece |
+|---|---|
+| fundamentos | os que o contrato deste tópico não declara |
+| objeções | as que o `risco` declarado não previu |
+| documentos | os que o canon da matéria não tem |
+
+Só itens ainda em `- [ ]`: item marcado já foi confirmado ou descartado por quem assina, e relembrá-lo ensina a pular a lista inteira. A comparação de fundamento reusa o extrator da 0.6.0, então `art. 300, II, do CPC` na lista não reaparece quando o contrato já declara `art. 300 do CPC`.
+
+Repetir o que já está no contrato duas seções acima é ruído, e lista repetida é lista pulada — o defeito que o modelo por tipo de ação já tinha nomeado: checklist que erra por excesso ensina a ignorar a lista, e lista ignorada é pior que lista ausente.
+
+**O briefing é leitura.** Ele não marca item, não altera o checklist e não completa o contrato. E matéria sem checklist não ganha cobrança por não ter um: a seção simplesmente não aparece.
+
 ## A porta de entrada — importar peca arquivada
 
 ```bash

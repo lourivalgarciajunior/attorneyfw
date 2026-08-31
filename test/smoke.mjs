@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { contarPrazo, diasUteisAte, feriadosNacionais, topicosDe } from '../src/core.mjs';
 import { citacoesDe, cobre, rotuloDe } from '../src/citacao.mjs';
 import { conferirTopicos } from '../src/conferir.mjs';
+import { vozDoEscritorio } from '../src/estilo.mjs';
+import { checklistAberto } from '../src/modelo.mjs';
 
 const CLI = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'bin', 'attorneyfw.mjs');
 const raiz = mkdtempSync(join(tmpdir(), 'attorneyfw-'));
@@ -670,6 +672,198 @@ ok('peca com um rotulo so nao gera aviso', (() => {
 
 writeFileSync(entPath, ent, 'utf8');
 emAcme('build', '1');
+
+// --- o card lido para quem escreve
+ok('o card real da fixture tem amostra fina demais para descrever voz', (() => {
+  const v = vozDoEscritorio(raiz);   // n: 2
+  return v.n === 2 && v.amostraFina === true && v.tracos.length === 0;
+})());
+
+// Cards sinteticos: o piso e a regra, e ela precisa ser exercida nos dois lados.
+const cardFalso = (n, tracos, pares = [], mediana = 40) => {
+  const dir = mkdtempSync(join(tmpdir(), 'card-'));
+  writeFileSync(join(dir, 'estilo.yaml'), [
+    '# comentario do card', `derivado_em: 2026-08-31`, `n: ${n}`, '',
+    'tracos:',
+    ...tracos.flatMap(([rot, chave, em]) => [
+      `  - traco: ${JSON.stringify(rot)}`, `    chave: ${chave}`,
+      `    em: ${em}/${n}`, '    ocorrencias: 9',
+    ]),
+    '', 'rotulo_das_partes:',
+    ...pares.flatMap(([par, em]) => [`  - par: ${par}`, `    em: ${em}/${n}`, '    ocorrencias: 9']),
+    '', 'ritmo:', '  paragrafos_medidos: 120', `  palavras_por_paragrafo_mediana: ${mediana}`,
+    '', 'enfase:', '  trechos_em_caixa_alta: 17', '',
+  ].join('\n'), 'utf8');
+  return vozDoEscritorio(dir);
+};
+
+ok('traco em 2 de 8 nao passa o piso', (() => {
+  const v = cardFalso(8, [['convida com "vejamos"', 'convite_vejamos', 2]]);
+  return v.n === 8 && !v.amostraFina && v.tracos.length === 0;
+})());
+
+ok('traco em 6 de 8 passa, e sai com o em', (() => {
+  const [t] = cardFalso(8, [['convida com "vejamos"', 'convite_vejamos', 6]]).tracos;
+  return t.pecas === 6 && t.de === 8 && t.rotulo === 'convida com "vejamos"';
+})());
+
+// Metade exata nao descreve nada, e e onde o ruido mora.
+ok('metade exata nao passa o piso',
+  cardFalso(8, [['x', 'convite_vejamos', 4]]).tracos.length === 0);
+
+ok('amostra de duas pecas nao devolve traco nenhum', (() => {
+  const v = cardFalso(2, [['x', 'convite_vejamos', 2]]);
+  return v.amostraFina === true && v.tracos.length === 0;
+})());
+
+// Decisao do ADR, e nao esquecimento: caixa alta e o traco que se imita em
+// excesso sem esforco, e excesso de caixa alta e defeito de peca.
+ok('caixa alta nao sai do card para quem escreve', (() => {
+  const v = cardFalso(8, [['x', 'convite_vejamos', 6]]);
+  return !JSON.stringify(v).includes('caixa') && !JSON.stringify(v).includes('17');
+})());
+
+ok('o ritmo sai', cardFalso(8, [], [], 53).ritmo === 53);
+
+ok('o par dominante sai com o em',
+  cardFalso(8, [], [['Requerente/Requerida', 6], ['Autor/Ré', 2]]).parDominante.pecas === 6);
+
+// Empate nao elege par: dizer "o escritorio usa X" com 4 a 4 seria inventar uma
+// preferencia que a medicao nao mostrou.
+ok('empate nao elege par',
+  cardFalso(8, [], [['Requerente/Requerida', 4], ['Autor/Ré', 4]]).parDominante === null);
+
+ok('sem estilo.yaml a voz e null', vozDoEscritorio(mkdtempSync(join(tmpdir(), 'vazio-'))) === null);
+
+// --- o checklist lido para quem escreve
+const materiaFalsa = (linhas) => {
+  const dir = mkdtempSync(join(tmpdir(), 'mat-'));
+  mkdirSync(join(dir, 'docs'), { recursive: true });
+  if (linhas) writeFileSync(join(dir, 'docs', 'checklist-cobranca.md'), linhas.join('\n'), 'utf8');
+  return checklistAberto({ dir });
+};
+
+ok('sem checklist na materia, devolve null', materiaFalsa(null) === null);
+
+ok('so os itens abertos voltam, com a procedencia', (() => {
+  const r = materiaFalsa([
+    '## Documentos que apareceram neste tipo de acao', '',
+    '- [ ] contrato assinado  _(3/5 — alfa, beta)_',
+    '- [x] comprovante de pagamento  _(2/5 — alfa)_',
+    '', '## Fundamentos que sustentaram o pedido', '',
+    '- [ ] art. 373 do CPC  _(4/5 — alfa, beta)_',
+    '', '## Objecoes que a outra parte levantou', '',
+    '- [ ] alega prescricao  _(2/5 — beta)_', '',
+  ]);
+  return r.documentos.length === 1 && r.documentos[0].texto === 'contrato assinado'
+    && r.documentos[0].procedencia === '3/5 — alfa, beta'
+    && r.fundamentos.length === 1 && r.objecoes.length === 1
+    && r.tipos[0] === 'cobranca';
+})());
+
+ok('item ja marcado nao volta ao briefing', (() => {
+  const r = materiaFalsa([
+    '## Documentos que apareceram neste tipo de acao', '',
+    '- [x] contrato assinado  _(3/5 — alfa)_', '',
+  ]);
+  return r.documentos.length === 0;
+})());
+
+// --- o briefing costurando as duas
+run('materia', 'new', 'Epsilon — Briefing', '--tipo', 'contencioso',
+  '--cliente', 'Epsilon Ltda', '--juizo', '1a Vara Civel', '--slug', 'epsilon');
+const eps = join(raiz, 'materias', 'epsilon');
+const emEps = rodarEm(eps);
+emEps('tese');
+emEps('plano');
+emEps('entrega', 'new', 'Peticao inicial');
+emEps('entrega', 'move', '1', 'minuta');
+const epsEnt = join(eps, 'entregas', 'minuta', 'ent-01-peticao-inicial.md');
+writeFileSync(epsEnt, lerLF(epsEnt)
+  .replace('sustenta:', 'sustenta: a cobranca e inexigivel')
+  .replace('fundamento: []', 'fundamento: [art. 300 do CPC]')
+  .replace('risco:', 'risco: o banco vai alegar contrato verbal'), 'utf8');
+
+const epsCheck = join(eps, 'docs', 'checklist-cobranca.md');
+writeFileSync(epsCheck, [
+  '## Documentos que apareceram neste tipo de acao', '',
+  '- [ ] contrato assinado  _(3/5 — alfa, beta)_',
+  '- [x] comprovante de pagamento  _(2/5 — alfa)_',
+  '', '## Fundamentos que sustentaram o pedido', '',
+  '- [ ] art. 373 do CPC  _(4/5 — alfa, beta)_',
+  '- [ ] art. 300, II, do CPC  _(2/5 — alfa)_',
+  '', '## Objecoes que a outra parte levantou', '',
+  '- [ ] alega prescricao  _(2/5 — beta)_', '',
+].join('\n'), 'utf8');
+
+ok('sem card, o briefing diz que a voz nao foi derivada', (() => {
+  const original = lerLF(raiz, 'estilo.yaml');
+  rmSync(join(raiz, 'estilo.yaml'));
+  const saida = emEps('brief', '1').saida;
+  writeFileSync(join(raiz, 'estilo.yaml'), original, 'utf8');
+  return saida.includes('voz do escritorio nao foi derivada')
+    && saida.includes('voz do modelo');
+})());
+
+// Card sintetico na raiz, restaurado ao fim: os outros blocos leem este arquivo.
+const cardOriginal = lerLF(raiz, 'estilo.yaml');
+writeFileSync(join(raiz, 'estilo.yaml'), [
+  'derivado_em: 2026-08-30', 'n: 8', '', 'tracos:',
+  '  - traco: "trata o juizo por Excelencia"', '    chave: tratamento_excelencia',
+  '    em: 6/8', '    ocorrencias: 40',
+  '  - traco: "convida com vejamos"', '    chave: convite_vejamos',
+  '    em: 2/8', '    ocorrencias: 3',
+  '', 'rotulo_das_partes:',
+  '  - par: Requerente/Requerida', '    em: 6/8', '    ocorrencias: 90',
+  '  - par: Autor/Ré', '    em: 2/8', '    ocorrencias: 10',
+  '', 'ritmo:', '  paragrafos_medidos: 300', '  palavras_por_paragrafo_mediana: 47',
+  '', 'enfase:', '  trechos_em_caixa_alta: 21', '',
+].join('\n'), 'utf8');
+
+const brf = emEps('brief', '1').saida;
+
+ok('o traco acima do piso entra com o em', brf.includes('trata o juizo por Excelencia — em 6/8'));
+ok('o traco em 2 de 8 nao entra no briefing', !brf.includes('vejamos'));
+// Decisao do ADR: e o unico traco medido que se imita em excesso sem esforco.
+ok('a caixa alta nao chega ao briefing',
+  !/caixa alta|trechos_em_caixa/i.test(brf) && !brf.includes('trechos_em_caixa_alta: 21'));
+ok('o ritmo entra', brf.includes('mediana de 47 palavras'));
+
+// A decisao que da forma a tudo: um traco dentro de `## Instrucoes` deixa de ser
+// descricao no instante em que e lido.
+ok('nenhuma linha de traco cai dentro de Instrucoes',
+  brf.indexOf('## Voz do escritorio') < brf.indexOf('## Instrucoes')
+  && brf.indexOf('em 6/8') < brf.indexOf('## Instrucoes'));
+
+ok('o briefing diz que a voz e observacao, e nao instrucao',
+  brf.includes('observacao, e nao instrucao') && brf.includes('Nenhuma diz "escreva assim"'));
+
+// O checklist entra como diferenca. `art. 300, II` esta coberto por `art. 300`
+// declarado no contrato — a comparacao e por artigo.
+ok('fundamento ja declarado no contrato nao repete no briefing', !brf.includes('art. 300, II'));
+ok('fundamento que o contrato nao declara aparece', brf.includes('art. 373 do CPC  (4/5'));
+ok('item ja marcado no checklist nao aparece', !brf.includes('comprovante de pagamento'));
+ok('a lista sai rotulada como pendencia', brf.includes('Sao pendencias, e nao verdades'));
+
+ok('as tres instrucoes negativas estao la',
+  brf.includes('Nao force traco de estilo')
+  && brf.includes('Nao afirme item da lista')
+  && brf.includes('escreva a pendencia ao final'));
+
+// O briefing e leitura: marcar item por conta seria decidir pelo advogado
+// exatamente onde a decisao e dele.
+ok('o briefing nao altera o checklist da materia', (() => {
+  const antes = lerLF(epsCheck);
+  emEps('brief', '1');
+  return lerLF(epsCheck) === antes;
+})());
+
+ok('documento ja no canon nao aparece na lista', (() => {
+  emEps('canon', 'new', 'documento', 'contrato assinado');
+  return !emEps('brief', '1').saida.includes('contrato assinado  (3/5');
+})());
+
+writeFileSync(join(raiz, 'estilo.yaml'), cardOriginal, 'utf8');
 
 // ---------------------------------------------------------------- importar
 console.log('\nimportar peca arquivada');

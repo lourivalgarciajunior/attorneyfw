@@ -8,8 +8,108 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   Erro, acharEscritorio, artefatos, c, canon, contextoPrazo, entregas, estrategia,
-  exigirMateria, lerEscritorio, lista, pedidos as pedidosDa, pendencias, prazoDe, rel,
+  exigirMateria, lerEscritorio, lista, pedidos as pedidosDa, pendencias, prazoDe, rel, slug,
 } from './core.mjs';
+import { contarRotulos, vozDoEscritorio } from './estilo.mjs';
+import { checklistAberto } from './modelo.mjs';
+import { citacoesDe, cobre } from './citacao.mjs';
+
+/**
+ * A secao de voz. Ela existe porque a 0.5.0 mediu como o escritorio escreve e
+ * guardou o resultado num arquivo que ninguem abria na hora de escrever.
+ *
+ * E ela nao entra em `## Instrucoes`, de proposito. Um traco que diz `em 6/8`
+ * colocado dentro de um pacote de instrucoes deixa de ser descricao no instante
+ * em que e lido: quem redige tratara a frequencia como norma, e o resultado e
+ * uma peca que imita tique em vez de escrever com a voz da casa. **O card
+ * descreve, e nao prescreve** — e nenhum gate cobra aderencia a voz.
+ */
+function secaoVoz(raiz, voc, anteriores) {
+  const l = ['', `## Voz do escritorio — observacao, e nao instrucao`];
+  const v = vozDoEscritorio(raiz);
+
+  if (!v) {
+    l.push('(sem estilo.yaml — a voz do escritorio nao foi derivada, e o texto vai');
+    l.push('sair com a voz do modelo. Derive: attorneyfw estilo --de "peca1.docx,...")');
+    return l.join('\n');
+  }
+
+  l.push(`Derivada de ${v.n} peca(s) do proprio escritorio em ${v.derivadoEm || '?'}.`);
+  l.push('Cada linha diz "assim aparece em N de M". Nenhuma diz "escreva assim".');
+  l.push('');
+  if (v.amostraFina) {
+    l.push(`Amostra de ${v.n} peca(s) — pequena demais para descrever voz. Nenhum traco incluido.`);
+  } else if (!v.tracos.length) {
+    l.push(`Nenhum traco apareceu em mais da metade das ${v.n} pecas medidas.`);
+  } else {
+    for (const t of v.tracos) l.push(`- ${t.rotulo} — em ${t.pecas}/${t.de}`);
+  }
+  if (v.ritmo) l.push(`- ritmo: mediana de ${v.ritmo} palavras por paragrafo`);
+
+  // O que a peca ja fez pesa mais que o que o escritorio costuma fazer: o gate
+  // cobra consistencia dentro da peca, e nao a escolha do par.
+  const r = contarRotulos(anteriores.join('\n'));
+  if (r.requerente && r.autor) {
+    l.push(`- rotulo: esta ${voc.entrega} ja usa OS DOIS pares (Requerente ${r.requerente}, Autor/Ré ${r.autor}) — o gate avisa`);
+  } else if (r.requerente || r.autor) {
+    l.push(`- rotulo: esta ${voc.entrega} ja usa ${r.requerente ? 'Requerente/Requerida' : 'Autor/Ré'} — mantenha`);
+  } else if (v.parDominante) {
+    l.push(`- rotulo: o escritorio usa ${v.parDominante.par} em ${v.parDominante.pecas}/${v.parDominante.de}`);
+  }
+  return l.join('\n');
+}
+
+/** Comparacao frouxa de texto livre — item de checklist contra o que a materia ja tem. */
+const pareceCom = (a, b) => {
+  const [x, y] = [slug(a).slice(0, 40), slug(b).slice(0, 40)];
+  return Boolean(x && y && (x.includes(y) || y.includes(x)));
+};
+
+/**
+ * O checklist do tipo de acao, filtrado ao que **falta**.
+ *
+ * Repetir o que ja esta no contrato duas secoes acima e ruido, e lista repetida
+ * e lista pulada — o defeito que o ADR do modelo nomeou: checklist que erra por
+ * excesso ensina a ignorar a lista, e lista ignorada e pior que lista ausente.
+ * O que serve e a **diferenca**, que e comparacao.
+ *
+ * Sem checklist, a secao nao aparece: materia que nao precisa de um nao ganha
+ * cobranca por nao ter.
+ */
+function secaoChecklist(m, t, cn) {
+  const ck = checklistAberto(m);
+  if (!ck) return '';
+
+
+  const declaradas = lista(t.fundamento).flatMap((f) => citacoesDe(f));
+  const fundamentos = ck.fundamentos.filter((i) => {
+    const cits = citacoesDe(i.texto);
+    if (cits.length) return !cits.some((ci) => declaradas.some((d) => cobre(d, ci)));
+    return !lista(t.fundamento).some((f) => pareceCom(i.texto, f));
+  });
+
+  const objecoes = ck.objecoes.filter((i) => !pareceCom(i.texto, t.risco || ''));
+
+  const noCanon = cn.documentos.flatMap((d) => [d.nome, ...(d.apelidos || [])]);
+  const documentos = ck.documentos.filter((i) => !noCanon.some((x) => pareceCom(i.texto, x)));
+
+  const l = ['', `## O que este tipo de acao (${ck.tipos.join(', ')}) costuma ter, e esta materia ainda nao tem`];
+  l.push('Itens ainda abertos do checklist do proprio escritorio, filtrados contra o');
+  l.push(`contrato deste ${m.voc.topico} e contra o canon. **Sao pendencias, e nao verdades.**`);
+  l.push('');
+  const bloco = (titulo, itens) => {
+    if (!itens.length) return;
+    l.push(`${titulo}:`);
+    for (const i of itens) l.push(`- ${i.texto}${i.procedencia ? `  (${i.procedencia})` : ''}`);
+  };
+  bloco(`fundamentos que o contrato deste ${m.voc.topico} nao declara`, fundamentos);
+  bloco('objecoes que o risco declarado nao previu', objecoes);
+  bloco('documentos que o canon da materia nao tem', documentos);
+  if (!fundamentos.length && !objecoes.length && !documentos.length) {
+    l.push(`(nada em aberto que este ${m.voc.topico} ja nao cubra)`);
+  }
+  return l.join('\n');
+}
 
 export function brief(args) {
   const m = exigirMateria(args);
@@ -96,6 +196,9 @@ ${ler(autos) || '(vazio)'}
 ## Onde o texto parou
 ${cauda || `(primeiro ${m.voc.topico} da ${m.voc.entrega})`}
 
+${secaoVoz(raiz, m.voc, anteriores)}
+${secaoChecklist(m, t, cn)}
+
 ## Instrucoes
 - Escreva apenas ESTE ${m.voc.topico}, texto corrido, sem cabecalho de peca.
 - O ${m.voc.topico} tem de sustentar exatamente o que o contrato declara — nada alem.
@@ -103,6 +206,9 @@ ${cauda || `(primeiro ${m.voc.topico} da ${m.voc.entrega})`}
 - Nao invente fato, data, valor nem documento: se faltar, escreva e liste a pendencia ao final.
 - Nao cite dispositivo, sumula ou precedente que nao esteja em fundamento. Se precisar de outro, liste como pendencia — quem assina confere.
 - Responda ao risco declarado antes que a parte contraria o levante.
+- Nao force traco de estilo. A secao de voz e observacao, e nao instrucao: ela diz como o escritorio escreve, e nao como voce deve escrever. Nenhum gate cobra aderencia a voz.
+- Nao afirme item da lista. Sao pendencias do arquivo do escritorio, e nada ali esta provado nesta materia.
+- Se um item da lista importa para este ${m.voc.topico} e nao esta provado, escreva a pendencia ao final — nao o escreva como fato.
 - Nao encerre a ${m.voc.entrega} se ela continua.
 
 ${est ? `## ${m.voc.artefato.charAt(0).toUpperCase() + m.voc.artefato.slice(1)} em vigor (${est.arquivo})\n${est.corpo.trim()}` : `(sem ${m.voc.artefato} — o briefing esta cego)`}`);

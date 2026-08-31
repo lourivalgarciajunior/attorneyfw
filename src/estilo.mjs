@@ -18,6 +18,10 @@
  * unico gate que o card habilita cobra **consistencia interna** — peca que usa
  * dois rotulos para a mesma parte —, que se verifica dentro da peca e nao
  * depende de o card estar certo.
+ *
+ * **Nenhum gate cobra aderencia a voz**, aqui nem em lugar nenhum: estilo nao se
+ * reprova. Desde a 0.7.0 o card chega ao briefing de quem escreve, e chega la
+ * como observacao — fora da secao de instrucoes, e com o `n` em cada linha.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -179,6 +183,59 @@ function mostrar(raiz, caminho) {
 }
 
 /**
+ * O card lido para quem vai escrever — o que o `brief` costura.
+ *
+ * Duas decisoes moram aqui, e as duas sao do ADR:
+ *
+ * 1. **Piso.** So sai traco presente em mais da metade das pecas, e so com
+ *    amostra de tres ou mais. Traco visto em 2 de 8 e ruido; carregado para todo
+ *    briefing, ruido vira estilo da casa em duas semanas — e ninguem lembra que
+ *    era ruido.
+ * 2. **Caixa alta nao sai daqui.** E o unico traco medido que se imita em
+ *    excesso sem esforco, e excesso de caixa alta e defeito de peca, nao voz de
+ *    escritorio. Nao e esquecimento: e para nao ser acrescentado depois como
+ *    "faltava".
+ *
+ * Sem `estilo.yaml`, devolve `null` — e o briefing simplesmente nao ganha a
+ * secao. Card ausente nao vira cobranca.
+ */
+const MIN_AMOSTRA = 3;
+
+export function vozDoEscritorio(raiz) {
+  const caminho = join(raiz, ARQUIVO_ESTILO);
+  if (!existsSync(caminho)) return null;
+  const bruto = readFileSync(caminho, 'utf8');
+
+  const n = Number((bruto.match(/^n:\s*(\d+)/m) || [])[1] || 0);
+  const derivadoEm = (bruto.match(/^derivado_em:\s*(\S+)/m) || [])[1] || '';
+  const amostraFina = n < MIN_AMOSTRA;
+
+  const todos = [...bruto.matchAll(/- traco:\s*(".*?"|\S.*?)\n\s*chave:\s*(\S+)\n\s*em:\s*(\d+)\/(\d+)/g)]
+    .map((x) => ({
+      rotulo: x[1].startsWith('"') ? JSON.parse(x[1]) : x[1].trim(),
+      chave: x[2],
+      pecas: Number(x[3]),
+      de: Number(x[4]),
+    }));
+
+  const pares = [...bruto.matchAll(/- par:\s*(\S+)\n\s*em:\s*(\d+)\/(\d+)/g)]
+    .map((x) => ({ par: x[1], pecas: Number(x[2]), de: Number(x[3]) }))
+    .sort((a, b) => b.pecas - a.pecas);
+
+  return {
+    n,
+    derivadoEm,
+    amostraFina,
+    // Maioria estrita: metade exata nao descreve nada, e e onde o ruido mora.
+    tracos: amostraFina ? [] : todos.filter((t) => t.pecas * 2 > n),
+    ritmo: Number((bruto.match(/palavras_por_paragrafo_mediana:\s*(\d+)/) || [])[1] || 0),
+    // Empate nao elege par: dizer "o escritorio usa X" com 4 a 4 seria inventar
+    // uma preferencia que a medicao nao mostrou.
+    parDominante: pares.length && (pares.length === 1 || pares[0].pecas > pares[1].pecas) ? pares[0] : null,
+  };
+}
+
+/**
  * A unica regra de gate que o card habilita: **dentro** de uma peca, os dois
  * pares de rotulo convivendo.
  *
@@ -187,7 +244,22 @@ function mostrar(raiz, caminho) {
  * diferentes.
  */
 export function rotulosMisturados(texto) {
-  const req = (texto.match(ROTULOS.requerente) || []).length;
-  const aut = (texto.match(ROTULOS.autor) || []).length;
-  return req && aut ? { requerente: req, autor: aut } : null;
+  const { requerente, autor } = contarRotulos(texto);
+  return requerente && autor ? { requerente, autor } : null;
+}
+
+/**
+ * Quantas vezes cada par de rotulo aparece num texto.
+ *
+ * O `brief` usa isto para dizer qual par a **propria peca** ja adotou. Esse dado
+ * pesa mais que o do card: o gate cobra consistencia dentro da peca, e nao a
+ * escolha do par — entao o que importa e o que ela ja fez, e nao o que o
+ * escritorio costuma fazer.
+ */
+export function contarRotulos(texto) {
+  const t = String(texto || '');
+  return {
+    requerente: (t.match(ROTULOS.requerente) || []).length,
+    autor: (t.match(ROTULOS.autor) || []).length,
+  };
 }

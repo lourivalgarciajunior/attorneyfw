@@ -143,32 +143,42 @@ Os documentos de governanca e o relatorio ao escritorio foram corrigidos.
 
 ### ML-3A — A ficha da carteira
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `templates/parte-carteira.md` (novo), `src/parte.mjs` (novo), `src/core.mjs`
 **Aceite:**
-- [ ] `partes/<slug>.md` na raiz, com documento obrigatorio
-- [ ] CPF ou CNPJ validado por digito verificador
-- [ ] Matriz e filial sao fichas distintas, ligadas por `matriz:`
+- [x] `partes/<slug>.md` na raiz, com documento obrigatorio
+- [x] CPF ou CNPJ validado por digito verificador
+- [x] Matriz e filial sao fichas distintas, ligadas por `matriz:`
 
 ### ML-3B — A materia referencia
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/canon.mjs`, `templates/parte.md`, `src/core.mjs` (sequencial com ML-3A)
 **Aceite:**
-- [ ] `ref: <slug>` herda a qualificacao; papel continua da materia
-- [ ] Ficha antiga sem `ref` carrega sem migracao
+- [x] `ref: <slug>` herda a qualificacao; papel continua da materia
+- [x] Ficha antiga sem `ref` carrega sem migracao
 
 ### ML-3C — Gate, busca e diagrama
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/validate.mjs`, `src/buscar.mjs`, `src/diagrama.mjs`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Divergencia carteira x materia e **violacao**, com as duas versoes a vista
-- [ ] `buscar` acha materia por nome ou documento de parte
-- [ ] `diagrama partes` le a ficha da carteira quando ha `ref`
-- [ ] Smoke reproduz o caso do corpus: mesmo documento, duas sedes, reprova
+- [x] Divergencia carteira x materia e **violacao**, com as duas versoes a vista
+- [x] `buscar` acha materia por nome ou documento de parte
+- [x] `diagrama partes` le a ficha da carteira quando ha `ref`
+- [x] Smoke reproduz o caso do corpus: mesmo documento, duas sedes, reprova
 
 ---
+
+**Medido ao fim da onda:** 18 asserts. O que reproduz o corpus e o de documento
+divergente: o mesmo CNPJ com duas qualificacoes reprova o gate, e a mensagem
+mostra os dois lados sem escolher qual esta certo.
+
+**Segunda vez que um assert amarrado ao codigo de saida do `validate` quebrou por
+motivo alheio.** A propriedade a testar e "nao gera violacao **desta** regra", e
+nao "o gate passa" — o gate passar depende de toda a fixture. Agora o helper
+`violacoes()` filtra as linhas de erro e o teste olha so as suas; quando falha,
+imprime as violacoes, para a proxima nao exigir investigacao.
 
 ## Wave 4 — Modelo por tipo de acao
 

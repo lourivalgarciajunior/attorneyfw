@@ -12,3 +12,7 @@ saida/*.pdf
 # O mapa de anonimizacao e a CHAVE que desfaz a anonimizacao de todas as pecas
 # de uma materia de uma vez. E o pior arquivo possivel para vazar.
 anonimizacao.yaml
+
+# Fichas de parte e modelos destilados sao material de cliente, como materias/.
+/partes/
+/modelos/

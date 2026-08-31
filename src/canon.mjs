@@ -4,9 +4,12 @@
  * grafado de outro jeito, valor que mudou, data que nao bate com a cronologia.
  * A contraparte le as duas.
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { Erro, acharEscritorio, c, canon, escrever, exigirMateria, hoje, rel, slug, template } from './core.mjs';
+import {
+  Erro, acharEscritorio, c, canon, escrever, exigirMateria, gravarCampoYaml, hoje,
+  partesDaCarteira, rel, slug, template,
+} from './core.mjs';
 
 const TIPOS = { parte: 'partes', documento: 'documentos' };
 
@@ -31,6 +34,19 @@ export function canonNew(args) {
     apelidos: args.apelidos ? `[${args.apelidos}]` : '[]',
     papel: args.papel || (m.tipo === 'contencioso' ? 'a definir' : 'consulente'),
   }));
+
+  // `--ref` liga a ficha da materia a da carteira. A qualificacao passa a vir de
+  // um lugar so, e o gate compara as duas.
+  if (tipo === 'parte' && args.ref) {
+    const daCarteira = partesDaCarteira(acharEscritorio()).find((p) => p.slug === String(args.ref));
+    if (!daCarteira) {
+      throw new Erro(`nao ha ficha "${args.ref}" em partes/ na raiz da carteira.
+  Crie antes:  attorneyfw parte new "${nome}" --documento <CPF|CNPJ>`);
+    }
+    const raw = readFileSync(caminho, 'utf8');
+    writeFileSync(caminho, gravarCampoYaml(raw, 'ref', String(args.ref)), 'utf8');
+    console.log(c.dim(`  qualificacao herdada de partes/${args.ref}.md`));
+  }
 
   console.log(`${c.green(`${tipo} no canon`)}  ${rel(acharEscritorio(), caminho)}${id ? c.dim(`  (${id})`) : ''}`);
   if (tipo === 'documento') console.log(c.dim(`  cite-o nos contratos de topico como  documentos: [${id}]`));

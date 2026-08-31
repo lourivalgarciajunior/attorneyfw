@@ -19,11 +19,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  ESTADOS_ATIVOS, Erro, RESULTADOS, TIPOS, acharEscritorio, artefatos, c,
-  entregas, estrategia, materias, valor,
+  ESTADOS_ATIVOS, Erro, RESULTADOS, TIPOS, acharEscritorio, artefatos, c, canon,
+  entregas, estrategia, materias, soDigitos, valor,
 } from './core.mjs';
 
 const semAcento = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+/** Termo que so tem digito e pontuacao de documento vira so os digitos. */
+const normalizarTermo = (t) => (/^[\d.\-/\s]+$/.test(t) && soDigitos(t).length >= 11 ? soDigitos(t) : t);
 
 /**
  * O que a busca le, e o rotulo com que cada acerto aparece. A lista e explicita
@@ -40,6 +43,17 @@ function fontes(m) {
   for (const e of entregas(m)) {
     // So o titulo da entrega, nunca o corpo — ver o cabecalho deste arquivo.
     out.push({ rotulo: 'entrega', arquivo: e.arquivo, texto: valor(e.fm.titulo) || e.arquivo });
+  }
+  // As partes entram pelo nome E pelo documento: "que processos essa empresa
+  // tem conosco?" e a pergunta que a carteira ja poderia responder e nao
+  // respondia. Documento normalizado, para achar com ou sem pontuacao.
+  for (const parte of canon(m, acharEscritorio()).partes) {
+    const doc = parte.documento || '';
+    out.push({
+      rotulo: 'parte',
+      arquivo: parte.arquivo,
+      texto: [parte.nome, ...parte.apelidos, doc, soDigitos(doc)].filter(Boolean).join(' · '),
+    });
   }
   return out;
 }
@@ -79,10 +93,11 @@ export function buscar(args) {
     .filter((m) => !args.tipo || m.tipo === String(args.tipo))
     .filter((m) => !args.resultado || m.resultado === String(args.resultado));
 
+  const alvo = normalizarTermo(termo);
   const achados = [];
   for (const m of todas) {
     const acertos = fontes(m)
-      .map((f) => ({ ...f, tem: semAcento(f.texto).includes(semAcento(termo)) }))
+      .map((f) => ({ ...f, tem: semAcento(f.texto).includes(semAcento(alvo)) }))
       .filter((f) => f.tem);
     if (acertos.length) achados.push({ m, acertos });
   }
@@ -90,7 +105,7 @@ export function buscar(args) {
   if (args.json) {
     console.log(JSON.stringify({
       termo,
-      varridos: ['tese ou mapa de risco', 'DEC', 'cronologia', 'titulo de entrega'],
+      varridos: ['tese ou mapa de risco', 'DEC', 'cronologia', 'titulo de entrega', 'parte (nome e documento)'],
       naoVarrido: 'corpo de minuta',
       materias: achados.map(({ m, acertos }) => ({
         slug: m.slug, titulo: valor(m.cfg.titulo), tipo: m.tipo,
@@ -131,5 +146,6 @@ export function buscar(args) {
     console.log(c.yellow(`  ${perdas} materia(s) com este termo terminaram em perda.`));
     console.log(c.dim('  Vale conferir o que se alegou la antes de repetir a tese aqui.'));
   }
-  console.log(c.dim('  varrido: tese ou mapa, DEC, cronologia e titulo de entrega. Corpo de minuta nao entra.'));
+  console.log(c.dim('  varrido: tese ou mapa, DEC, cronologia, titulo de entrega e parte (nome e documento).'));
+  console.log(c.dim('  Corpo de minuta nao entra.'));
 }

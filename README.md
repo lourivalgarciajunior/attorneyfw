@@ -193,6 +193,36 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## O canon da carteira
+
+```bash
+attorneyfw parte new "Industria Alfa Ltda" --documento 11.222.333/0001-81
+attorneyfw parte new "Industria Alfa — filial PE" --documento <cnpj-da-filial> --matriz industria-alfa-ltda
+attorneyfw parte list
+
+# na materia, a ficha referencia em vez de redigitar:
+attorneyfw canon new parte "Industria Alfa Ltda" --papel autor --ref industria-alfa-ltda
+```
+
+**Uma qualificação por parte, na carteira inteira.** Esta é a mudança que nasceu do achado mais consequente da leitura de oito peças reais: em quatro delas o cliente era o mesmo, e um CNPJ aparecia como filial de um estado numa ação e como a autora — com sede e inscrição estadual de outro — na ação vizinha.
+
+O gate não veria isso nem em cem execuções, e o motivo é estrutural: **o canon era por matéria, e a contradição estava entre duas**. Cliente recorrente é a regra num escritório, não a exceção.
+
+| | fica na carteira | fica na matéria |
+|---|---|---|
+| nome, documento, endereço, inscrições | ✓ | |
+| papel no processo, o que a parte afirma nos autos, procuração | | ✓ |
+
+A mesma empresa é autora num processo e ré noutro; o CNPJ não muda com isso. Misturar os dois níveis foi o que permitiu a divergência — cada matéria redigitava a qualificação inteira, e a segunda digitação discordava da primeira.
+
+**Matriz e filial são fichas distintas**, cada uma com seu CNPJ, ligadas por `matriz:`. Tratar filial como campo de endereço da matriz é exatamente o que produziu o erro observado, e em matéria tributária, trabalhista e previdenciária quem responde é o estabelecimento.
+
+O documento é obrigatório e validado por dígito verificador: é ele que distingue homônimo e é ele que o gate compara.
+
+Divergência entre a ficha da matéria e a da carteira é **violação**, não aviso — aqui reprovar é o certo, porque não há caso legítimo em que o mesmo documento tenha duas qualificações. Se a carteira estiver errada, corrige-se a carteira, num lugar só, e todas as matérias acompanham.
+
+Ficha antiga sem `ref` continua carregando, sem migração. A subida é oportunidade, não ruptura.
+
 ## A memória do escritório
 
 A carteira sempre foi a base de casos — uma pasta por matéria, com decisão, tese, fatos, provas e cronologia, em texto e versionada. Faltavam duas coisas para que ela respondesse perguntas.
@@ -211,7 +241,7 @@ O vocabulário é fechado — `ganho`, `ganho_parcial`, `perda`, `acordo`, `exti
 attorneyfw buscar "indeferimento da opcao" --resultado perda
 ```
 
-Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia e título de entrega — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
+Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia, título de entrega e as partes — por nome **e por documento**, com ou sem pontuação — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
 
 Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém pedir. Quem redige precisa saber que uma matéria irmã com a mesma tese terminou em perda, e essa é informação que só aparece se for empurrada.
 

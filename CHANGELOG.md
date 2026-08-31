@@ -6,6 +6,46 @@ Cinco evolucoes tiradas da leitura de **oito pecas reais** de areas diferentes.
 A ampliacao anterior nasceu de pedidos; esta nasce de evidencia — cada item tem
 pelo menos um defeito encontrado e conferido no corpus.
 
+### Adicionado — o canon sobe para a carteira
+
+- **`attorneyfw parte new "Nome" --documento <CPF|CNPJ> [--matriz <slug>]`** e
+  **`attorneyfw parte list`**: uma qualificacao por parte, em `partes/<slug>.md`
+  na raiz da carteira. Documento obrigatorio e validado por digito verificador.
+
+- **`attorneyfw canon new parte ... --ref <slug>`**: a materia referencia em vez
+  de redigitar. Redigitar era a origem mecanica da divergencia.
+
+- `attorneyfw buscar` acha materia pelo **nome ou pelo documento** da parte, com
+  ou sem pontuacao — "que processos essa empresa tem conosco?" era pergunta que a
+  carteira ja poderia responder e nao respondia.
+
+- `attorneyfw diagrama partes` passa a grafar a parte como a carteira a grafa, e
+  a mostrar o documento: a figura nao pode escrever a parte de um jeito e a peca
+  de outro.
+
+### Decidido
+
+- **A divergencia que motivou isto nao estava dentro de peca nenhuma.** Estava
+  entre duas materias do mesmo cliente: um CNPJ era filial de um estado numa
+  acao e a autora — com sede e inscricao estadual de outro — na acao vizinha. O
+  gate nao veria isso nem em cem execucoes, porque o canon era por materia.
+  Cliente recorrente era quatro de oito no corpus.
+
+- **Papel e da materia; qualificacao e da carteira.** A mesma empresa e autora
+  num processo e re noutro, e o CNPJ nao muda com isso.
+
+- **Matriz e filial sao fichas distintas**, cada uma com seu CNPJ, ligadas por
+  `matriz:`. Tratar filial como campo de endereco da matriz e exatamente o que
+  produziu o erro — e em materia tributaria, trabalhista e previdenciaria quem
+  responde e o estabelecimento.
+
+- **Divergencia entre a ficha da materia e a da carteira e violacao**, e nao
+  aviso. Aqui reprovar e o certo: nao ha caso legitimo em que o mesmo documento
+  tenha duas qualificacoes. A mensagem mostra os dois lados e nao escolhe.
+
+- **Ficha antiga sem `ref` carrega sem migracao.** A subida e oportunidade, nao
+  ruptura.
+
 ### Adicionado — conferencia numerica
 
 - **`attorneyfw conferir <entrega>`**, com `--json`. Tres comparacoes mecanicas

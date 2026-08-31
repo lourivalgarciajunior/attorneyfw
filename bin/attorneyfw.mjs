@@ -26,6 +26,7 @@ import { prognostico } from '../src/prognostico.mjs';
 import { anonimizar } from '../src/anonimizar.mjs';
 import { dados } from '../src/dados.mjs';
 import { conferir } from '../src/conferir.mjs';
+import { parteNew, parteList } from '../src/parte.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -50,7 +51,11 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw entrega renumber <e> <n>   troca o numero, arquivo e frontmatter juntos
   attorneyfw entrega retitle <e> "T"    troca o titulo, arquivo e frontmatter juntos
   attorneyfw topico add <entrega>       novo contrato de topico ou clausula
-  attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento
+  attorneyfw parte new "Nome" --documento <CPF|CNPJ> [--matriz <slug>]
+                            ficha de parte da CARTEIRA — uma qualificacao so
+  attorneyfw parte list                 as partes da carteira
+  attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento da materia
+                            (parte aceita --ref <slug> da carteira)
   attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos]
                             [--material] [--fatal]
   attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
@@ -139,6 +144,13 @@ try {
       const sub = args._.shift();
       if (sub === 'add') topicoAdd(args);
       else throw new Erro('Uso: attorneyfw topico add <entrega>');
+      break;
+    }
+    case 'parte': {
+      const sub = args._.shift();
+      if (sub === 'new') parteNew(args);
+      else if (sub === 'list') parteList(args);
+      else throw new Erro('Uso: attorneyfw parte new|list');
       break;
     }
     case 'canon': {

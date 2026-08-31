@@ -695,20 +695,65 @@ export function pedidos(materia) {
 
 // --------------------------------------------------------------------- canon
 
+/**
+ * As fichas de parte da CARTEIRA — uma qualificacao por pessoa ou empresa, para
+ * a carteira inteira.
+ *
+ * Existe porque a divergencia que motivou isto nao estava dentro de peca
+ * nenhuma: estava **entre duas materias** do mesmo cliente, que redigitaram a
+ * qualificacao cada uma por sua conta e discordaram. Numa delas um CNPJ era
+ * filial de Pernambuco; na outra, o mesmo CNPJ era a autora, com sede em outro
+ * estado e inscricao estadual de outro estado ainda.
+ *
+ * Canon por materia nao veria isso nem em cem execucoes.
+ */
+export function partesDaCarteira(raiz = acharEscritorio()) {
+  const dir = join(raiz, 'partes');
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) return [];
+  return readdirSync(dir).filter((f) => f.endsWith('.md')).sort().map((f) => {
+    const { fm, corpo } = frontmatter(readFileSync(join(dir, f), 'utf8'));
+    return {
+      arquivo: f,
+      slug: basename(f, '.md'),
+      nome: valor(fm.nome) || basename(f, '.md'),
+      documento: valor(fm.documento),
+      matriz: valor(fm.matriz),
+      apelidos: lista(fm.apelidos),
+      fm,
+      corpo,
+      caminho: join(dir, f),
+    };
+  });
+}
+
+/** So os digitos: `75.394.502/0004-96` e `75394502000496` sao o mesmo documento. */
+export const soDigitos = (s) => String(s ?? '').replace(/\D/g, '');
+
 /** Canon da materia: um arquivo por parte e por documento. */
-export function canon(materia) {
+export function canon(materia, raiz = null) {
+  // A ficha da materia pode declarar `ref: <slug>` e herdar a qualificacao da
+  // carteira. O papel continua sendo da materia — a mesma empresa e autora num
+  // processo e re noutro, e o CNPJ nao muda com isso.
+  const daCarteira = new Map(
+    (raiz ? partesDaCarteira(raiz) : []).map((p) => [p.slug, p]),
+  );
   const ler = (sub) => {
     const dir = join(materia.dir, 'docs', 'canon', sub);
     if (!existsSync(dir) || !statSync(dir).isDirectory()) return [];
     return readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => {
       const { fm, corpo } = frontmatter(readFileSync(join(dir, f), 'utf8'));
+      const ref = sub === 'partes' ? daCarteira.get(valor(fm.ref)) : null;
       return {
         arquivo: f,
-        nome: fm.nome || basename(f, '.md'),
+        nome: (ref ? ref.nome : null) || fm.nome || basename(f, '.md'),
         id: fm.id || '',
-        apelidos: lista(fm.apelidos),
+        documento: valor(fm.documento) || (ref ? ref.documento : ''),
+        apelidos: [...new Set([...lista(fm.apelidos), ...(ref ? ref.apelidos : [])])],
+        ref: ref || null,
+        refSlug: sub === 'partes' ? valor(fm.ref) : '',
         fm,
         corpo,
+        caminho: join(dir, f),
       };
     });
   };

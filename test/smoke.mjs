@@ -331,6 +331,83 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
 })());
 
+// -------------------------------------------------------- canon da carteira
+console.log('\ncanon da carteira');
+
+const CNPJ_MATRIZ = '11.222.333/0001-81';
+const CNPJ_FILIAL = '11.222.333/0002-62';
+
+ok('documento e obrigatorio', run('parte', 'new', 'Alfa Ltda').codigo === 1);
+ok('documento com digito verificador errado e recusado',
+  run('parte', 'new', 'Alfa Ltda', '--documento', '11.222.333/0001-99').codigo === 1);
+ok('parte nova na carteira',
+  run('parte', 'new', 'Industria Alfa Ltda', '--documento', CNPJ_MATRIZ, '--slug', 'alfa').codigo === 0);
+ok('documento repetido e recusado — uma qualificacao por documento', (() => {
+  const r = run('parte', 'new', 'Outra Razao Social', '--documento', CNPJ_MATRIZ, '--slug', 'outra');
+  return r.codigo === 1 && r.saida.includes('alfa');
+})());
+
+// Matriz e filial sao fichas distintas. Tratar filial como campo de endereco da
+// matriz foi o que produziu a divergencia que originou esta onda.
+ok('filial e ficha propria, ligada a matriz',
+  run('parte', 'new', 'Industria Alfa — filial', '--documento', CNPJ_FILIAL,
+    '--matriz', 'alfa', '--slug', 'alfa-filial').codigo === 0);
+ok('matriz inexistente e recusada',
+  run('parte', 'new', 'X Ltda', '--documento', '11.444.777/0001-61', '--matriz', 'nao-existe', '--slug', 'x').codigo === 1);
+ok('parte list mostra a filial como filial', run('parte', 'list').saida.includes('filial de alfa'));
+
+// A materia referencia em vez de redigitar.
+ok('canon new parte --ref liga a ficha da carteira', (() => {
+  const r = emAcme('canon', 'new', 'parte', 'Industria Alfa Ltda', '--papel', 'autor', '--ref', 'alfa');
+  return r.codigo === 0 && r.saida.includes('herdada');
+})());
+ok('--ref inexistente e recusado',
+  emAcme('canon', 'new', 'parte', 'Beta Ltda', '--ref', 'nao-existe').codigo === 1);
+
+const fichaAlfa = join(acme, 'docs', 'canon', 'partes', 'industria-alfa-ltda.md');
+ok('a ficha da materia guarda o ref', lerLF(fichaAlfa).includes('ref: alfa'));
+// A propriedade e "a ficha referenciada nao gera violacao" — nao "o gate passa".
+// Amarrar ao codigo de saida acopla o teste a toda violacao que a fixture tenha
+// por outro motivo, e ele quebra sem que nada de errado tenha acontecido.
+const violacoes = (r) => r.saida.split(/\r?\n/).filter((l) => l.includes('ERRO'));
+ok('ficha referenciada nao gera violacao', (() => {
+  const v = violacoes(emAcme('validate'));
+  if (!v.some((l) => /carteira|ref /.test(l))) return true;
+  console.log(v.map((l) => `       ${l}`).join('\n'));
+  return false;
+})());
+
+// O caso do corpus: o mesmo documento com duas qualificacoes. Aqui reprovar e o
+// certo — nao ha caso legitimo em que o mesmo CNPJ tenha duas sedes.
+ok('documento divergente da carteira reprova o gate', (() => {
+  const bom = lerLF(fichaAlfa);
+  writeFileSync(fichaAlfa, bom.replace(/^documento:.*$/m, `documento: ${CNPJ_FILIAL}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaAlfa, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('documento diverge da carteira');
+})());
+ok('a reprovacao mostra os dois lados', (() => {
+  const bom = lerLF(fichaAlfa);
+  writeFileSync(fichaAlfa, bom.replace(/^nome:.*$/m, 'nome: Industria Alfa S/A'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaAlfa, bom, 'utf8');
+  return r.saida.includes('Industria Alfa S/A') && r.saida.includes('Industria Alfa Ltda');
+})());
+
+// Ficha antiga, sem ref, continua carregando.
+ok('ficha sem ref carrega sem migracao', (() => {
+  emAcme('canon', 'new', 'parte', 'Parte Antiga Sem Ref', '--papel', 'reu');
+  return !violacoes(emAcme('validate')).some((l) => /carteira|ref /.test(l));
+})());
+
+ok('buscar acha a materia pelo nome da parte', run('buscar', 'Industria Alfa').saida.includes('acme'));
+ok('buscar acha pelo documento, com pontuacao', run('buscar', CNPJ_MATRIZ).saida.includes('acme'));
+ok('buscar acha pelo documento, sem pontuacao', run('buscar', '11222333000181').saida.includes('acme'));
+ok('o diagrama de partes usa o nome da carteira', (() => {
+  const r = emAcme('diagrama', 'partes');
+  return r.saida.includes('Industria Alfa Ltda') && r.saida.includes(CNPJ_MATRIZ);
+})());
+
 // ------------------------------------------------------- conferencia numerica
 console.log('\nconferencia numerica');
 

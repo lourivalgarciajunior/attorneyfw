@@ -136,6 +136,8 @@ function corpoEntrega(m, { id, numero, titulo, tipo, intimacao, dias }) {
     prazo_intimacao: intimacao || '',
     prazo_dias: dias || '',
     prazo_contagem: m.tipo === 'contencioso' ? 'uteis' : 'corridos',
+    // Regime nasce processual e nao se infere: prazo material se declara.
+    prazo_regime: 'processual',
   });
 }
 

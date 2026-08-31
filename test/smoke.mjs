@@ -69,6 +69,44 @@ console.log('\ncontagem de prazo');
   ok('dias uteis negativos quando a data ja passou', diasUteisAte('2026-09-23', '2026-09-01') < 0);
 }
 
+// ------------------------------------------------- prazo material (art. 210 CTN)
+// Os dois casos vieram de um Recurso Ordinario Constitucional real, e foram
+// calculados a mao ANTES da implementacao. Sao o motivo desta regra existir:
+// a 0.1.0 devolvia 2026-01-27 no primeiro, data POSTERIOR a correta.
+console.log('\nprazo material — art. 210 do CTN');
+{
+  const fer = new Set([...feriadosNacionais(2025), ...feriadosNacionais(2026)]);
+  // `recesso: true` de proposito: o regime material tem de ignora-lo sozinho.
+  // Passar `false` aqui mascarava o defeito, que so apareceu rodando o CLI.
+  const material = (intimacao, dias) => contarPrazo({
+    intimacao, dias, contagem: 'corridos', regime: 'material', recesso: true, feriados: fer,
+  });
+
+  // 26.12.2025 e sexta. Pelo caput a contagem comeca no sabado 27; se o
+  // "iniciam" do paragrafo unico tambem deslocar, comeca na segunda 29.
+  const a = material('2025-12-26', 30);
+  ok('caput conta do dia seguinte, util ou nao', a.inicio === '2025-12-27');
+  ok('30o dia em domingo prorroga para segunda', a.fim === '2026-01-26');
+  ok('a outra leitura do paragrafo unico e devolvida', a.divergencia === true && a.fimAlternativo === '2026-01-27');
+  ok('adotada e a data mais curta', a.fim < a.fimAlternativo);
+
+  // 19.01.2026 e segunda: o dia seguinte ja e util, entao as leituras coincidem.
+  // O 30o dia cai na quarta-feira de cinzas e prorroga — e o argumento do ROC.
+  const b = material('2026-01-19', 30);
+  ok('sem divergencia quando o dia seguinte ja e util', !b.divergencia && b.fimAlternativo === undefined);
+  ok('30o dia na quarta de cinzas prorroga', b.fim === '2026-02-19');
+
+  // O defeito que originou a correcao: a regra processual devolve data posterior.
+  const errado = contarPrazo({ intimacao: '2025-12-26', dias: 30, contagem: 'corridos', recesso: false, feriados: fer });
+  ok('a regra processual erra para MAIS neste caso', errado.fim > a.fim);
+  ok('o recesso do art. 220 nao suspende prazo material', a.fim === '2026-01-26');
+
+  ok('regime invalido e recusado', (() => {
+    try { material('2026-01-19', 30); contarPrazo({ intimacao: '2026-01-19', dias: 5, regime: 'penal' }); return false; }
+    catch { return true; }
+  })());
+}
+
 // ---------------------------------------------------------------------- carteira
 console.log('\ncarteira e materias');
 ok('init cria o escritorio', run('init', 'Escritorio de Teste', '--advogado', 'Fulana', '--oab', 'SP 1').codigo === 0);
@@ -172,6 +210,29 @@ ok('prazo set com data invalida e recusado', emAcme('prazo', 'set', '1', '--inti
 ok('agenda mostra o prazo', emAcme('prazo').saida.includes('acme/01'));
 ok('agenda avisa que e conferencia', emAcme('prazo').saida.includes('conferencia'));
 ok('agenda da carteira roda na raiz', run('prazo').codigo === 0 || run('prazo').codigo === 1);
+
+// --material grava o regime e a agenda mostra a divergencia
+ok('prazo set --material', emAcme('prazo', 'set', '2', '--intimacao', '2025-12-26', '--dias', '30', '--material').codigo === 0);
+ok('--material grava o regime', readFileSync(join(acme, 'entregas', 'backlog', 'ent-02-replica.md'), 'utf8').includes('prazo_regime: material'));
+ok('a saida mostra as duas leituras', emAcme('prazo', 'set', '2', '--intimacao', '2025-12-26', '--dias', '30', '--material').saida.includes('2026-01-27'));
+ok('--material com --uteis e recusado', emAcme('prazo', 'set', '2', '--intimacao', '2025-12-26', '--dias', '30', '--material', '--uteis').codigo === 1);
+ok('a agenda marca o regime do CTN', emAcme('prazo').saida.includes('CTN'));
+ok('gate avisa corridos com regime processual', (() => {
+  const p = join(acme, 'entregas', 'backlog', 'ent-02-replica.md');
+  const antes = readFileSync(p, 'utf8');
+  writeFileSync(p, antes.replace('prazo_regime: material', 'prazo_regime: processual'), 'utf8');
+  const r = emAcme('validate').saida.includes('--material');
+  writeFileSync(p, antes, 'utf8');
+  return r;
+})());
+ok('regime invalido reprova o gate', (() => {
+  const p = join(acme, 'entregas', 'backlog', 'ent-02-replica.md');
+  const antes = readFileSync(p, 'utf8');
+  writeFileSync(p, antes.replace('prazo_regime: material', 'prazo_regime: penal'), 'utf8');
+  const r = emAcme('validate').codigo === 1;
+  writeFileSync(p, antes, 'utf8');
+  return r;
+})());
 
 // prazo vencido com a entrega ainda aberta: erro
 ok('gate reprova prazo vencido em entrega aberta', (() => {

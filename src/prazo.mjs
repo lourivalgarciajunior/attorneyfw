@@ -21,18 +21,22 @@ export function prazoSet(args) {
   const m = exigirMateria(args);
   const raiz = acharEscritorio();
   const pedido = args._[0];
-  if (!pedido) throw new Erro('Uso: attorneyfw prazo set <entrega> --intimacao AAAA-MM-DD --dias N [--corridos] [--fatal]');
+  if (!pedido) throw new Erro('Uso: attorneyfw prazo set <entrega> --intimacao AAAA-MM-DD --dias N [--corridos] [--material] [--fatal]');
   if (!args.intimacao || !args.dias) throw new Erro('--intimacao e --dias sao obrigatorios. Prazo pela metade nao e prazo.');
   if (!dataValida(args.intimacao)) throw new Erro(`--intimacao "${args.intimacao}" nao e AAAA-MM-DD.`);
   const dias = Number(args.dias);
   if (!Number.isInteger(dias) || dias < 1) throw new Erro(`--dias "${args.dias}" nao e um numero de dias.`);
 
   const [alvo] = alvosDe(entregas(m), pedido);
-  const contagem = args.corridos ? 'corridos' : 'uteis';
+  // Prazo material e continuo por definicao (art. 210, caput, do CTN). Aceitar
+  // `--material --uteis` seria gravar uma combinacao que a lei nao tem.
+  if (args.material && args.uteis) throw new Erro('--material conta em dias corridos; --uteis nao se combina com ele.');
+  const regime = args.material ? 'material' : (valor(alvo.fm.prazo_regime) || 'processual');
+  const contagem = args.corridos || args.material ? 'corridos' : 'uteis';
   const fatal = args.fatal ? 'true' : (valor(alvo.fm.prazo_fatal) || 'false');
 
   const raw = readFileSync(alvo.caminho, 'utf8');
-  const atualizado = raw
+  let atualizado = raw
     .replace(/^(prazo_intimacao:[ \t]*).*$/m, `$1${args.intimacao}`)
     .replace(/^(prazo_dias:[ \t]*).*$/m, `$1${dias}`)
     .replace(/^(prazo_contagem:[ \t]*).*$/m, `$1${contagem}`)
@@ -40,15 +44,38 @@ export function prazoSet(args) {
   if (atualizado === raw && !/^prazo_intimacao:/m.test(raw)) {
     throw new Erro(`${alvo.arquivo} nao tem os campos de prazo no frontmatter — acrescente prazo_intimacao, prazo_dias, prazo_contagem e prazo_fatal a mao.`);
   }
+  // Entrega criada pela 0.1.0 nao tem `prazo_regime`. Acrescentar em vez de
+  // recusar: o campo e novo, e recusar obrigaria a editar a mao todo arquivo
+  // que ja existe.
+  atualizado = /^prazo_regime:/m.test(atualizado)
+    ? atualizado.replace(/^(prazo_regime:[ \t]*).*$/m, `$1${regime}`)
+    : atualizado.replace(/^(prazo_contagem:[ \t]*.*)$/m, `$1\nprazo_regime: ${regime}`);
   writeFileSync(alvo.caminho, atualizado, 'utf8');
 
   const ctx = contextoPrazo(raiz, [Number(String(args.intimacao).slice(0, 4))]);
-  const p = prazoDe({ fm: { ...alvo.fm, prazo_intimacao: args.intimacao, prazo_dias: dias, prazo_contagem: contagem, prazo_fatal: fatal } }, ctx);
+  const p = prazoDe({ fm: { ...alvo.fm, prazo_intimacao: args.intimacao, prazo_dias: dias, prazo_contagem: contagem, prazo_regime: regime, prazo_fatal: fatal } }, ctx);
 
   console.log(`${c.green('prazo gravado')}  ${rel(raiz, alvo.caminho)}`);
-  console.log(`  intimacao ${p.intimacao} | ${p.dias} dias ${p.contagem} | inicio ${p.inicio} | ${c.b(`vence ${p.fim}`)}${p.fatal ? c.red('  FATAL') : ''}`);
+  console.log(`  intimacao ${p.intimacao} | ${p.dias} dias ${p.contagem} (${p.regime}) | inicio ${p.inicio} | ${c.b(`vence ${p.fim}`)}${p.fatal ? c.red('  FATAL') : ''}`);
+  if (p.divergencia) explicarDivergencia(p);
   console.log(c.dim(`  ${AVISO}`));
 }
+
+/**
+ * O paragrafo unico do art. 210 do CTN diz que o prazo "so se inicia ou vence"
+ * em dia de expediente normal. Se o deslocamento alcanca o termo inicial, ou so
+ * o vencimento, e questao em aberto — e no caso que originou esta regra as duas
+ * leituras dao datas diferentes. Adotamos a mais curta e mostramos a outra:
+ * decidir calada seria a ferramenta resolvendo questao juridica no lugar de
+ * quem assina. Ver ADR-2026-08-31.
+ */
+function explicarDivergencia(p) {
+  console.log(`  ${c.yellow('duas leituras do art. 210, par. unico, do CTN — adotada a mais curta')}`);
+  console.log(c.dim(`    caput: contagem de ${p.inicio}, vence ${p.fim}  ${c.b('<- adotada')}`));
+  console.log(c.dim(`    se "iniciam" tambem deslocar: de ${p.inicioAlternativo}, vence ${p.fimAlternativo}`));
+}
+
+export { explicarDivergencia };
 
 /**
  * A agenda. Dentro de uma materia mostra a dela; na raiz da carteira, a de
@@ -94,14 +121,20 @@ export function prazoLista(args) {
       console.log(`  ${c.yellow('???       ')} ${onde.padEnd(28)} ${l.e.fm.titulo || l.e.arquivo}  ${c.yellow(l.erro)}`);
       continue;
     }
-    const { fim, restam, fatal, vencido } = l.p;
+    const { fim, restam, fatal, vencido, regime } = l.p;
     if (vencido) vencidos++;
     const rotulo = vencido
       ? c.red(`VENCIDO ${String(-restam).padStart(2)}d`)
       : restam <= 2 ? c.red(`${String(restam).padStart(2)}d uteis`)
         : restam <= 5 ? c.yellow(`${String(restam).padStart(2)}d uteis`)
           : c.dim(`${String(restam).padStart(2)}d uteis`);
-    console.log(`  ${fim}  ${rotulo}  ${onde.padEnd(28)} ${(l.e.fm.titulo || l.e.arquivo).padEnd(38)} ${c.dim(l.e.estado)}${fatal ? c.red('  FATAL') : ''}`);
+    // O regime so aparece quando nao e o padrao: coluna que repete "processual"
+    // em toda linha vira ruido e para de ser lida.
+    const marca = regime === 'material' ? c.cyan('  CTN') : '';
+    console.log(`  ${fim}  ${rotulo}  ${onde.padEnd(28)} ${(l.e.fm.titulo || l.e.arquivo).padEnd(38)} ${c.dim(l.e.estado)}${marca}${fatal ? c.red('  FATAL') : ''}`);
+    if (l.p.divergencia) {
+      console.log(c.dim(`${' '.repeat(14)}outra leitura do art. 210, par. unico: vence ${l.p.fimAlternativo} — adotada a mais curta`));
+    }
   }
 
   if (vencidos) {

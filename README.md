@@ -144,11 +144,39 @@ Enquanto a matéria está em curso, fato não pago é **aviso**. Quando toda ent
 
 ## Contagem de prazo
 
-Segue o CPC: art. 224 (exclui o dia do começo, inclui o do vencimento; a contagem começa no primeiro dia útil seguinte à publicação), art. 219 (dias úteis) e art. 220 (suspensão de 20/12 a 20/01). Já conhece os feriados nacionais, inclusive os que dependem da Páscoa — carnaval, cinzas, sexta-feira da paixão, corpus christi.
+Dois regimes, declarados — nunca inferidos. Adivinhar prazo é o único erro desta ferramenta que custa o caso.
 
-Não conhece, e nunca vai conhecer sozinho: feriado estadual e municipal, portaria de suspensão de expediente, ponto facultativo do foro. Isso entra em `docs/feriados.md`, uma linha por dia. Sem isso a contagem sai errada **para menos** — e errar para menos é o único erro desta ferramenta que custa o caso.
+| | `processual` (padrão) | `material` (`--material`) |
+|---|---|---|
+| base legal | CPC, arts. 219, 220 e 224 | CTN, art. 210 |
+| termo inicial | primeiro dia **útil** seguinte | dia seguinte, **útil ou não** |
+| unidade | dias úteis (ou `--corridos`) | dias corridos, sempre |
+| recesso de 20/12 a 20/01 | suspende | **não suspende** — é processual |
+| vencimento sem expediente | prorroga | prorroga |
 
-Prazo em dias corridos usa `--corridos`; o vencimento em dia sem expediente prorroga para o seguinte.
+```bash
+attorneyfw prazo set 1 --intimacao 2026-09-01 --dias 15 --fatal
+attorneyfw prazo set 2 --intimacao 2025-12-26 --dias 30 --material
+```
+
+Já conhece os feriados nacionais, inclusive os que dependem da Páscoa — carnaval, cinzas, sexta-feira da paixão, corpus christi.
+
+Não conhece, e nunca vai conhecer sozinho: feriado estadual e municipal, portaria de suspensão de expediente, ponto facultativo do foro. Isso entra em `docs/feriados.md`, uma linha por dia. Sem isso a contagem sai errada **para menos** — e errar para menos é o único erro desta ferramenta que perde prazo.
+
+### A divergência do art. 210, parágrafo único
+
+O dispositivo diz que os prazos "só se **iniciam** ou vencem em dia de expediente normal". Se esse deslocamento alcança apenas o vencimento, ou também o termo inicial, é questão em aberto — e as duas leituras dão datas diferentes.
+
+Quando divergem, o CLI devolve as duas e **adota a mais curta**:
+
+```
+intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2026-01-26
+  duas leituras do art. 210, par. unico, do CTN — adotada a mais curta
+    caput: contagem de 2025-12-27, vence 2026-01-26  <- adotada
+    se "iniciam" tambem deslocar: de 2025-12-29, vence 2026-01-27
+```
+
+Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
 ## Desenvolvimento
 

@@ -204,6 +204,53 @@ viraram trabalho.
   em consultivo nao ha pedido nem condenacao para comparar, e mandar registrar
   desfecho para so entao dizer que o comando nao serve seria trabalho a toa.
 
+### Adicionado — amostra jurisprudencial e prognostico
+
+- **`attorneyfw jurisprudencia [add "<id>"]`**, com `--tribunal`, `--data`,
+  `--resultado`, `--razao`, `--fonte`, `--lido` e `--json`. A secao entra na
+  tese e no mapa de risco.
+
+- **`attorneyfw prognostico [--json]`** — semaforo verde, amarelo ou vermelho,
+  com as razoes, **cada uma apontando o artefato de onde saiu**. Sai com codigo
+  1 quando ha impeditivo.
+
+### Decidido — o item entregue diferente do que foi pedido
+
+- **A ferramenta nao produz probabilidade de exito em porcentagem, e nao vai
+  produzir.** Nao e limitacao a ser removida quando houver dados melhores: e
+  recusa, na mesma familia de nao assinar, nao aprovar e nao protocolar.
+
+  Tres camadas de motivo. *Unidade*: forca de argumento, risco processual e
+  frequencia historica nao estao na mesma escala e nao se somam; a media delas
+  tem precisao aparente e nenhum referente. *Uso*: aquele numero nao fica na
+  tela — vai para conversa com cliente, onde ninguem pergunta como foi
+  calculado. *Responsabilidade*: numero de probabilidade dado a cliente opera
+  como promessa de resultado.
+
+  **Duas regras de lint protegem a decisao.** Uma positiva, que reprova o build
+  se a recusa sumir do README, do help ou do modulo — decisao sem a razao
+  escrita ao lado e reimplementada pela proxima pessoa, que acha que faltava. E
+  uma negativa, que reprova se alguma linha de codigo passar a emitir percentual
+  ao lado de "exito". A guarda foi verificada quebrando-a de proposito.
+
+- **A amostra e conferida, nao um censo.** O pedido era "80% dos ultimos 50 no
+  TJPR". Ha um obstaculo de acesso — os tribunais estaduais nao oferecem
+  consulta programavel de inteiro teor — e um de metodo que nao se resolve com
+  dinheiro: classificar cinquenta acordaos exige le-los, e um deles pode ter
+  sido favoravel por fundamento que nao serve ao caso em maos.
+
+- **Julgado sem `--lido` entra como pendente**, mesmo que se declare o
+  resultado, e o comando avisa. Mesma disciplina do `[CONFERIR NA FONTE]`.
+
+- **A saida declara sempre o `n`** e nunca apresenta a amostra como universo. O
+  `--json` traz `universo: null` de proposito.
+
+- **Nao ha coleta automatica.** Registro e manual; fonte que exige contrato
+  entra por chave do escritorio, e captcha nao se contorna.
+
+- Os criterios do semaforo sao os que o gate ja cobra, lidos em conjunto. Nao ha
+  peso arbitrario a calibrar porque nao ha nota a compor.
+
 ### Mudado
 
 - A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser

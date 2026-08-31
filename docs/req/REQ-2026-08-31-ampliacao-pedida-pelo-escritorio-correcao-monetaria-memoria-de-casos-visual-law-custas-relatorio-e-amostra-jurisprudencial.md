@@ -10,6 +10,22 @@ roadmap: "ROADMAP-2026-08-31-ampliacao-pedida-pelo-escritorio-em-seis-ondas"
 
 > Date: 2026-08-31 | Status: Open
 
+## Decisoes que amarram esta REQ
+
+ADR: `docs/adr/ADR-2026-08-31-numero-gerado-sai-com-procedencia-serie-e-tabela-em-arquivo-versionado-memoria-obrigatoria.md`
+— ondas 1 e 4: serie e tabela em arquivo versionado, memoria e procedencia sempre.
+
+ADR: `docs/adr/ADR-2026-08-31-a-carteira-e-a-memoria-institucional-resultado-no-encerramento-e-busca-transversal.md`
+— ondas 2 e 5: resultado no encerramento e busca transversal.
+
+ADR: `docs/adr/ADR-2026-08-31-visual-law-deriva-do-canon-e-da-cronologia-nunca-de-texto-livre.md`
+— onda 3: diagrama e projecao do canon.
+
+ADR: `docs/adr/ADR-2026-08-31-prognostico-e-semaforo-com-premissas-a-vista-e-jurisprudencia-e-amostra-conferida.md`
+— onda 6: semaforo em vez de porcentagem, amostra em vez de censo.
+
+Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-ampliacao-pedida-pelo-escritorio-em-seis-ondas.md`
+
 ## Motivation
 
 Um escritorio que usou a ferramenta mandou dez pedidos de funcionalidade,

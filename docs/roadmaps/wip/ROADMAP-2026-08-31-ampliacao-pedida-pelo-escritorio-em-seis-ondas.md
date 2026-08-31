@@ -259,25 +259,39 @@ que o bookfw pagou com quatro livros.
 
 ### ML-6A — Amostra conferida
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/jurisprudencia.mjs` (novo), `templates/tese.md`, `templates/mapa-risco.md`, `bin/attorneyfw.mjs`
 **Aceite:**
-- [ ] Julgado com identificador, link, resultado e razao da classificacao
-- [ ] Sem leitura confirmada, entra como **pendente** e assim aparece
-- [ ] Saida declara sempre o `n` da amostra
-- [ ] Nenhuma coleta automatica nesta onda — registro manual e o escopo
+- [x] Julgado com identificador, link, resultado e razao da classificacao
+- [x] Sem leitura confirmada, entra como **pendente** e assim aparece
+- [x] Saida declara sempre o `n` da amostra
+- [x] Nenhuma coleta automatica nesta onda — registro manual e o escopo
 
 ### ML-6B — `attorneyfw prognostico`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/prognostico.mjs` (novo), `bin/attorneyfw.mjs`, `tools/lint.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Semaforo verde/amarelo/vermelho, com razoes apontando o artefato de origem
-- [ ] Criterios derivados do que o gate ja cobra — sem peso arbitrario novo
-- [ ] **Nenhuma porcentagem**, e lint que reprova se alguma superficie emitir uma
-- [ ] Smoke cobre os tres estados do semaforo
+- [x] Semaforo verde/amarelo/vermelho, com razoes apontando o artefato de origem
+- [x] Criterios derivados do que o gate ja cobra — sem peso arbitrario novo
+- [x] **Nenhuma porcentagem**, e lint que reprova se alguma superficie emitir uma
+- [x] Smoke cobre os tres estados do semaforo
 
 ---
+
+**Medido ao fim da onda:** 17 asserts. A guarda contra porcentagem foi
+**verificada quebrando-a de proposito** — uma linha emitindo `${pct}% de exito`
+em `prognostico.mjs` reprova o lint com nome e numero de linha.
+
+**Defeito encontrado rodando:** a insercao do segundo julgado ia parar na tabela
+de **Riscos**, que vem adiante no mesmo arquivo — a busca pela ultima linha de
+tabela partia de um deslocamento fixo depois do titulo, e nao das fronteiras da
+secao. O julgado era gravado no lugar errado e sumia da amostra sem erro nenhum.
+
+**Decisao autonoma sobre o teste:** o semaforo e testado **pela transicao**, e
+nao pela luz num instante. Fixar a luz num ponto do smoke faria o teste quebrar
+a cada criterio novo sem nada de errado ter acontecido; o que tem de valer e a
+regra — acrescentar um julgado contrario acrescenta exatamente um impeditivo.
 
 ## Barreira final
 

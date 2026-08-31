@@ -518,6 +518,69 @@ writeFileSync(serieArq, SERIE_BOA);
 ok('indice lista o que a carteira tem', run('indice').saida.includes('2024-01'));
 ok('serie desconhecida nao e adivinhada', run('atualizar', '10', '--de', '2024-01-15', '--serie', 'xpto').codigo === 1);
 
+// ------------------------------------------- amostra jurisprudencial e semaforo
+console.log('\namostra e prognostico');
+
+ok('julgado sem identificador e recusado', emAcme('jurisprudencia', 'add').codigo === 1);
+ok('resultado fora do vocabulario e recusado',
+  emAcme('jurisprudencia', 'add', 'X-1', '--resultado', 'talvez').codigo === 1);
+ok('identificador com barra vertical e recusado — quebraria a tabela',
+  emAcme('jurisprudencia', 'add', 'A | B').codigo === 1);
+
+// Classificar sem ter lido e o defeito que esta amostra existe para evitar.
+const semLer = emAcme('jurisprudencia', 'add', '0002079-26.2017.8.16.0004',
+  '--tribunal', 'TJPR', '--data', '2018-08-16', '--resultado', 'favoravel');
+ok('classificado sem --lido avisa', semLer.saida.includes('PENDENTE DE LEITURA'));
+ok('e entra como pendente, nao como favoravel',
+  emAcme('jurisprudencia').saida.includes('pendente'));
+
+ok('com --lido entra classificado', (() => {
+  emAcme('jurisprudencia', 'add', '1514292-8', '--tribunal', 'TJPR',
+    '--data', '2016-11-22', '--resultado', 'favoravel', '--lido', '--razao', 'enfrenta a objecao pelo nome');
+  const r = emAcme('jurisprudencia');
+  return r.saida.includes('favoravel') && r.saida.includes('enfrenta a objecao');
+})());
+ok('a saida declara o n da amostra', emAcme('jurisprudencia').saida.includes('amostra de 2'));
+ok('e diz que nao e censo', emAcme('jurisprudencia').saida.includes('nao censo'));
+ok('nenhuma porcentagem sai da amostra', !/\d+([.,]\d+)?%/.test(emAcme('jurisprudencia').saida));
+ok('--json nao traz universo', (() => {
+  const r = emAcme('jurisprudencia', '--json');
+  try { const j = JSON.parse(r.saida); return j.n === 2 && j.universo === null && j.lidos === 1; }
+  catch { return false; }
+})());
+
+// O semaforo se testa pela transicao, e nao pela luz num instante: a luz depende
+// de todo o estado da materia, e um teste que a fixa quebra a cada regra nova
+// sem nada de errado ter acontecido. O que tem de valer e a regra.
+const antes = JSON.parse(emAcme('prognostico', '--json').saida);
+ok('julgado nao lido e reserva, e nao impeditivo',
+  antes.reservas.some((x) => x.razao.includes('nao lidos')));
+ok('cada reserva tem endereco', antes.reservas.every((x) => x.onde && x.razao));
+
+// Julgado contrario lido e nao distinguido e impeditivo.
+ok('julgado contrario lido acrescenta um impeditivo e pinta de vermelho', (() => {
+  emAcme('jurisprudencia', 'add', 'CONTRA-1', '--tribunal', 'TJPR', '--resultado', 'contrario', '--lido');
+  const r = emAcme('prognostico');
+  const dep = JSON.parse(emAcme('prognostico', '--json').saida);
+  return dep.semaforo === 'vermelho'
+    && dep.impeditivos.length === antes.impeditivos.length + 1
+    && dep.impeditivos.some((x) => x.razao.includes('CONTRA-1'))
+    && r.codigo === 1;
+})());
+
+ok('a recusa da porcentagem sai na propria saida',
+  emAcme('prognostico').saida.includes('NAO e probabilidade de exito'));
+ok('nenhuma porcentagem sai do prognostico', !/\d+([.,]\d+)?%/.test(emAcme('prognostico').saida));
+ok('--json declara probabilidadeDeExito null', (() => {
+  const r = emAcme('prognostico', '--json');
+  try { const j = JSON.parse(r.saida); return j.probabilidadeDeExito === null && j.semaforo === 'vermelho'; }
+  catch { return false; }
+})());
+ok('cada impeditivo tem endereco', (() => {
+  const r = emAcme('prognostico', '--json');
+  try { return JSON.parse(r.saida).impeditivos.every((x) => x.onde && x.razao); } catch { return false; }
+})());
+
 // ----------------------------------------------------------------- relatorio
 console.log('\nrelatorio ao cliente');
 

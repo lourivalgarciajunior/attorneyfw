@@ -46,6 +46,19 @@ pode ser citado nos topicos; o que nao estiver, confere-se antes.
 |---|---|---|---|
 |  |  |  |  |
 
+## Amostra jurisprudencial
+
+Julgados conferidos, com o **n** a vista. Amostra, nunca censo: dez a quinze
+lidos valem mais que cinquenta classificados por ementa. Julgado que ninguem
+abriu entra como `pendente` e assim aparece — a mesma disciplina do
+`[CONFERIR NA FONTE]`.
+
+Nenhuma porcentagem sai daqui. Ver o ADR sobre prognostico.
+
+| Julgado | Tribunal | Data | Resultado | Lido | Razao | Fonte |
+|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |
+
 ## O que a outra parte vai dizer
 
 A tese da contraparte, escrita por nos, no melhor que ela consegue. Topico que

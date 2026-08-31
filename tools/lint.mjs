@@ -95,6 +95,26 @@ for (const r of RESSALVAS) {
   }
 }
 
+// 8b. A recusa em produzir porcentagem de exito e uma decisao, nao um vazio de
+//     implementacao. Se ela sumir do texto, some tambem a razao de nao a
+//     reintroduzir — e a proxima pessoa a implementa achando que faltava.
+for (const arq of ['bin/attorneyfw.mjs', 'README.md', 'src/prognostico.mjs']) {
+  const t = semAcento(arq === 'README.md' ? readme : arq === 'bin/attorneyfw.mjs' ? bin : ler(...arq.split('/')));
+  if (!(/nao produz|nunca produz|nao sai porcentagem|nenhuma porcentagem/.test(t) && t.includes('exito'))) {
+    falha('recusa-porcentagem', `${arq} nao declara que a ferramenta nao produz porcentagem de exito`);
+  }
+}
+// 8c. O teste negativo correspondente: nenhuma linha de codigo pode emitir um
+//     percentual ao lado de "exito". Comentario e linha que nega estao fora.
+for (const f of srcs) {
+  ler('src', f).split(/\r?\n/).forEach((linha, i) => {
+    const t = semAcento(linha);
+    if (!t.includes('exito') || !linha.includes('%')) return;
+    if (/^\s*(\*|\/\/|\/\*)/.test(linha) || /nao|nunca/.test(t)) return;
+    falha('porcentagem-de-exito', `src/${f}:${i + 1} parece emitir percentual de exito`);
+  });
+}
+
 // 9. Os dois tipos de materia precisam ter vocabulario completo: uma chave a
 //    menos num deles vira `undefined` no meio de uma mensagem do gate.
 const core = ler('src', 'core.mjs');

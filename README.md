@@ -217,6 +217,36 @@ Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém
 
 O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
 
+## Amostra jurisprudencial e prognóstico
+
+```bash
+attorneyfw jurisprudencia add "0002079-26.2017.8.16.0004" --tribunal TJPR   --data 2018-08-16 --resultado contrario --lido --razao "a sentenca confirmada afastou o art. 31 §2"
+attorneyfw jurisprudencia
+attorneyfw prognostico
+```
+
+Estes dois entregam menos do que o escritório pediu, de propósito, e o [ADR](docs/adr/) diz por quê.
+
+**A amostra é conferida, não um censo.** O pedido era "80% dos últimos 50 casos no TJPR". Há um obstáculo de acesso — os tribunais estaduais não oferecem consulta programável de inteiro teor — e um de método, que não se resolve com dinheiro: **classificar cinquenta acórdãos exige lê-los**. Um deles pode ter sido favorável por fundamento que não serve ao caso em mãos, e entra na conta como vitória. Dez a quinze lidos valem mais que cinquenta classificados por ementa.
+
+Julgado sem `--lido` entra como `pendente` e **assim aparece** — a mesma disciplina do `[CONFERIR NA FONTE]`. A saída declara sempre o `n`, e nunca apresenta a amostra como universo. Não há coleta automática: registro é manual, fonte que exige contrato entra por chave do escritório, e captcha não se contorna.
+
+**A ferramenta não produz probabilidade de êxito em porcentagem, e não vai produzir.** Não é limitação a ser removida quando houver dados melhores: é recusa, na mesma família de não assinar, não aprovar e não protocolar. Há uma regra de lint que reprova o build se essa recusa sumir de qualquer superfície.
+
+O motivo tem três camadas. **Unidade:** força de argumento, risco processual e frequência histórica não estão na mesma escala e não se somam; a média delas tem precisão aparente e nenhum referente. **Uso:** aquele número não fica na tela — sai dela e vai para conversa com cliente, onde ninguém pergunta como foi calculado. **Responsabilidade:** número de probabilidade dado a cliente opera como promessa de resultado.
+
+O que sai é semáforo, e **cada razão aponta o artefato de onde saiu** — quem discorda ataca a razão, e a razão tem endereço:
+
+| Luz | Quando | Exemplo de razão |
+|---|---|---|
+| 🔴 vermelho | há impeditivo | `F2` sem provado; pedido sem tópico; prazo vencido; julgado contrário não distinguido |
+| 🟡 amarelo | há reserva | citação não conferida; julgado da amostra não lido; teto e piso em branco |
+| 🟢 verde | nenhum dos dois | ausência de defeito conhecido — **não** prognóstico de vitória |
+
+Os critérios não são novos: são os que o gate já cobra, lidos em conjunto. Não há peso arbitrário a calibrar porque não há nota a compor.
+
+E o que responde à pergunta do cliente sem fingir precisão já estava na tese desde a 0.1.0 — **teto e piso**, a **matriz de risco**, e o **escopo negativo**.
+
 ## Relatório ao cliente
 
 ```bash
@@ -316,7 +346,7 @@ O IPCA-E não tem coleta automática nesta versão: preenche-se à mão, e o com
 npm run check     # lint + smoke
 ```
 
-O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
+O lint tem onze regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
 
 ## Escopo negativo
 

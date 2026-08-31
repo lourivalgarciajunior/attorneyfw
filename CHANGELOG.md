@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.9.0 — 2026-08-31
+
+### Acrescentado
+
+- **`attorneyfw prazo --json`** — a agenda tambem sai como contrato tipado, com
+  `versao`, `hoje`, `ressalva`, `janela`, `materias`, `vencidos` e `prazos[]`.
+
+  O motivo nao e simetria com os outros `--json`. O hook `SessionStart` do plugin
+  decidia se havia prazo vencido lendo `linha.includes('VENCIDO')` — o unico
+  acoplamento deste repositorio cuja quebra e **silenciosa e cara**. Reescrever
+  aquele rotulo desligaria o unico alarme do plugin e **manteria a agenda
+  impressa**: nada falharia, nada avisaria, e o unico erro desta ferramenta que
+  custa o caso do cliente ficaria sem sinal.
+
+  Agora o sinal e campo: `vencido: true`, `restam: -6`, `vencidos: 1`.
+
+### As tres decisoes que dao forma ao payload
+
+- **A ressalva e campo, e nao rodape.** Payload tipado e feito para programa
+  consumir, e programa nao le rodape. Se a ressalva ficasse so na renderizacao de
+  texto, o numero viajaria sozinho — e um prazo de conferencia chega ao consumidor
+  com cara de contagem oficial. **Regra 16 do lint** reprova o build se
+  `src/prazo.mjs` deixar de atribuir `ressalva: AVISO` ao payload.
+
+- **Cada entrada carrega a `linha` que o terminal imprimiria, sem ANSI.**
+  Decide-se pelos campos, exibe-se pela linha: nenhum lado reimplementa o outro, e
+  nao ha segunda renderizacao para envelhecer. O `c.*` do core sempre colore — nao
+  ha teste de TTY —, e sem a linha limpa cada consumidor escreveria o proprio
+  removedor de cor, cada um com um regex diferente.
+
+- **`versao: 1`**, para que um consumidor possa recusar o que nao entende. Sem
+  numero de versao, renomear um campo troca um acoplamento de texto por um
+  acoplamento de forma, que quebra igual e sem aviso.
+
+### Mudado
+
+- **O hook do plugin parou de ler texto.** Decide por `vencidos`, por
+  `prazos.length` e por `erro`; exibe pela `linha`; imprime a `ressalva` **do
+  payload**, e nao uma copia literal. O removedor de cor do script sumiu.
+
+- **Ganho de comportamento, e nao so de forma:** o hook passou a gritar tambem
+  quando ha **prazo mal declarado**. Antes a linha `???` se perdia no meio da
+  lista; agora ela e contada e anunciada, porque a entrega tem prazo e ninguem
+  sabe qual e.
+
+- Payload ilegivel — inclusive CLI antigo, sem `--json` — faz o hook **calar**, e
+  nao falhar. A regra de nunca derrubar a sessao vale acima de tudo.
+
+### Nao mudou, e ha teste provando
+
+- **A saida de terminal, byte a byte.** Conferida contra a captura de antes da
+  mudanca, numa fixture com prazo mal declarado, vencido com FATAL, material com a
+  divergencia do art. 210 e duas materias.
+- **Nenhuma linha de contagem, termo inicial ou feriado.**
+- **O codigo de saida:** `--json` continua saindo com 1 quando ha vencido.
+- `prazo set` continua sem `--json` — nao ha consumidor, e formato sem consumidor
+  nasce desatualizado.
+
 ## 0.8.0 — 2026-08-31
 
 ### Acrescentado

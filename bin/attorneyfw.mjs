@@ -79,9 +79,11 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw modelo aplicar <tipo>      cria o checklist PENDENTE na materia
   attorneyfw modelo                     os modelos da carteira
   attorneyfw conferir <entrega>         extenso x algarismo, soma x total, item x pedido,
-                            transcricao x ficha e texto x contrato do topico.
+                            transcricao x ficha, texto x contrato do topico e
+                            continuidade de fato contra a cronologia e o canon.
                             Nao confere se o dispositivo existe, se esta em vigor,
-                            se foi superado nem se sustenta o que o topico afirma
+                            se foi superado nem se sustenta o que o topico afirma,
+                            e nao infere que dois fatos sao o mesmo fato
   attorneyfw dados <entrega>            o que tem formato de dado pessoal (so acusa)
   attorneyfw anonimizar --init          cria o mapa real -> ficticio da materia
   attorneyfw anonimizar <entrega>       aplica o mapa inteiro numa passada [--reverter]

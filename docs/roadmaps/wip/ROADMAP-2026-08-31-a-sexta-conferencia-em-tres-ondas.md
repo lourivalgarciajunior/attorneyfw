@@ -160,7 +160,7 @@ nenhuma data do topico e a dela. Tres testes de regressao.
 
 ### ML-3A — README, AJUDA e a regra de lint
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `bin/attorneyfw.mjs`, `tools/lint.mjs`
 **Acoes:**
 1. README: a sexta conferencia, as tres ancoras, e a promessa do template

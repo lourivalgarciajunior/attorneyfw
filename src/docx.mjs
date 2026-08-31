@@ -107,8 +107,25 @@ export async function docx(args) {
   // sozinho; aqui a fonte e uma so, e a saida do papel e a do markdown.
   const fonte = join(m.dir, 'saida', `${e.fm.id || e.arquivo.replace('.md', '')}.md`);
   if (!existsSync(fonte) || args.recostura) build({ ...args, _: [String(e.numero)] });
-  const texto = readFileSync(fonte, 'utf8');
 
+  await markdownParaDocx({
+    raiz, esc, texto: readFileSync(fonte, 'utf8'),
+    titulo: `${e.fm.titulo || e.arquivo} — ${m.cfg.processo || m.slug}`,
+    alvo: join(m.dir, 'saida', `${String(e.numero).padStart(2, '0')} — ${e.fm.titulo || e.arquivo.replace('.md', '')}.docx`),
+    rodape: rel(raiz, fonte),
+  });
+}
+
+/**
+ * Markdown -> DOCX. E o unico gerador de OOXML da ferramenta, e todos os
+ * comandos que produzem papel passam por aqui.
+ *
+ * A regra que ele existe para sustentar: **nada reconstroi a selecao do texto**.
+ * O `docx` le o markdown que o `build` gerou; o relatorio le o markdown que o
+ * `relatorio` gerou. Foi um gerador copiado que divergiu do build, no bookfw,
+ * e o preco foi quatro livros com a mesma correcao aplicada quatro vezes.
+ */
+export async function markdownParaDocx({ raiz, esc, texto, titulo, alvo, rodape = '' }) {
   const {
     Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber, LineRuleType,
   } = await carregarDocx(raiz);
@@ -140,7 +157,7 @@ export async function docx(args) {
     const marca = bloco.match(new RegExp(`^${MARCA}(\\d+)@@$`));
     if (marca) {
       filhos.push(...await paragrafosDoDiagrama(
-        fontes[Number(marca[1])], render, { Paragraph, AlignmentType, run, m },
+        fontes[Number(marca[1])], render, { Paragraph, AlignmentType, run },
       ));
       continue;
     }
@@ -168,8 +185,8 @@ export async function docx(args) {
 
   const doc = new Document({
     creator: esc.advogado || 'attorneyfw',
-    title: `${e.fm.titulo || e.arquivo} — ${m.cfg.processo || m.slug}`,
-    description: `Gerado por attorneyfw em ${hoje()}. Conferir antes de protocolar.`,
+    title: titulo,
+    description: `Gerado por attorneyfw em ${hoje()}. Conferir antes de assinar.`,
     sections: [{
       properties: { page: { size: A4, margin: MARGENS } },
       footers: {
@@ -184,12 +201,11 @@ export async function docx(args) {
     }],
   });
 
-  const nome = `${String(e.numero).padStart(2, '0')} — ${e.fm.titulo || e.arquivo.replace('.md', '')}.docx`;
-  const alvo = join(m.dir, 'saida', nome);
-  mkdirSync(join(m.dir, 'saida'), { recursive: true });
+  mkdirSync(join(alvo, '..'), { recursive: true });
   writeFileSync(alvo, await Packer.toBuffer(doc));
 
   console.log(`${c.green('docx gerado')}  ${rel(raiz, alvo)}`);
-  console.log(c.dim(`  ${filhos.length} paragrafos | de ${rel(raiz, fonte)}`));
-  console.log(c.dim('  confira antes de protocolar — o CLI monta, quem assina responde'));
+  console.log(c.dim(`  ${filhos.length} paragrafos${rodape ? ` | de ${rodape}` : ''}`));
+  console.log(c.dim('  confira antes de assinar — o CLI monta, quem assina responde'));
+  return alvo;
 }

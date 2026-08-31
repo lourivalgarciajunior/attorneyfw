@@ -30,7 +30,10 @@ wip_limit: 2
 #
 # Entrega protocolada nao e desfecho: ela registra que a peca saiu, nao o que
 # aconteceu depois. Materia sem resultado esta em curso.
-valor_pedido:
+valor_pedido: {{valor_pedido}}
+# Data a que o valor pedido se refere. Com ela, o relatorio corrige; sem ela,
+# sai nominal e diz que saiu.
+valor_pedido_em:
 resultado:
 resultado_em:
 resultado_valor:

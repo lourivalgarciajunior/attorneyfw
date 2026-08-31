@@ -518,6 +518,72 @@ writeFileSync(serieArq, SERIE_BOA);
 ok('indice lista o que a carteira tem', run('indice').saida.includes('2024-01'));
 ok('serie desconhecida nao e adivinhada', run('atualizar', '10', '--de', '2024-01-15', '--serie', 'xpto').codigo === 1);
 
+// ----------------------------------------------------------------- relatorio
+console.log('\nrelatorio ao cliente');
+
+// A regra inteira deste comando esta no sinal: os mesmos dois numeros sao ganho
+// para o reu e perda parcial para o autor. Por isso os dois casos sao testados
+// com os MESMOS valores, e o que muda e so o papel.
+const matAcme = join(acme, 'materia.yaml');
+const yamlBase = lerLF(matAcme)
+  .replace(/^valor_pedido:.*$/m, 'valor_pedido: 50000,00')
+  .replace(/^resultado_valor:.*$/m, 'resultado_valor: 20000,00');
+writeFileSync(matAcme, yamlBase, 'utf8');
+
+// A ficha do canon diz "autor" — o cliente pediu 50 mil e obteve 20 mil.
+const comoAutor = emAcme('relatorio');
+ok('polo ativo: ganho e o que entrou', comoAutor.saida.includes('20.000,00'));
+ok('polo ativo: a proporcao e do que se pediu', comoAutor.saida.includes('40.0%'));
+ok('relatorio grava o markdown', existsSync(join(acme, 'saida', 'relatorio-acme.md')));
+ok('sem data de referencia, avisa que o valor e nominal', comoAutor.saida.includes('NOMINAIS'));
+
+// Mesmos numeros, papel trocado: o ganho passa a ser o que se deixou de pagar.
+const fichaParte = join(acme, 'docs', 'canon', 'partes', 'acme-ltda.md');
+writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: reu'), 'utf8');
+const comoReu = emAcme('relatorio');
+ok('polo passivo: ganho e o que se deixou de pagar', comoReu.saida.includes('30.000,00'));
+ok('polo passivo: 60% do que era exigido', comoReu.saida.includes('60.0%'));
+ok('o texto diz "deixou de pagar" so no polo passivo',
+  readFileSync(join(acme, 'saida', 'relatorio-acme.md'), 'utf8').includes('deixou de pagar'));
+
+// O polo nao se infere. Papel fora do vocabulario tem de parar o comando.
+ok('papel desconhecido para o relatorio', (() => {
+  writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: interessado'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: autor'), 'utf8');
+  return r.codigo === 1 && r.saida.includes('de que lado');
+})());
+
+// Com data de referencia, corrige pela serie da onda 1.
+ok('com valor_pedido_em, corrige e mostra o fator', (() => {
+  writeFileSync(matAcme, yamlBase
+    .replace(/^valor_pedido_em:.*$/m, 'valor_pedido_em: 2024-01-15')
+    .replace(/^resultado_em:.*$/m, 'resultado_em: 2024-03-20'), 'utf8');
+  const r = emAcme('relatorio');
+  // 50.000,00 x 1,0251 = 51.255,00, pela mesma serie sintetica da correcao.
+  return r.saida.includes('51.255,00') && r.saida.includes('pedido corrigido');
+})());
+
+ok('sem valor_pedido o comando falha em vez de deduzir', (() => {
+  writeFileSync(matAcme, yamlBase.replace(/^valor_pedido:.*$/m, 'valor_pedido:'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(matAcme, yamlBase, 'utf8');
+  return r.codigo === 1 && r.saida.includes('valor_pedido');
+})());
+
+ok('consultivo nao tem polo, e o comando diz isso', (() => {
+  const r = emBeta('relatorio');
+  return r.codigo === 1 && r.saida.includes('contenciosa');
+})());
+
+ok('materia sem resultado nao gera relatorio', (() => {
+  const bom = lerLF(matAcme);
+  writeFileSync(matAcme, bom.replace(/^resultado: .*$/m, 'resultado:'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(matAcme, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('materia fechar');
+})());
+
 // --------------------------------------------------------------------- custas
 console.log('\ncustas');
 

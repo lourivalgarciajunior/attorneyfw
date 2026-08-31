@@ -20,6 +20,7 @@ import { atualizar, indiceLista } from '../src/atualizar.mjs';
 import { buscar } from '../src/buscar.mjs';
 import { diagrama } from '../src/diagrama.mjs';
 import { custas } from '../src/custas.mjs';
+import { relatorio } from '../src/relatorio.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -59,6 +60,7 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw build <entrega>            costura a entrega em markdown
   attorneyfw docx <entrega>             a versao de protocolo (pede o pacote docx)
   attorneyfw indice [atualizar [serie]] series de indice da carteira
+  attorneyfw relatorio [--docx]          o resultado explicado ao cliente
   attorneyfw custas init --tribunal <t>  cria a tabela de custas do tribunal
   attorneyfw custas <valor> --tribunal <t> [--ano N] [--provisorio] [--json]
   attorneyfw atualizar <valor> --de AAAA-MM-DD [--ate AAAA-MM-DD]
@@ -149,6 +151,7 @@ try {
     case 'atualizar': atualizar(args); break;
     case 'buscar': buscar(args); break;
     case 'custas': custas(args); break;
+    case 'relatorio': await relatorio(args); break;
     case 'diagrama': diagrama(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;

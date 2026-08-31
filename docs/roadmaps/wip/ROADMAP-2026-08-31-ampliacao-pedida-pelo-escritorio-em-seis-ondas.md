@@ -234,15 +234,24 @@ R$ 1.020,00.
 
 ### ML-5A — O relatorio
 
-**Status:** ⬜ Pendente
-**Files affected:** `src/relatorio.mjs` (novo), `bin/attorneyfw.mjs`, `README.md`, `CHANGELOG.md`
+**Status:** ✅ Concluído
+**Files affected:** `src/relatorio.mjs` (novo), `src/docx.mjs` (extracao do `markdownParaDocx`), `templates/materia.yaml`, `bin/attorneyfw.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Compara `valor_pedido` × `resultado_valor`, corrigidos pela Wave 1
-- [ ] **O sinal do ganho vem do papel do cliente no canon de partes**
-- [ ] Falta de resultado ou de papel **falha** — nao infere
-- [ ] Sai em markdown, e em DOCX pelo caminho existente
+- [x] Compara `valor_pedido` × `resultado_valor`, corrigidos pela Wave 1
+- [x] **O sinal do ganho vem do papel do cliente no canon de partes**
+- [x] Falta de resultado ou de papel **falha** — nao infere
+- [x] Sai em markdown, e em DOCX pelo caminho existente
 
 ---
+
+**Medido ao fim da onda:** 12 asserts. Os dois centrais usam os **mesmos**
+valores — pedido 50.000, obtido 20.000 — e trocam so o papel: como autor o ganho
+e 20.000 (40%); como reu, 30.000 (60%). E a prova de que o sinal esta no polo, e
+nao nos numeros.
+
+**Decisao autonoma:** o `markdownParaDocx` foi extraido do `docx.mjs` em vez de
+o relatorio ganhar um gerador proprio. Gerador copiado foi exatamente o defeito
+que o bookfw pagou com quatro livros.
 
 ## Wave 6 — Item 3: amostra jurisprudencial e semaforo
 

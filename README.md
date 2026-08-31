@@ -217,6 +217,22 @@ Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém
 
 O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
 
+## Relatório ao cliente
+
+```bash
+attorneyfw relatorio --docx
+```
+
+Pós-venda: explicar a vitória e, sobretudo, explicar a derrota parcial. Compara `valor_pedido` com `resultado_valor`, corrigindo o primeiro quando há `valor_pedido_em`.
+
+**O sinal do ganho vem do papel do cliente.** Consumidor pede R$ 50.000 de danos morais e o juiz condena a R$ 20.000: para o réu isso é um ganho de R$ 30.000; para o autor, os mesmos dois números são perda parcial de R$ 30.000. O sinal não está nos números — está em de que lado o cliente estava.
+
+Por isso **o polo não se infere**. Sem papel declarado no canon de partes (ou, na falta dele, no `materia.yaml`), o comando falha. Relatório com o sinal trocado não é um relatório ruim: é um documento que diz ao cliente que ele ganhou quando perdeu.
+
+Falta de `resultado` ou de `valor_pedido` também para o comando. Deduzir o pedido da peça seria adivinhar.
+
+O `--docx` passa pelo mesmo gerador do `attorneyfw docx`, que lê o markdown já gerado — nada reconstrói a seleção do texto.
+
 ## Custas processuais
 
 ```bash

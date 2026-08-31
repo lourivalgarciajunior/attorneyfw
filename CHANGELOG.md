@@ -175,6 +175,35 @@ viraram trabalho.
   unico ponto seguido de uma ou duas casas e decimal. Encontrado rodando a
   primeira conta de custas, nao lendo o codigo.
 
+### Adicionado — relatorio de resultado ao cliente
+
+- **`attorneyfw relatorio [--docx] [--serie]`**. Compara `valor_pedido` com
+  `resultado_valor`, corrigindo o primeiro quando ha `valor_pedido_em`.
+
+- **`valor_pedido_em`** no `materia.yaml`, ao lado do `valor_pedido`. Com ele o
+  relatorio corrige; sem ele, sai nominal e **diz que saiu**.
+
+- `markdownParaDocx` extraido do `docx.mjs`: o unico gerador de OOXML da
+  ferramenta, usado por todo comando que produz papel. Nada reconstroi a selecao
+  do texto — foi um gerador copiado que divergiu do build, no bookfw, e o preco
+  foram quatro livros com a mesma correcao aplicada quatro vezes.
+
+### Decidido
+
+- **O sinal do ganho vem do papel do cliente, e o polo nao se infere.**
+  Consumidor pede R$ 50.000 e o juiz condena a R$ 20.000: para o reu e ganho de
+  R$ 30.000; para o autor, os mesmos dois numeros sao perda parcial de
+  R$ 30.000. Sem papel declarado no canon — ou, na falta dele, no
+  `materia.yaml` —, o comando **falha**. Relatorio com o sinal trocado nao e um
+  relatorio ruim: e um documento que diz ao cliente que ele ganhou quando perdeu.
+
+- **Falta de `resultado` ou de `valor_pedido` para o comando.** Deduzir o pedido
+  da peca seria adivinhar.
+
+- **Consultivo nao gera relatorio de resultado**, e a recusa vem antes de tudo:
+  em consultivo nao ha pedido nem condenacao para comparar, e mandar registrar
+  desfecho para so entao dizer que o comando nao serve seria trabalho a toa.
+
 ### Mudado
 
 - A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser

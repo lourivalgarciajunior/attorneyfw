@@ -1,5 +1,5 @@
 ---
-status: wip
+status: done
 date: 2026-08-31
 req: docs/req/REQ-2026-08-31-conferencia-do-texto-do-topico-contra-o-contrato-declarado.md
 adr: docs/adr/ADR-2026-08-31-o-texto-do-topico-se-confere-contra-o-proprio-contrato.md
@@ -7,7 +7,7 @@ adr: docs/adr/ADR-2026-08-31-o-texto-do-topico-se-confere-contra-o-proprio-contr
 
 # Roadmap: A quinta conferencia — texto contra contrato, em quatro ondas
 
-> Created: 2026-08-31 | Status: wip
+> Created: 2026-08-31 | Status: done
 
 ## Context
 
@@ -35,14 +35,14 @@ com a superficie de linha de comando.
 
 ## Acceptance Criteria
 
-- [ ] As quatro ondas concluidas, cada uma com `npm run check` verde
-- [ ] Nenhuma das cinco comparacoes verifica existencia, vigencia, superacao ou pertinencia
-- [ ] Quatro das cinco sao aviso; so topico sem texto reprova, e so em `revisao` e `entregue`
-- [ ] Sigla fora da tabela declarada nao vira citacao — silencio, e nao palpite
-- [ ] O contrato de topico nao ganha campo novo
-- [ ] Zero dependencia de runtime nova
-- [ ] CI verde em Linux e Windows ao fim de cada onda
-- [ ] Plugin `attorneyfw` atualizado no `plugin-skill`, com a versao alinhada ao CLI
+- [x] As quatro ondas concluidas, cada uma com `npm run check` verde
+- [x] Nenhuma das cinco comparacoes verifica existencia, vigencia, superacao ou pertinencia
+- [x] Quatro das cinco sao aviso; so topico sem texto reprova, e so em `revisao` e `entregue`
+- [x] Sigla fora da tabela declarada nao vira citacao — silencio, e nao palpite
+- [x] O contrato de topico nao ganha campo novo
+- [x] Zero dependencia de runtime nova
+- [x] CI verde em Linux e Windows ao fim de cada onda
+- [x] Plugin `attorneyfw` atualizado no `plugin-skill`, com a versao alinhada ao CLI
 
 ---
 
@@ -175,7 +175,7 @@ da nada. Cada teste cria a propria fixture.
 
 ### ML-4B — CHANGELOG, versao e plugin
 
-**Status:** 🔄 Em andamento
+**Status:** ✅ Concluído
 **Files affected:** `CHANGELOG.md`, `package.json`, `plugin-skill/plugins/attorneyfw/**`
 **Acoes:**
 1. CHANGELOG 0.6.0 — o que passou a ser conferido, e o que continua sem ser.
@@ -189,4 +189,16 @@ da nada. Cada teste cria a propria fixture.
 
 **Aceite:** `claude plugin validate .` passa; `diff -r` do cache contra a fonte
 sai limpo.
+
+Medido contra `main` em `e38ea6c` (0.5.1): **30 modulos** (29 + `citacao.mjs`),
+**307 -> 335 asserts**, 12 -> 13 regras de lint.
+
+**Nota de publicacao.** O `plugin update` para 0.6.0 respondeu
+`updated from 0.5.1 to 0.6.0` e serviu conteudo **velho**: ja existia uma pasta
+`cache/.../attorneyfw/0.6.0/` de uma publicacao anterior desta mesma sequencia,
+e o cache nao reescreve pasta de versao existente. Quem pegou foi o `diff -r`.
+Apagar a pasta nao resolve — sem ela o update diz `already at the latest
+version`. Resolveu `uninstall` + `install`. Registrado no `CONTRIBUTING.md` do
+`plugin-skill`.
+
 **Validacao:** `npm run check` · `trackfw validate` · `claude plugin validate .`

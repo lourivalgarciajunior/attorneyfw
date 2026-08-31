@@ -1,5 +1,5 @@
 ---
-status: In Progress
+status: Done
 date: 2026-08-31
 author: "Lourival Garcia"
 adr: "ADR-2026-08-31-o-texto-do-topico-se-confere-contra-o-proprio-contrato"
@@ -8,7 +8,7 @@ roadmap: "ROADMAP-2026-08-31-a-quinta-conferencia-texto-contra-contrato-em-quatr
 
 # REQ: Conferencia do texto do topico contra o contrato declarado
 
-> Date: 2026-08-31 | Status: In Progress
+> Date: 2026-08-31 | Status: Done
 
 ## Decisoes que amarram esta REQ
 
@@ -20,7 +20,7 @@ ADR: `docs/adr/ADR-2026-08-31-numero-se-confere-contra-si-mesmo-e-contra-o-docum
 — a familia em que ela entra: par a vista, nada corrigido, silencio no lugar de
 palpite.
 
-Roadmap: `docs/roadmaps/wip/ROADMAP-2026-08-31-a-quinta-conferencia-texto-contra-contrato-em-quatro-ondas.md`
+Roadmap: `docs/roadmaps/done/ROADMAP-2026-08-31-a-quinta-conferencia-texto-contra-contrato-em-quatro-ondas.md`
 
 ## Motivation
 
@@ -93,14 +93,14 @@ E o topico com contrato cheio e prosa vazia hoje passa: o gate conta palavras da
 
 ## Acceptance criteria
 
-- [ ] `citacoesDe("art. 373, II, do CPC")` e `citacoesDe("artigo 373 do Codigo de Processo Civil")` produzem a mesma chave normalizada.
-- [ ] `citacoesDe` reconhece `Sumula 7 do STJ`, `Sumula Vinculante 28`, `SV 28`, `Tema 69 do STF`, `RE 574.706`, `REsp 1.221.170`.
-- [ ] Sigla que nao esta na tabela nao vira citacao — nenhum achado.
-- [ ] Topico que cita no texto dispositivo ausente de `fundamento:` produz um par com os dois lados.
-- [ ] Topico com `fundamento:` declarado e nao citado no texto produz um par.
-- [ ] Topico com `documentos: [D3]` e texto que nunca menciona D3 nem o nome dele no canon produz um par.
-- [ ] Topico com contrato e texto vazio e **erro** em `revisao`; **nao** e erro em `pesquisa`.
-- [ ] `art. 373, II` no texto e `art. 373` no contrato **nao** produzem achado.
-- [ ] `attorneyfw conferir` termina dizendo que nao conferiu existencia, vigencia, superacao nem pertinencia.
-- [ ] `npm run check` verde: 13 regras de lint e o smoke nos dois tipos de materia.
-- [ ] `trackfw validate` sem violacoes.
+- [x] `citacoesDe("art. 373, II, do CPC")` e `citacoesDe("artigo 373 do Codigo de Processo Civil")` produzem a mesma chave normalizada.
+- [x] `citacoesDe` reconhece `Sumula 7 do STJ`, `Sumula Vinculante 28`, `SV 28`, `Tema 69 do STF`, `RE 574.706`, `REsp 1.221.170`.
+- [x] Sigla que nao esta na tabela nao vira citacao — nenhum achado.
+- [x] Topico que cita no texto dispositivo ausente de `fundamento:` produz um par com os dois lados.
+- [x] Topico com `fundamento:` declarado e nao citado no texto produz um par.
+- [x] Topico com `documentos: [D3]` e texto que nunca menciona D3 nem o nome dele no canon produz um par.
+- [x] Topico com contrato e texto vazio e **erro** em `revisao`; **nao** e erro em `pesquisa`.
+- [x] `art. 373, II` no texto e `art. 373` no contrato **nao** produzem achado.
+- [x] `attorneyfw conferir` termina dizendo que nao conferiu existencia, vigencia, superacao nem pertinencia.
+- [x] `npm run check` verde: 13 regras de lint e o smoke nos dois tipos de materia.
+- [x] `trackfw validate` sem violacoes.

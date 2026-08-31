@@ -196,23 +196,37 @@ por um teste que exige que o comentario continue nao servindo de marca.
 
 ### ML-4A — Formato da tabela e o motor
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/custas.mjs` (novo), `templates/custas-tribunal.yaml` (novo)
 **Aceite:**
-- [ ] Faixas, formula, piso e teto, com `norma` e `norma_data` obrigatorios
-- [ ] Tabela sem `norma`/`norma_data` e recusada — procedencia nao e opcional
-- [ ] Tabela ausente falha dizendo qual arquivo criar
+- [x] Faixas, formula, piso e teto, com `norma` e `norma_data` obrigatorios
+- [x] Tabela sem `norma`/`norma_data` e recusada — procedencia nao e opcional
+- [x] Tabela ausente falha dizendo qual arquivo criar
 
 ### ML-4B — `attorneyfw custas` e a ressalva
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `bin/attorneyfw.mjs`, `tools/lint.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Saida com norma, data e memoria de cada componente
-- [ ] Semente de um tribunal marcada **conferir na fonte**, e nao no `files` do pacote
-- [ ] Lint estende a ressalva de conferencia a custas
+- [x] Saida com norma, data e memoria de cada componente
+- [x] Semente de um tribunal marcada **conferir na fonte**, e nao no `files` do pacote
+- [x] Lint estende a ressalva de conferencia a custas
 
 ---
+
+**Medido ao fim da onda:** 17 asserts novos, com o total conferido a mao sobre a
+semente — 1% de R$ 85.000,00 mais R$ 50,00 fixos mais a faixa de R$ 120,00 dao
+R$ 1.020,00.
+
+**Dois defeitos, os dois encontrados rodando:**
+
+1. `percentual: 1.0` era lido como **10%**. O leitor de numero tratava o ponto
+   como milhar sempre. O orcamento saia com um zero a mais e nada avisava.
+   Corrigido com uma regra so — `numeroBR` — usada por todo o subsistema de
+   dinheiro.
+2. O teste do tipo desconhecido trocava o **primeiro** `tipo: fixo` do arquivo,
+   que esta num comentario do template. Ele exercitava nada e devolvia verde.
+   Agora ancora na linha.
 
 ## Wave 5 — Item 11: relatorio ao cliente
 

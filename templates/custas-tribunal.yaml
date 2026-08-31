@@ -1,0 +1,53 @@
+# Tabela de custas — {{tribunal}}, {{ano}}
+# Criada por attorneyfw em {{data}}.
+#
+# OS VALORES ABAIXO SAO EXEMPLO DE FORMATO. Substitua pelos da norma publicada
+# antes de usar. Enquanto `conferido_em` estiver vazio, o orcamento so sai com
+# --provisorio, e sai marcado como provisorio.
+#
+# Custas mudam por ato normativo datado: a saida do comando diz qual norma
+# aplicou e de quando, e por isso `norma` e `norma_data` sao obrigatorios.
+
+tribunal: {{tribunal_slug}}
+ano: {{ano}}
+
+norma: PREENCHER — resolucao ou lei que fixa a tabela
+norma_data: {{ano}}-01-01
+fonte: PREENCHER — endereco da norma publicada
+
+# Data em que uma pessoa conferiu estes valores contra a fonte. Vazio = nao
+# conferido. Este campo e a diferenca entre um orcamento e um chute formatado.
+conferido_em:
+
+observacao: valores de exemplo — conferir na fonte antes de orcar
+
+componentes:
+  # tipo: percentual — percentual sobre o valor da causa, com piso e teto
+  #       opcionais. Piso e teto sao aplicados nessa ordem.
+  - id: custas-iniciais
+    rotulo: Custas judiciais iniciais
+    tipo: percentual
+    percentual: 1.0
+    piso: 100,00
+    teto: 10000,00
+    observacao: EXEMPLO — conferir
+
+  # tipo: fixo — valor que nao depende da causa.
+  - id: taxa-diligencia
+    rotulo: Diligencia de oficial de justica
+    tipo: fixo
+    valor: 50,00
+    observacao: EXEMPLO — conferir
+
+  # tipo: faixas — a primeira faixa cujo `ate` alcance o valor da causa.
+  #       A ultima faixa fica sem `ate` e vale para o que passar de todas.
+  - id: fundo
+    rotulo: Fundo de reaparelhamento
+    tipo: faixas
+    faixas:
+      - ate: 10000,00
+        valor: 30,00
+      - ate: 100000,00
+        valor: 120,00
+      - ate:
+        valor: 300,00

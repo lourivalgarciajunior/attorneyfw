@@ -84,6 +84,7 @@ const semAcento = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLow
 const RESSALVAS = [
   { assunto: 'a contagem de prazo', ancora: 'contagem oficial', onde: ['src/prazo.mjs'] },
   { assunto: 'a correcao monetaria', ancora: 'calculo oficial', onde: ['src/atualizar.mjs'] },
+  { assunto: 'o orcamento de custas', ancora: 'guia', onde: ['src/custas.mjs'] },
 ];
 for (const r of RESSALVAS) {
   for (const arq of ['bin/attorneyfw.mjs', 'README.md', ...r.onde]) {

@@ -52,29 +52,48 @@ const arquivoSerie = (raiz, nome) => join(dirSeries(raiz), `${nome}.csv`);
 // ------------------------------------------------------------------ dinheiro
 
 /**
- * "1.234,56", "1234,56", "1234.56" e "1234" viram 123456 centavos.
+ * "1.234,56", "1234,56", "1234.56", "1.0" e "1234" viram numero.
  *
- * A ambiguidade real e "1.234": ponto como milhar ou como decimal? Resolve-se
- * pelo numero de casas — tres depois do separador so pode ser milhar.
+ * A ambiguidade real e o ponto: milhar ou decimal? Duas regras resolvem, e a
+ * segunda ja custou uma conta multiplicada por dez — `percentual: 1.0` numa
+ * tabela de custas era lido como 10%, e o orcamento saia com um zero a mais sem
+ * que nada avisasse:
+ *
+ * 1. **Havendo virgula, ela e o decimal** e todo ponto e milhar.
+ * 2. **So com pontos**, um unico ponto seguido de uma ou duas casas e decimal;
+ *    tres casas so podem ser milhar.
  */
-export function centavos(entrada) {
+export function numeroBR(entrada) {
   const s = String(entrada ?? '').trim().replace(/\s|R\$/g, '');
   if (!s) throw new Erro('valor vazio');
   if (!/^-?[\d.,]+$/.test(s)) throw new Erro(`valor nao numerico: "${entrada}"`);
 
   const sinal = s.startsWith('-') ? -1 : 1;
-  let n = s.replace('-', '');
-  const ultimo = Math.max(n.lastIndexOf(','), n.lastIndexOf('.'));
+  const n = s.replace('-', '');
+
   let inteiro = n;
   let frac = '';
-  if (ultimo >= 0 && n.length - ultimo - 1 <= 2) {
-    inteiro = n.slice(0, ultimo);
-    frac = n.slice(ultimo + 1);
+  if (n.includes(',')) {
+    const i = n.lastIndexOf(',');
+    inteiro = n.slice(0, i);
+    frac = n.slice(i + 1);
+  } else {
+    const i = n.lastIndexOf('.');
+    const casas = i < 0 ? -1 : n.length - i - 1;
+    // Mais de um ponto so pode ser milhar: "1.234.567".
+    if (i >= 0 && casas <= 2 && n.indexOf('.') === i) {
+      inteiro = n.slice(0, i);
+      frac = n.slice(i + 1);
+    }
   }
-  inteiro = inteiro.replace(/[.,]/g, '');
-  if (!inteiro) inteiro = '0';
+  inteiro = inteiro.replace(/[.,]/g, '') || '0';
   if (!/^\d*$/.test(inteiro) || !/^\d*$/.test(frac)) throw new Erro(`valor nao numerico: "${entrada}"`);
-  return sinal * (Number(inteiro) * 100 + Number(frac.padEnd(2, '0').slice(0, 2)));
+  return sinal * Number(`${inteiro}.${frac || '0'}`);
+}
+
+/** O mesmo, em centavos inteiros. Dinheiro nao trafega em ponto flutuante. */
+export function centavos(entrada) {
+  return Math.round(numeroBR(entrada) * 100);
 }
 
 /** 123456 vira "1.234,56". Sem simbolo — quem imprime decide se poe "R$". */

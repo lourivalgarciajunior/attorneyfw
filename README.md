@@ -217,6 +217,26 @@ Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém
 
 O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
 
+## Custas processuais
+
+```bash
+attorneyfw custas init --tribunal tjpr --ano 2026
+attorneyfw custas 85000,00 --tribunal tjpr
+```
+
+Também **conferência, não o cálculo oficial**: o valor que vale é o da guia emitida pelo tribunal. Serve para responder ao cliente sem abrir cinco tabelas — não para substituir a emissão da guia.
+
+**A tabela mora em arquivo versionado, nunca em raspagem ao vivo.** Custas mudam por ato normativo datado, e um número raspado de uma página não sabe dizer de onde veio. A saída diz sempre qual norma aplicou e de quando. Cada justiça tem a sua — `tabelas/custas/<tribunal>-<ano>.yaml` —, e crescer é acrescentar arquivo, não código.
+
+Três tipos de componente cobrem o que as tabelas fazem: `percentual` (com piso e teto opcionais), `fixo`, e `faixas`.
+
+Duas recusas, ambas deliberadas:
+
+1. **Tabela sem `norma` e `norma_data` não carrega.** Procedência não é campo opcional num número que vai para orçamento a cliente.
+2. **Tabela sem `conferido_em` não produz orçamento** sem `--provisorio` — e com ele, a saída sai marcada em vermelho como provisória. O `custas init` gera valores de exemplo; se ela pudesse orçar em silêncio, o exemplo viraria o orçamento de alguém.
+
+O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
+
 ## Visual law
 
 Três diagramas, e só três:
@@ -280,7 +300,7 @@ O IPCA-E não tem coleta automática nesta versão: preenche-se à mão, e o com
 npm run check     # lint + smoke
 ```
 
-O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre duas: a contagem de prazo e a correção monetária.
+O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
 
 ## Escopo negativo
 

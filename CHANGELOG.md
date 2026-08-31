@@ -139,6 +139,42 @@ viraram trabalho.
 - O `docx` continua lendo o markdown que o `build` gerou, com figura ou sem —
   a regra que existe desde a 0.1.0 vale sem excecao para os diagramas.
 
+### Adicionado — custas processuais
+
+- **`attorneyfw custas <valor> --tribunal <t> [--ano N]`**, com `--provisorio` e
+  `--json`, e **`attorneyfw custas init --tribunal <t>`** para criar a tabela.
+  Tres tipos de componente cobrem o que as tabelas fazem: `percentual` com piso
+  e teto, `fixo`, e `faixas`.
+
+### Decidido
+
+- **A tabela mora em arquivo versionado, nunca em raspagem ao vivo.** Custas
+  mudam por ato normativo datado, e numero raspado de uma pagina nao sabe dizer
+  de onde veio. A saida diz sempre qual norma aplicou e de quando.
+
+- **Tabela sem `norma` e `norma_data` nao carrega.** Procedencia nao e campo
+  opcional num numero que vai para orcamento a cliente.
+
+- **Tabela sem `conferido_em` nao orca** sem `--provisorio`, e com ele a saida
+  sai marcada em vermelho. O `custas init` gera valores de exemplo; se ela
+  pudesse orcar em silencio, o exemplo viraria o orcamento de alguem.
+
+- **O CLI nao vem com tabela de tribunal nenhum.** O `init` gera o formato; os
+  numeros sao do escritorio, conferidos por uma pessoa contra a norma publicada.
+
+- O parser da tabela e estrito: o que nao for reconhecido vira erro, e nao campo
+  silenciosamente ignorado. Custas ignoradas em silencio sao a metade do
+  orcamento que falta.
+
+### Corrigido
+
+- **`percentual: 1.0` era lido como 10%.** O leitor de numero tratava o ponto
+  como separador de milhar sempre, e o orcamento saia com um zero a mais sem que
+  nada avisasse. Agora ha uma regra so, `numeroBR`, usada pelo dinheiro inteiro:
+  havendo virgula, ela e o decimal e todo ponto e milhar; so com pontos, um
+  unico ponto seguido de uma ou duas casas e decimal. Encontrado rodando a
+  primeira conta de custas, nao lendo o codigo.
+
 ### Mudado
 
 - A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser

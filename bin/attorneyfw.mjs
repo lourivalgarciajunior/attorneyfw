@@ -19,6 +19,7 @@ import { docx } from '../src/docx.mjs';
 import { atualizar, indiceLista } from '../src/atualizar.mjs';
 import { buscar } from '../src/buscar.mjs';
 import { diagrama } from '../src/diagrama.mjs';
+import { custas } from '../src/custas.mjs';
 import { indiceAtualizar } from '../src/indice.mjs';
 
 // fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
@@ -58,6 +59,8 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw build <entrega>            costura a entrega em markdown
   attorneyfw docx <entrega>             a versao de protocolo (pede o pacote docx)
   attorneyfw indice [atualizar [serie]] series de indice da carteira
+  attorneyfw custas init --tribunal <t>  cria a tabela de custas do tribunal
+  attorneyfw custas <valor> --tribunal <t> [--ano N] [--provisorio] [--json]
   attorneyfw atualizar <valor> --de AAAA-MM-DD [--ate AAAA-MM-DD]
                        [--serie inpc|ipca|ipca-e|igp-m] [--juros N] [--juros-de D]
                        [--selic] [--json]     correcao monetaria com memoria
@@ -71,8 +74,8 @@ A contagem de prazo e CONFERENCIA, nao a contagem oficial: feriado do foro e
 suspensao de expediente entram a mao em docs/feriados.md. O prazo que vale e o
 dos autos.
 
-A correcao monetaria tambem e CONFERENCIA, nao o calculo oficial: o valor que
-vale e o da memoria homologada nos autos. Serie de indice mora na carteira, em
+A correcao monetaria e as custas tambem sao CONFERENCIA, nao o calculo oficial:
+o valor que vale e o da memoria homologada nos autos e o da guia do tribunal. Serie de indice mora na carteira, em
 tabelas/indices/, e so o comando 'indice atualizar' toca a rede.`;
 
 function parse(argv) {
@@ -145,6 +148,7 @@ try {
     }
     case 'atualizar': atualizar(args); break;
     case 'buscar': buscar(args); break;
+    case 'custas': custas(args); break;
     case 'diagrama': diagrama(args); break;
     case 'docx': await docx(args); break;
     case 'version': case '--version': case '-v': console.log(VERSAO); break;

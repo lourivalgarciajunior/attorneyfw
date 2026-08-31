@@ -518,6 +518,78 @@ writeFileSync(serieArq, SERIE_BOA);
 ok('indice lista o que a carteira tem', run('indice').saida.includes('2024-01'));
 ok('serie desconhecida nao e adivinhada', run('atualizar', '10', '--de', '2024-01-15', '--serie', 'xpto').codigo === 1);
 
+// --------------------------------------------------------------------- custas
+console.log('\ncustas');
+
+ok('sem tribunal e recusado', run('custas', '1000').codigo === 1);
+ok('tabela ausente diz qual arquivo criar', (() => {
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.codigo === 1 && r.saida.includes('custas init');
+})());
+ok('custas init cria a tabela', run('custas', 'init', '--tribunal', 'tjxx', '--ano', '2026').codigo === 0);
+ok('init nao sobrescreve', run('custas', 'init', '--tribunal', 'tjxx', '--ano', '2026').codigo === 1);
+
+const tabCustas = join(raiz, 'tabelas', 'custas', 'tjxx-2026.yaml');
+
+// A semente traz valores de exemplo. Se ela orcasse em silencio, o exemplo
+// viraria o orcamento de alguem.
+const naoConferida = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026');
+ok('tabela nao conferida nao orca', naoConferida.codigo === 1 && naoConferida.saida.includes('conferido_em'));
+ok('--provisorio mostra, e marca como provisorio', (() => {
+  const r = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026', '--provisorio');
+  return r.codigo === 0 && r.saida.includes('PROVISORIO');
+})());
+
+// Procedencia nao e opcional.
+ok('tabela sem norma nao carrega', (() => {
+  const bom = lerLF(tabCustas);
+  writeFileSync(tabCustas, bom.replace(/^norma:.*$/m, 'norma:'), 'utf8');
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026', '--provisorio');
+  writeFileSync(tabCustas, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('procedencia');
+})());
+
+// Conta conferida a mao sobre a semente, com valor da causa de R$ 85.000,00:
+//   custas-iniciais   1% de 85.000,00 = 850,00 (entre o piso 100 e o teto 10.000)
+//   taxa-diligencia   fixo             =  50,00
+//   fundo             faixa ate 100.000 = 120,00
+//   TOTAL                              = 1.020,00
+writeFileSync(tabCustas, lerLF(tabCustas).replace(/^conferido_em:.*$/m, 'conferido_em: 2026-08-31'), 'utf8');
+const orc = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026');
+ok('tabela conferida orca sem --provisorio', orc.codigo === 0 && !orc.saida.includes('PROVISORIO'));
+ok('o total bate com a conta feita a mao', orc.saida.includes('1.020,00'));
+ok('a memoria diz como cada componente saiu', orc.saida.includes('1% sobre') && orc.saida.includes('faixa ate'));
+ok('a saida traz norma e data', orc.saida.includes('procedencia') && orc.saida.includes('2026-01-01'));
+ok('ressalva de conferencia na saida', orc.saida.includes('guia emitida pelo tribunal'));
+
+// Piso e teto sao a parte que erra em silencio se ninguem olhar.
+ok('piso eleva a causa pequena', (() => {
+  const r = run('custas', '1000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('elevado ao piso') && r.saida.includes('180,00');
+})());
+ok('teto limita a causa grande', (() => {
+  const r = run('custas', '5000000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('limitado ao teto') && r.saida.includes('10.000,00');
+})());
+ok('faixa final vale para o que passa de todas', (() => {
+  const r = run('custas', '5000000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('acima da ultima') && r.saida.includes('300,00');
+})());
+ok('--json traz o total em centavos', (() => {
+  const r = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026', '--json');
+  try { return JSON.parse(r.saida).total === 102000; } catch { return false; }
+})());
+ok('componente com tipo desconhecido e recusado', (() => {
+  const bom = lerLF(tabCustas);
+  // Ancorado na linha, e nao no primeiro "tipo: fixo" do arquivo: o template
+  // documenta cada tipo num comentario, e a troca ingenua acertava o comentario
+  // — o teste passava a exercitar nada e a devolver verde.
+  writeFileSync(tabCustas, bom.replace(/^(\s+)tipo: fixo$/m, '$1tipo: chute'), 'utf8');
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026');
+  writeFileSync(tabCustas, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('chute');
+})());
+
 // --------------------------------------------------------------- gate da carteira
 console.log('\ngate');
 ok('validate na raiz percorre a carteira', run('validate').saida.includes('materias 2'));

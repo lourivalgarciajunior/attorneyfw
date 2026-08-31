@@ -457,6 +457,85 @@ ok('aplicar o modelo nao mexe no que o gate cobra', (() => {
   return violacoes(emAcme('validate')).length === antes;
 })());
 
+// ------------------------------------- o que a peca anuncia sobre si mesma
+console.log('\ntitulo e prioridade');
+
+// O caso do corpus: o titulo anuncia "c/c pedido de tutela provisoria de
+// urgencia" e a peca nao formula o pedido de tutela.
+ok('titulo que promete c/c e o pedido nao menciona vira aviso', (() => {
+  emAcme('entrega', 'retitle', '1', 'Peticao inicial c/c pedido de tutela provisoria de urgencia');
+  const r = emAcme('validate');
+  const linha = r.saida.split('\n').find((l) => l.includes('o titulo promete'));
+  return Boolean(linha) && linha.includes('aviso');
+})());
+ok('a mensagem mostra o que o titulo prometeu', emAcme('validate').saida.includes('tutela'));
+ok('e nao reprova o gate por isso',
+  !violacoes(emAcme('validate')).some((l) => l.includes('titulo promete')));
+
+ok('titulo sem c/c nao gera aviso', (() => {
+  emAcme('entrega', 'retitle', '1', 'Peticao inicial');
+  return !emAcme('validate').saida.includes('o titulo promete');
+})());
+
+// Prioridade: a idade vem da ficha, e nao do texto.
+const nasc = (anos) => {
+  const d = new Date(Date.now() - anos * 365.25 * 86400000);
+  return d.toISOString().slice(0, 10);
+};
+// Ficha propria, criada aqui: depender de uma criada num bloco posterior
+// acopla este teste a ordem dos blocos, e a ordem muda a cada onda nova.
+emAcme('canon', 'new', 'parte', 'Parte Com Idade', '--papel', 'autor');
+const fichaIdosa = join(acme, 'docs', 'canon', 'partes', 'parte-com-idade.md');
+
+ok('sem nascimento, a regra da idade nao roda', (() => {
+  const r = emAcme('validate');
+  return !r.saida.includes('prioridade de tramitacao') && !r.saida.includes('nascimento');
+})());
+
+ok('parte de 60+ sem pedido de prioridade vira aviso', (() => {
+  const bom = lerLF(fichaIdosa);
+  writeFileSync(fichaIdosa, bom.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bom, 'utf8');
+  const linha = r.saida.split('\n').find((l) => l.includes('prioridade de tramitacao'));
+  return Boolean(linha) && linha.includes('aviso') && linha.includes('69 anos');
+})());
+
+ok('menor sem pedido de prioridade vira aviso', (() => {
+  const bom = lerLF(fichaIdosa);
+  writeFileSync(fichaIdosa, bom.replace(/^nascimento:.*$/m, `nascimento: ${nasc(4)}`), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bom, 'utf8');
+  return r.saida.includes('prioridade de tramitacao') && r.saida.includes('4 anos');
+})());
+
+// O caso exato do alvara: o cabecalho diz uma idade que nenhuma parte tem.
+ok('idade anunciada que nenhuma parte tem vira aviso, com os dois lados', (() => {
+  const bomF = lerLF(fichaIdosa);
+  const bomE = lerLF(entPath);
+  writeFileSync(fichaIdosa, bomF.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  writeFileSync(entPath, bomE.replace('texto '.repeat(200),
+    'Prioridade de tramitacao, autores com 64 anos de idade, na forma da lei.'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bomF, 'utf8');
+  writeFileSync(entPath, bomE, 'utf8');
+  return r.saida.includes('fala em 64 anos') && r.saida.includes('a mais velha tem 69');
+})());
+
+ok('idade anunciada que bate com a ficha nao gera aviso', (() => {
+  const bomF = lerLF(fichaIdosa);
+  const bomE = lerLF(entPath);
+  writeFileSync(fichaIdosa, bomF.replace(/^nascimento:.*$/m, `nascimento: ${nasc(69)}`), 'utf8');
+  writeFileSync(entPath, bomE.replace('texto '.repeat(200),
+    'Prioridade de tramitacao, autor com 69 anos de idade.'), 'utf8');
+  const r = emAcme('validate');
+  writeFileSync(fichaIdosa, bomF, 'utf8');
+  writeFileSync(entPath, bomE, 'utf8');
+  return !r.saida.includes('fala em');
+})());
+
+emAcme('build', '1');
+
 // ---------------------------------------------------------------- formulas
 console.log('\nformulas de peca');
 

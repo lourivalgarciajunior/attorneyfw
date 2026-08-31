@@ -6,6 +6,37 @@ Cinco evolucoes tiradas do **arquivo** do escritorio. As duas ampliacoes
 anteriores tiraram do corpus os defeitos das pecas; esta tira delas o que elas
 tambem sao — o acervo que a ferramenta nao sabia ler.
 
+### Adicionado — o gate cobra o que a peca anuncia sobre si mesma
+
+- **Aviso quando o titulo anuncia `c/c X` e o pedido nao menciona X.** No corpus,
+  uma anulatoria fiscal anuncia "c/c pedido de tutela provisoria de urgencia" e
+  nao formula o pedido de tutela. E a remissao vazia que o gate ja persegue no
+  corpo, agora no lugar mais visivel da peca.
+
+- **`nascimento:` na ficha de parte**, e a idade passou a ser **derivada**. Idade
+  escrita a mao envelhece no dia seguinte e nao se confere contra nada.
+
+- **Aviso quando ha parte com 60+ ou menor e a peca nao pede prioridade**, e
+  **aviso quando a idade anunciada nao bate com a ficha**, com os dois lados a
+  vista. No corpus, um alvara anuncia "autores com 64 anos" e o mais velho dos
+  cinco requerentes tem 69.
+
+### Decidido
+
+- **Aviso, e nunca violacao**, nas tres regras: as tres tem caso legitimo, e o
+  gate so reprova o que nao tem excecao — e por isso o que ele reprova e levado
+  a serio.
+
+- **Sem `nascimento:`, a regra da idade nao roda**, e nao ha aviso de campo
+  faltando. Campo que a materia nao precisa nao vira cobranca.
+
+- **A regra vale ate onde a comparacao alcanca**, e a mensagem diz isso: o gate
+  afirma que a peca anuncia e nao cumpre, e nao que a tutela era cabivel ou que a
+  prioridade e devida. Estender alem disso seria o gate opinando sobre merito.
+
+- O reconhecimento do `c/c` e conservador: quando a regra nao entende o cumulo,
+  ela **cala**. Errar para o silencio e a direcao certa num aviso.
+
 ### Adicionado — as formulas saem do codigo
 
 - **`formulas.yaml` na carteira**, com enderecamento por foro, qualificacao e

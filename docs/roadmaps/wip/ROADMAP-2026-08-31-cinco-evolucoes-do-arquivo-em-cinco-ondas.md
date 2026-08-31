@@ -179,13 +179,13 @@ consequencia — mas e o tipo de coisa que so aparece executando.
 
 ### ML-4A — A regra
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/validate.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Aviso quando o titulo anuncia `c/c X` e o pedido nao menciona X
-- [ ] A mensagem mostra os dois lados
-- [ ] Aviso, e nao violacao
-- [ ] Smoke reproduz o caso do corpus
+- [x] Aviso quando o titulo anuncia `c/c X` e o pedido nao menciona X
+- [x] A mensagem mostra os dois lados
+- [x] Aviso, e nao violacao
+- [x] Smoke reproduz o caso do corpus
 
 ---
 
@@ -193,16 +193,25 @@ consequencia — mas e o tipo de coisa que so aparece executando.
 
 ### ML-5A — `nascimento:` e as duas regras
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `templates/parte-carteira.md`, `templates/parte.md`, `src/core.mjs`, `src/validate.mjs`, `test/smoke.mjs`, `README.md`, `CHANGELOG.md`
 **Aceite:**
-- [ ] Idade **derivada** da data, nunca digitada
-- [ ] Aviso com parte de 60+ ou menor e sem pedido de prioridade
-- [ ] Aviso quando a idade anunciada nao bate com a ficha, com os dois lados
-- [ ] Sem `nascimento:`, a regra nao roda e nao ha aviso de campo faltando
-- [ ] Smoke cobre os tres casos
+- [x] Idade **derivada** da data, nunca digitada
+- [x] Aviso com parte de 60+ ou menor e sem pedido de prioridade
+- [x] Aviso quando a idade anunciada nao bate com a ficha, com os dois lados
+- [x] Sem `nascimento:`, a regra nao roda e nao ha aviso de campo faltando
+- [x] Smoke cobre os tres casos
 
 ---
+
+**Medido ao fim das duas ondas:** 9 asserts, reproduzindo os dois casos do corpus
+— o titulo que promete tutela e nao pede, e o cabecalho que fala em 64 anos com o
+requerente mais velho de 69.
+
+**Os asserts que importam sao os negativos:** titulo sem `c/c` nao avisa; idade
+anunciada que bate com a ficha nao avisa; e **sem `nascimento:` a regra nao roda
+e nao reclama do campo**. Regra que fala quando nao devia e regra que se aprende
+a ignorar.
 
 ## Barreira final
 

@@ -20,6 +20,36 @@ import { rotulosMisturados } from './estilo.mjs';
 
 const OBRIGATORIOS = ['sustenta', 'fundamento', 'risco'];
 
+const semAcentoGate = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+/**
+ * O que o titulo promete depois de `c/c`, reduzido as palavras que carregam
+ * sentido.
+ *
+ * Forma livre de proposito conservador: quando a regra nao reconhece o cumulo,
+ * ela **cala**. Errar para o silencio e a direcao certa num aviso.
+ */
+const PARADAS = new Set(['pedido', 'pedidos', 'de', 'da', 'do', 'com', 'e', 'a', 'o', 'em', 'por']);
+function cumuloDoTitulo(titulo) {
+  const t = semAcentoGate(titulo);
+  const m = t.match(/\bc[/.]\s?c[.]?\s+(.{4,80})$|\bcumulada?\s+com\s+(.{4,80})$/);
+  if (!m) return [];
+  return (m[1] || m[2]).split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 5 && !PARADAS.has(w))
+    .slice(0, 4);
+}
+
+/** Idade em anos completos. Sem data, `null` — e a regra que a usa nao roda. */
+function idadeEm(nascimento, hojeIso) {
+  if (!dataValida(nascimento)) return null;
+  const [an, mn, dn] = nascimento.split('-').map(Number);
+  const [ah, mh, dh] = hojeIso.split('-').map(Number);
+  let idade = ah - an;
+  if (mh < mn || (mh === mn && dh < dn)) idade--;
+  return idade >= 0 && idade < 130 ? idade : null;
+}
+
+
 export function validate(args) {
   const raiz = acharEscritorio();
   const esc = lerEscritorio(raiz);
@@ -307,6 +337,71 @@ function validarMateria(m, { raiz, esc, ctx }) {
     if (docLocal && soDigitos(docLocal) !== soDigitos(p.ref.documento)) {
       erro(`docs/canon/partes/${p.arquivo}`,
         `documento diverge da carteira — aqui "${docLocal}", em partes/${p.refSlug}.md "${p.ref.documento}"`);
+    }
+  }
+
+  // ---- o titulo promete o que a peca nao pede
+  // Numa anulatoria fiscal do corpus, o titulo anuncia "c/c pedido de tutela
+  // provisoria de urgencia", o art. 300 aparece na qualificacao — e o pedido de
+  // tutela nao e formulado. E a remissao vazia que o gate ja persegue no corpo,
+  // agora no lugar mais visivel da peca.
+  //
+  // Aviso, e nao violacao: ha caso legitimo em que o cumulo se resolve num
+  // topico e nao ganha alinea propria. Mas a divergencia nao pode ficar
+  // invisivel, que era o estado ate aqui.
+  for (const e of es) {
+    if (e.estado === 'abandonado' || e.estado === 'backlog') continue;
+    const promessa = cumuloDoTitulo(valor(e.fm.titulo));
+    if (!promessa.length) continue;
+    const sustentados = new Set(e.topicos.flatMap((t) => lista(t.pedidos)));
+    const textoDosPedidos = semAcentoGate([
+      ...peds.filter((x) => sustentados.has(x.id)).map((x) => x.texto),
+      ...e.topicos.map((t) => valor(t.sustenta)),
+    ].join(' '));
+    const faltando = promessa.filter((w) => !textoDosPedidos.includes(w));
+    if (faltando.length === promessa.length) {
+      aviso(rel(m.dir, e.caminho),
+        `o titulo promete "${promessa.join(' ')}" e o pedido nao menciona — a peca anuncia e nao cumpre`);
+    }
+  }
+
+  // ---- prioridade de tramitacao contra a idade da ficha
+  // Num alvara do corpus, o cabecalho anuncia "autores com 64 anos" e cita o
+  // Estatuto do Idoso; entre os cinco requerentes, o mais velho tem 69 e tres
+  // passam de 60. O numero escolhido nao e o do mais velho nem o do limite
+  // legal.
+  //
+  // Sem `nascimento:` na ficha, nada disto roda — e nao ha aviso de campo
+  // faltando: campo que a materia nao precisa nao vira cobranca.
+  {
+    const idades = cn.partes
+      .map((p) => ({ nome: p.nome, idade: idadeEm(p.nascimento, ctx.hoje) }))
+      .filter((x) => x.idade !== null);
+    if (idades.length) {
+      const maisVelho = idades.reduce((a, b) => (b.idade > a.idade ? b : a));
+      const menor = idades.find((x) => x.idade < 18);
+      const merece = maisVelho.idade >= 60 || Boolean(menor);
+
+      for (const e of es) {
+        if (e.estado === 'abandonado' || e.estado === 'backlog') continue;
+        const corpo = semAcentoGate(`${valor(e.fm.titulo)} ${e.corpo}`);
+        const pede = /prioridade|preferencia na tramit/.test(corpo);
+
+        if (merece && !pede) {
+          const razao = menor ? `${menor.nome} tem ${menor.idade} anos` : `${maisVelho.nome} tem ${maisVelho.idade} anos`;
+          aviso(rel(m.dir, e.caminho),
+            `${razao} e a peca nao pede prioridade de tramitacao — se ha razao para nao pedir, ela e sua`);
+        }
+        if (pede) {
+          for (const mm of e.corpo.matchAll(/\b(\d{2,3})\s*anos\b/g)) {
+            const dito = Number(mm[1]);
+            if (idades.some((x) => x.idade === dito)) continue;
+            aviso(rel(m.dir, e.caminho),
+              `a peca fala em ${dito} anos e nenhuma parte da ficha tem essa idade — a mais velha tem ${maisVelho.idade}`);
+            break;
+          }
+        }
+      }
     }
   }
 

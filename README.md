@@ -193,6 +193,26 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## O que a peça anuncia sobre si mesma
+
+Duas coisas apareceram nas oito peças que não são erro de direito nem erro de conta: **promessas que a peça faz sobre si e não cumpre.** As duas passam despercebidas porque quem lê sabe do que se trata e completa sozinho.
+
+**O título promete um pedido que a peça não formula.** Numa anulatória fiscal, o título diz *"c/c pedido de tutela provisória de urgência"*, o art. 300 aparece na qualificação — e o pedido de tutela não é feito. É a mesma remissão vazia que o gate já persegue no corpo, agora no lugar mais visível da peça.
+
+**A prioridade anunciada não bate com a idade declarada.** Num alvará, o cabeçalho diz *"prioridade de tramitação, autores com 64 anos"*; entre os cinco requerentes, o mais velho tem 69 e três passam de 60. O número escolhido não é o do mais velho nem o do limite legal.
+
+Por isso a ficha de parte ganhou `nascimento:`, e **a idade passou a ser derivada, nunca digitada** — idade escrita à mão envelhece no dia seguinte e não se confere contra nada.
+
+O gate **avisa**, e não reprova, em três situações:
+
+- o título anuncia `c/c X` e o pedido não menciona X;
+- há parte com 60+ ou menor, e a peça não pede prioridade;
+- a peça fala numa idade que nenhuma parte da ficha tem — mostrando os dois lados.
+
+As três têm caso legítimo, e por isso nenhuma reprova. **Sem `nascimento:` na ficha, a regra da idade simplesmente não roda** — e não há aviso de campo faltando: campo que a matéria não precisa não vira cobrança.
+
+O limite é claro e a mensagem o respeita: o gate diz que a peça **anuncia e não cumpre**. Não diz que a tutela era cabível nem que a prioridade é devida — isso é leitura, e fica com o agente de fundamento.
+
 ## As fórmulas da peça
 
 O `build` montava o endereçamento com uma linha escrita no código, feita para ser neutra: sem acento e com o gênero entre parênteses. Medida contra oito peças reais de um escritório, **ela não aparecia em nenhuma.** As oito usavam a forma cheia, com acento e gênero resolvido, e ela variava com o foro — seis formas distintas em oito peças. O `build` emitia uma sétima, que não era de ninguém.

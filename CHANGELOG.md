@@ -1,5 +1,263 @@
 # Changelog
 
+## 0.3.0 — 2026-08-31
+
+Ampliacao pedida por um escritorio usuario. Dez pedidos triados; tres ja
+existiam como estrutura obrigatoria, um foi recusado na forma pedida, e seis
+viraram trabalho.
+
+### Adicionado — correcao monetaria com memoria de calculo
+
+- **`attorneyfw atualizar <valor> --de DATA [--ate DATA]`**, com `--serie`,
+  `--juros N`, `--juros-de DATA`, `--selic` e `--json`. Corrige e, quando
+  pedido, acrescenta mora.
+
+  O ganho nao esta no numero final: esta na memoria. Valor corrigido sem memoria
+  a outra parte impugna e o juiz nao homologa, e o tempo economizado na minuta
+  volta a ser gasto na fase em que custa mais. Por isso a memoria e a
+  procedencia saem **sempre**, inclusive no modo resumido — que e justamente o
+  que acaba copiado para a peca.
+
+- **`attorneyfw indice atualizar [serie]`** busca INPC, IPCA, IGP-M e Selic no
+  SGS do Banco Central e grava em `tabelas/indices/<serie>.csv` na carteira.
+  **E o unico ponto do subsistema que toca a rede.** Calculo nunca busca nada:
+  funciona offline, e os mesmos arquivos devolvem o mesmo numero daqui a um ano.
+
+- **`attorneyfw indice`** lista o que a carteira ja tem, com cobertura e data de
+  coleta de cada serie.
+
+### Decidido
+
+- **O arquivo guarda a variacao mensal como a fonte publica**, e nao um
+  numero-indice ja calculado. O numero-indice e derivado na leitura. O motivo e
+  auditoria: cada linha do CSV continua conferivel contra a serie do Banco
+  Central, e quem duvidar do valor final refaz a conta a partir do dado bruto.
+
+- **Fora da cobertura da serie, o comando falha.** Nao extrapola, nao repete o
+  ultimo indice, nao interpola — a mensagem diz ate onde a serie vai e o que
+  rodar. Buraco no meio da serie tambem reprova: a razao entre dois pontos
+  passaria por cima do mes faltante e devolveria fator **menor**, sem nenhum
+  sinal de que algo faltou.
+
+- **Serie sem `# fonte:` e `# coletada_em:` e recusada.** Numero sem procedencia
+  nao vai para peca.
+
+- **O IPCA-E nao tem coleta automatica.** O codigo da serie no SGS nao foi
+  confirmado, e serie sem codigo confirmado nao e adivinhada: codigo errado
+  produz numero plausivel e errado, que e o pior resultado possivel aqui. O
+  comando manda preencher a mao e diz de onde.
+
+- Convencoes declaradas na saida porque nao sao as unicas defensaveis: correcao
+  por **mes cheio** com base no mes do termo inicial; juros simples **pro rata
+  die** sobre trinta dias; Selic **somada**, nao composta, exclusos o mes inicial
+  e o do pagamento, mais 1% no mes do pagamento.
+
+- Aritmetica em **centavos inteiros**, com um unico arredondamento no fim.
+  Ponto flutuante em dinheiro acumula residuo, e residuo em peca vira
+  impugnacao.
+
+### Adicionado — a carteira como memoria institucional
+
+- **`attorneyfw materia fechar <resultado>`**, com `--valor`, `--nota` e `--em`.
+  A carteira ja guardava tudo menos o que aconteceu no fim: a ultima entrega em
+  `entregue` diz que a peca saiu, e nao que se ganhou. Sem o desfecho, a base
+  responde "ja fizemos" e nao responde "ja perdemos" — que e a pergunta que
+  evita repetir uma causa perdida em vez de propor acordo.
+
+- **`attorneyfw buscar <termo>`**, com `--tipo`, `--resultado` e `--json`. Ha
+  grep, e grep acha uma palavra; nao responde *"que materias enfrentaram esta
+  tese, e como terminaram?"*. Devolve **materia**, nao linha solta — com tipo,
+  desfecho, nota e onde bateu.
+
+- Materias ja encerradas entram no `attorneyfw context` **sem ninguem pedir**.
+  Quem redige precisa saber que uma materia irma com a mesma tese terminou em
+  perda, e isso so aparece se for empurrado.
+
+- `materia list` e `status` na raiz mostram o desfecho, e o `status` fecha com o
+  placar da carteira. `materia list` tambem passou a mostrar pasta sem
+  `materia.yaml`, que some do gate e do prazo e precisava aparecer em algum lugar.
+
+### Decidido
+
+- **Vocabulario de resultado fechado** — `ganho`, `ganho_parcial`, `perda`,
+  `acordo`, `extinto`. O valor da base esta em conseguir contar, e campo livre
+  nao responde "quantas vezes ja perdemos esta tese?". O que nao couber vai em
+  `resultado_nota`, que existe ao lado justamente para isso.
+
+- **A busca nao le corpo de minuta.** Minuta contem citacao e transcricao, e
+  busca por termo juridico casaria com o que foi *citado* em vez do que foi
+  *sustentado*. Ruido treina a ignorar o resultado, e resultado ignorado e pior
+  que nenhum. O que ela varre — tese ou mapa, DEC, cronologia, titulo de entrega
+  — sai declarado na propria saida.
+
+- **Nao se modela processo judicial.** Sem instancias, recursos, sucumbencia ou
+  transito em julgado: a materia tem desfecho, data e valor. Acompanhamento
+  processual e do sistema do tribunal, que e a fonte.
+
+- **O gate avisa, e nao reprova**, em materia toda entregue ha mais de noventa
+  dias sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa
+  de um processo que so demora transformaria a regra em ruido.
+
+- Materia criada por versao anterior **nao precisa de migracao**: o gravador de
+  campo YAML acrescenta a chave que faltar, e campo ausente le como "em curso".
+
+### Adicionado — visual law
+
+- **`attorneyfw diagrama <linha-do-tempo|partes|fato-prova>`**, com `--salvar`.
+  Tres geradores, e so tres. A linha do tempo sai da cronologia cruzada com o
+  canon de documentos; o organograma, do canon de partes; o mapa fato→prova
+  liga cada pendencia numerada ao lastro que o contrato de topico declarou.
+
+- **Na peca, a figura entra onde o topico pedir**, por bloco cercado
+  ```` ```diagrama ```` — o mesmo idioma do contrato de topico. O `build` troca
+  a marca pelo bloco Mermaid; o `docx` renderiza com o mermaid-cli quando ele
+  esta no PATH e, sem ele, insere um aviso.
+
+### Decidido
+
+- **Diagrama e projecao de dado estruturado, nunca de texto livre.** Pedir ao
+  modelo que desenhe lendo a minuta funciona na demonstracao e falha na terceira
+  versao da peca: corrige-se uma data no corpo e a figura fica com a antiga.
+  Divergencia e pior que ausencia, porque a figura tem autoridade visual e e a
+  contraparte quem acha a contradicao. Aqui as duas leem o mesmo lugar.
+
+- **Marco sem documento sai visivelmente marcado como nao provado**, tracejado e
+  em vermelho, com aviso no terminal e no corpo da peca. E a mesma exigencia que
+  o gate faz ao texto, aplicada a figura: sair igual aos outros seria a figura
+  mentindo com mais autoridade que o paragrafo.
+
+- **A marca do diagrama e bloco cercado, e nao comentario HTML.** Comentario
+  nesta ferramenta ja quer dizer nota de trabalho, e o `textoDe` o remove
+  justamente para nao vazar para a peca — a marca em comentario pediria uma
+  figura que desaparece antes do `build` ver, em silencio. Descoberto no smoke,
+  e agora ha um teste que fixa o comportamento.
+
+- **Falta de figura nao impede protocolo.** Diagrama que nao pode ser gerado
+  deixa aviso no lugar e o `build` segue. Exportador de imagem ausente nao pode
+  travar uma peca.
+
+- O `docx` continua lendo o markdown que o `build` gerou, com figura ou sem —
+  a regra que existe desde a 0.1.0 vale sem excecao para os diagramas.
+
+### Adicionado — custas processuais
+
+- **`attorneyfw custas <valor> --tribunal <t> [--ano N]`**, com `--provisorio` e
+  `--json`, e **`attorneyfw custas init --tribunal <t>`** para criar a tabela.
+  Tres tipos de componente cobrem o que as tabelas fazem: `percentual` com piso
+  e teto, `fixo`, e `faixas`.
+
+### Decidido
+
+- **A tabela mora em arquivo versionado, nunca em raspagem ao vivo.** Custas
+  mudam por ato normativo datado, e numero raspado de uma pagina nao sabe dizer
+  de onde veio. A saida diz sempre qual norma aplicou e de quando.
+
+- **Tabela sem `norma` e `norma_data` nao carrega.** Procedencia nao e campo
+  opcional num numero que vai para orcamento a cliente.
+
+- **Tabela sem `conferido_em` nao orca** sem `--provisorio`, e com ele a saida
+  sai marcada em vermelho. O `custas init` gera valores de exemplo; se ela
+  pudesse orcar em silencio, o exemplo viraria o orcamento de alguem.
+
+- **O CLI nao vem com tabela de tribunal nenhum.** O `init` gera o formato; os
+  numeros sao do escritorio, conferidos por uma pessoa contra a norma publicada.
+
+- O parser da tabela e estrito: o que nao for reconhecido vira erro, e nao campo
+  silenciosamente ignorado. Custas ignoradas em silencio sao a metade do
+  orcamento que falta.
+
+### Corrigido
+
+- **`percentual: 1.0` era lido como 10%.** O leitor de numero tratava o ponto
+  como separador de milhar sempre, e o orcamento saia com um zero a mais sem que
+  nada avisasse. Agora ha uma regra so, `numeroBR`, usada pelo dinheiro inteiro:
+  havendo virgula, ela e o decimal e todo ponto e milhar; so com pontos, um
+  unico ponto seguido de uma ou duas casas e decimal. Encontrado rodando a
+  primeira conta de custas, nao lendo o codigo.
+
+### Adicionado — relatorio de resultado ao cliente
+
+- **`attorneyfw relatorio [--docx] [--serie]`**. Compara `valor_pedido` com
+  `resultado_valor`, corrigindo o primeiro quando ha `valor_pedido_em`.
+
+- **`valor_pedido_em`** no `materia.yaml`, ao lado do `valor_pedido`. Com ele o
+  relatorio corrige; sem ele, sai nominal e **diz que saiu**.
+
+- `markdownParaDocx` extraido do `docx.mjs`: o unico gerador de OOXML da
+  ferramenta, usado por todo comando que produz papel. Nada reconstroi a selecao
+  do texto — foi um gerador copiado que divergiu do build, no bookfw, e o preco
+  foram quatro livros com a mesma correcao aplicada quatro vezes.
+
+### Decidido
+
+- **O sinal do ganho vem do papel do cliente, e o polo nao se infere.**
+  Consumidor pede R$ 50.000 e o juiz condena a R$ 20.000: para o reu e ganho de
+  R$ 30.000; para o autor, os mesmos dois numeros sao perda parcial de
+  R$ 30.000. Sem papel declarado no canon — ou, na falta dele, no
+  `materia.yaml` —, o comando **falha**. Relatorio com o sinal trocado nao e um
+  relatorio ruim: e um documento que diz ao cliente que ele ganhou quando perdeu.
+
+- **Falta de `resultado` ou de `valor_pedido` para o comando.** Deduzir o pedido
+  da peca seria adivinhar.
+
+- **Consultivo nao gera relatorio de resultado**, e a recusa vem antes de tudo:
+  em consultivo nao ha pedido nem condenacao para comparar, e mandar registrar
+  desfecho para so entao dizer que o comando nao serve seria trabalho a toa.
+
+### Adicionado — amostra jurisprudencial e prognostico
+
+- **`attorneyfw jurisprudencia [add "<id>"]`**, com `--tribunal`, `--data`,
+  `--resultado`, `--razao`, `--fonte`, `--lido` e `--json`. A secao entra na
+  tese e no mapa de risco.
+
+- **`attorneyfw prognostico [--json]`** — semaforo verde, amarelo ou vermelho,
+  com as razoes, **cada uma apontando o artefato de onde saiu**. Sai com codigo
+  1 quando ha impeditivo.
+
+### Decidido — o item entregue diferente do que foi pedido
+
+- **A ferramenta nao produz probabilidade de exito em porcentagem, e nao vai
+  produzir.** Nao e limitacao a ser removida quando houver dados melhores: e
+  recusa, na mesma familia de nao assinar, nao aprovar e nao protocolar.
+
+  Tres camadas de motivo. *Unidade*: forca de argumento, risco processual e
+  frequencia historica nao estao na mesma escala e nao se somam; a media delas
+  tem precisao aparente e nenhum referente. *Uso*: aquele numero nao fica na
+  tela — vai para conversa com cliente, onde ninguem pergunta como foi
+  calculado. *Responsabilidade*: numero de probabilidade dado a cliente opera
+  como promessa de resultado.
+
+  **Duas regras de lint protegem a decisao.** Uma positiva, que reprova o build
+  se a recusa sumir do README, do help ou do modulo — decisao sem a razao
+  escrita ao lado e reimplementada pela proxima pessoa, que acha que faltava. E
+  uma negativa, que reprova se alguma linha de codigo passar a emitir percentual
+  ao lado de "exito". A guarda foi verificada quebrando-a de proposito.
+
+- **A amostra e conferida, nao um censo.** O pedido era "80% dos ultimos 50 no
+  TJPR". Ha um obstaculo de acesso — os tribunais estaduais nao oferecem
+  consulta programavel de inteiro teor — e um de metodo que nao se resolve com
+  dinheiro: classificar cinquenta acordaos exige le-los, e um deles pode ter
+  sido favoravel por fundamento que nao serve ao caso em maos.
+
+- **Julgado sem `--lido` entra como pendente**, mesmo que se declare o
+  resultado, e o comando avisa. Mesma disciplina do `[CONFERIR NA FONTE]`.
+
+- **A saida declara sempre o `n`** e nunca apresenta a amostra como universo. O
+  `--json` traz `universo: null` de proposito.
+
+- **Nao ha coleta automatica.** Registro e manual; fonte que exige contrato
+  entra por chave do escritorio, e captcha nao se contorna.
+
+- Os criterios do semaforo sao os que o gate ja cobra, lidos em conjunto. Nao ha
+  peso arbitrario a calibrar porque nao ha nota a compor.
+
+### Mudado
+
+- A regra de lint da ressalva deixou de ser especifica do prazo e passou a ser
+  uma tabela de ressalvas. Hoje cobre duas — contagem de prazo e correcao
+  monetaria —, e o build reprova se qualquer uma sumir do README, do help ou do
+  modulo que a produz.
+
 ## 0.2.0 — 2026-08-31
 
 Contagem de prazo material, separada da processual. Nasceu de um defeito medido

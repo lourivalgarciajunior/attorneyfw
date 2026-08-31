@@ -76,6 +76,21 @@ attorneyfw docx 1                     # a versao de protocolo
 attorneyfw entrega move 1 entregue
 ```
 
+Ao encerrar, e depois:
+
+```bash
+attorneyfw materia fechar perda --em 2027-03-11 --nota "improcedencia mantida em 2o grau"
+attorneyfw buscar "art. 31 simples nacional"
+```
+
+Dinheiro, na raiz da carteira:
+
+```bash
+attorneyfw indice atualizar           # busca INPC, IPCA, IGP-M e Selic
+attorneyfw indice                     # o que a carteira ja tem
+attorneyfw atualizar 8500,00 --de 2019-03-14 --juros 1
+```
+
 Consulta: `attorneyfw status` (na raiz, a carteira; dentro da matéria, o kanban dela), `attorneyfw prazo` (agenda; na raiz, de todas as matérias), `attorneyfw context` (dump da governança formatado para LLM), `attorneyfw materia list`.
 
 Todo comando de matéria aceita `--materia <slug>` para rodar da raiz sem entrar na pasta.
@@ -178,13 +193,160 @@ intimacao 2025-12-26 | 30 dias corridos (material) | inicio 2025-12-27 | vence 2
 
 Entre duas leituras defensáveis, a ferramenta nunca pode ser a que concede folga. Quando o dia seguinte à intimação já é dia útil, as leituras coincidem e a saída é uma data só. Ver `docs/adr/ADR-2026-08-31-prazo-material-*`.
 
+## A memória do escritório
+
+A carteira sempre foi a base de casos — uma pasta por matéria, com decisão, tese, fatos, provas e cronologia, em texto e versionada. Faltavam duas coisas para que ela respondesse perguntas.
+
+**O desfecho.** A última entrega em `entregue` registra que a peça saiu, não o que aconteceu depois. Sem isso a base responde "já fizemos" e não responde "já perdemos" — que é a pergunta que evita repetir uma causa perdida em vez de propor acordo.
+
+```bash
+attorneyfw materia fechar ganho_parcial --valor 20000 --nota "danos morais reduzidos de 50k"
+```
+
+O vocabulário é fechado — `ganho`, `ganho_parcial`, `perda`, `acordo`, `extinto` — porque o valor da base está em conseguir **contar**, e campo livre não responde "quantas vezes já perdemos esta tese?". O que não couber vai em `--nota`, que fica ao lado. Matéria sem resultado está em curso; desfecho não se infere de kanban cheio.
+
+**A busca.** `grep` acha uma palavra. Não responde *"que matérias enfrentaram esta tese, e como terminaram?"* — pergunta que cruza tese, fundamento e desfecho, e que ninguém faz com três greps encadeados no meio de um dia de trabalho.
+
+```bash
+attorneyfw buscar "indeferimento da opcao" --resultado perda
+```
+
+Devolve **matéria**, não linha solta: com o tipo, o desfecho, a nota e onde bateu. Varre tese ou mapa de risco, DEC, cronologia e título de entrega — e **não varre corpo de minuta**, de propósito: minuta contém citação e transcrição, e busca por termo jurídico casaria com o que foi *citado* em vez do que foi *sustentado*.
+
+Matérias já encerradas na carteira entram no `attorneyfw context` sem ninguém pedir. Quem redige precisa saber que uma matéria irmã com a mesma tese terminou em perda, e essa é informação que só aparece se for empurrada.
+
+O gate **avisa** — não reprova — quando uma matéria está toda entregue há mais de noventa dias e sem resultado. Nem todo desfecho chega nesse prazo, e reprovar por causa de um processo que só demora transformaria a regra em ruído.
+
+## Amostra jurisprudencial e prognóstico
+
+```bash
+attorneyfw jurisprudencia add "0002079-26.2017.8.16.0004" --tribunal TJPR   --data 2018-08-16 --resultado contrario --lido --razao "a sentenca confirmada afastou o art. 31 §2"
+attorneyfw jurisprudencia
+attorneyfw prognostico
+```
+
+Estes dois entregam menos do que o escritório pediu, de propósito, e o [ADR](docs/adr/) diz por quê.
+
+**A amostra é conferida, não um censo.** O pedido era "80% dos últimos 50 casos no TJPR". Há um obstáculo de acesso — os tribunais estaduais não oferecem consulta programável de inteiro teor — e um de método, que não se resolve com dinheiro: **classificar cinquenta acórdãos exige lê-los**. Um deles pode ter sido favorável por fundamento que não serve ao caso em mãos, e entra na conta como vitória. Dez a quinze lidos valem mais que cinquenta classificados por ementa.
+
+Julgado sem `--lido` entra como `pendente` e **assim aparece** — a mesma disciplina do `[CONFERIR NA FONTE]`. A saída declara sempre o `n`, e nunca apresenta a amostra como universo. Não há coleta automática: registro é manual, fonte que exige contrato entra por chave do escritório, e captcha não se contorna.
+
+**A ferramenta não produz probabilidade de êxito em porcentagem, e não vai produzir.** Não é limitação a ser removida quando houver dados melhores: é recusa, na mesma família de não assinar, não aprovar e não protocolar. Há uma regra de lint que reprova o build se essa recusa sumir de qualquer superfície.
+
+O motivo tem três camadas. **Unidade:** força de argumento, risco processual e frequência histórica não estão na mesma escala e não se somam; a média delas tem precisão aparente e nenhum referente. **Uso:** aquele número não fica na tela — sai dela e vai para conversa com cliente, onde ninguém pergunta como foi calculado. **Responsabilidade:** número de probabilidade dado a cliente opera como promessa de resultado.
+
+O que sai é semáforo, e **cada razão aponta o artefato de onde saiu** — quem discorda ataca a razão, e a razão tem endereço:
+
+| Luz | Quando | Exemplo de razão |
+|---|---|---|
+| 🔴 vermelho | há impeditivo | `F2` sem provado; pedido sem tópico; prazo vencido; julgado contrário não distinguido |
+| 🟡 amarelo | há reserva | citação não conferida; julgado da amostra não lido; teto e piso em branco |
+| 🟢 verde | nenhum dos dois | ausência de defeito conhecido — **não** prognóstico de vitória |
+
+Os critérios não são novos: são os que o gate já cobra, lidos em conjunto. Não há peso arbitrário a calibrar porque não há nota a compor.
+
+E o que responde à pergunta do cliente sem fingir precisão já estava na tese desde a 0.1.0 — **teto e piso**, a **matriz de risco**, e o **escopo negativo**.
+
+## Relatório ao cliente
+
+```bash
+attorneyfw relatorio --docx
+```
+
+Pós-venda: explicar a vitória e, sobretudo, explicar a derrota parcial. Compara `valor_pedido` com `resultado_valor`, corrigindo o primeiro quando há `valor_pedido_em`.
+
+**O sinal do ganho vem do papel do cliente.** Consumidor pede R$ 50.000 de danos morais e o juiz condena a R$ 20.000: para o réu isso é um ganho de R$ 30.000; para o autor, os mesmos dois números são perda parcial de R$ 30.000. O sinal não está nos números — está em de que lado o cliente estava.
+
+Por isso **o polo não se infere**. Sem papel declarado no canon de partes (ou, na falta dele, no `materia.yaml`), o comando falha. Relatório com o sinal trocado não é um relatório ruim: é um documento que diz ao cliente que ele ganhou quando perdeu.
+
+Falta de `resultado` ou de `valor_pedido` também para o comando. Deduzir o pedido da peça seria adivinhar.
+
+O `--docx` passa pelo mesmo gerador do `attorneyfw docx`, que lê o markdown já gerado — nada reconstrói a seleção do texto.
+
+## Custas processuais
+
+```bash
+attorneyfw custas init --tribunal tjpr --ano 2026
+attorneyfw custas 85000,00 --tribunal tjpr
+```
+
+Também **conferência, não o cálculo oficial**: o valor que vale é o da guia emitida pelo tribunal. Serve para responder ao cliente sem abrir cinco tabelas — não para substituir a emissão da guia.
+
+**A tabela mora em arquivo versionado, nunca em raspagem ao vivo.** Custas mudam por ato normativo datado, e um número raspado de uma página não sabe dizer de onde veio. A saída diz sempre qual norma aplicou e de quando. Cada justiça tem a sua — `tabelas/custas/<tribunal>-<ano>.yaml` —, e crescer é acrescentar arquivo, não código.
+
+Três tipos de componente cobrem o que as tabelas fazem: `percentual` (com piso e teto opcionais), `fixo`, e `faixas`.
+
+Duas recusas, ambas deliberadas:
+
+1. **Tabela sem `norma` e `norma_data` não carrega.** Procedência não é campo opcional num número que vai para orçamento a cliente.
+2. **Tabela sem `conferido_em` não produz orçamento** sem `--provisorio` — e com ele, a saída sai marcada em vermelho como provisória. O `custas init` gera valores de exemplo; se ela pudesse orçar em silêncio, o exemplo viraria o orçamento de alguém.
+
+O CLI **não vem com tabela de tribunal nenhum**. O `init` gera o formato; os números são do escritório, conferidos por uma pessoa contra a norma publicada. É trabalho de conferência, que é exatamente onde ele deve estar.
+
+## Visual law
+
+Três diagramas, e só três:
+
+```bash
+attorneyfw diagrama linha-do-tempo --salvar
+attorneyfw diagrama partes
+attorneyfw diagrama fato-prova
+```
+
+| Diagrama | Fonte | O que mostra |
+|---|---|---|
+| `linha-do-tempo` | cronologia × canon de documentos | fato, data, e o documento que o prova |
+| `partes` | canon de partes | quem é quem, e o papel de cada um |
+| `fato-prova` | tese × contratos de tópico | cada `F` ligado ao `D` que o paga |
+
+**Diagrama é projeção de dado estruturado, nunca de texto livre.** O caminho óbvio — pedir ao modelo que desenhe lendo a minuta — funciona na demonstração e falha na terceira versão da peça: corrige-se uma data no corpo e a figura fica com a antiga. Divergência é pior que ausência, porque a figura tem autoridade visual e é a contraparte quem acha a contradição. Aqui a figura não pode divergir da peça, porque as duas leem o mesmo lugar.
+
+Se o dado não está no canon, não entra na figura. Quem quiser um marco na linha do tempo acrescenta o fato à cronologia — que é onde ele deveria estar de qualquer modo, e onde o gate já o cobra.
+
+**Marco sem documento sai visivelmente marcado como não provado**, em vermelho tracejado. Não é enfeite: é a mesma exigência que o gate faz ao texto, aplicada à figura. Sair igual aos outros seria a figura mentindo com mais autoridade que o parágrafo.
+
+Na peça, a figura entra onde o tópico pedir — num bloco cercado, o mesmo idioma do contrato de tópico:
+
+````markdown
+```diagrama
+linha-do-tempo
+```
+````
+
+Bloco, e não comentário HTML: comentário nesta ferramenta já quer dizer nota de trabalho, e é removido justamente para não vazar para a peça. Marcar diagrama assim pediria uma figura que desaparece antes do `build` ver.
+
+O `build` troca a marca pelo bloco Mermaid. A fonte é texto — entra no diff, na revisão e no versionamento como qualquer outra parte da peça. Se o diagrama não puder ser gerado, o `build` **não para**: deixa um aviso no lugar da figura e segue, porque falta de figura não pode impedir um protocolo.
+
+O `docx` renderiza com o [mermaid-cli](https://github.com/mermaid-js/mermaid-cli) quando ele está no PATH (`npm i -g @mermaid-js/mermaid-cli`); sem ele, insere um aviso e **a peça sai assim mesmo**. E continua lendo o markdown que o `build` gerou — não consulta canon nem cronologia.
+
+## Correção monetária
+
+```bash
+attorneyfw indice atualizar           # so este comando toca a rede
+attorneyfw atualizar 8500,00 --de 2019-03-14 --ate 2026-08-31 --serie inpc --juros 1
+attorneyfw atualizar 8500,00 --de 2019-03-14 --selic --json
+```
+
+O que sai daqui é **conferência, não o cálculo oficial**: o valor que vale é o da memória homologada nos autos, e a contadoria do juízo nem sempre adota a mesma convenção. A ferramenta serve para o valor chegar à minuta **com a memória junto** — nunca sozinho.
+
+Quatro regras de desenho, e cada uma responde a uma forma conhecida de produzir número indefensável:
+
+1. **A série mora na carteira, em `tabelas/indices/`, versionada.** O arquivo guarda a variação mensal *como a fonte publica* — não um número-índice já calculado —, para que cada linha continue conferível contra a série do Banco Central. O número-índice é derivado na leitura.
+2. **Só o `indice atualizar` faz requisição de rede.** O cálculo lê arquivo e nada mais. Ele funciona offline, e os mesmos arquivos devolvem o mesmo número daqui a um ano.
+3. **Fora da cobertura da série, o comando falha.** Não extrapola, não repete o último índice, não interpola. A mensagem diz até onde a série vai e o que rodar. Buraco no meio da série também é erro, e não silêncio: a razão entre dois pontos passaria por cima do mês faltante e devolveria fator menor sem avisar.
+4. **A saída traz sempre memória e procedência**, inclusive no modo resumido — que é justamente o que acaba copiado para a peça.
+
+Convenções adotadas, declaradas porque não são as únicas defensáveis: correção por **mês cheio**, com base no mês do termo inicial; juros simples **pro rata die** sobre trinta dias; e a Selic **somada**, não composta, excluídos o mês inicial e o do pagamento, mais 1% no mês do pagamento — que é como ela se aplica no art. 406 do Código Civil.
+
+O IPCA-E não tem coleta automática nesta versão: preenche-se à mão, e o comando diz isso em vez de buscar um código de série não confirmado. Código errado produz número plausível e errado, que é o pior resultado possível aqui.
+
 ## Desenvolvimento
 
 ```bash
 npm run check     # lint + smoke
 ```
 
-O lint tem nove regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se a ressalva de que a contagem não é a oficial sumir do README, do help ou do módulo de prazo.
+O lint tem onze regras, cada uma nascida de coisa que já quebrou no trackfw ou no bookfw — inclusive uma que reprova o build se qualquer ressalva de conferência sumir do README, do help ou do módulo que a produz. Hoje ela cobre três: a contagem de prazo, a correção monetária e o orçamento de custas.
 
 ## Escopo negativo
 

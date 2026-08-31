@@ -26,6 +26,17 @@ export const ESTADOS_ATIVOS = ['backlog', 'pesquisa', 'minuta', 'revisao', 'entr
 export const TIPOS = ['contencioso', 'consultivo'];
 
 /**
+ * Desfecho da materia. Vocabulario fechado de proposito: o valor da carteira
+ * como memoria institucional esta em conseguir **contar**, e campo livre nao
+ * responde "quantas vezes ja perdemos esta tese?". O que nao couber no
+ * vocabulario vai em `resultado_nota`, que existe ao lado justamente para isso.
+ *
+ * Materia sem resultado esta em curso. Nao se infere desfecho de kanban cheio:
+ * entrega protocolada registra que a peca saiu, nao o que aconteceu depois.
+ */
+export const RESULTADOS = ['ganho', 'ganho_parcial', 'perda', 'acordo', 'extinto'];
+
+/**
  * Regime de contagem. `processual` segue o CPC — termo inicial no primeiro dia
  * util seguinte. `material` segue o art. 210 do CTN — dia seguinte, util ou
  * nao. Nao se infere um do outro: adivinhar prazo e o unico erro desta
@@ -138,7 +149,13 @@ export function exigirMateria(args = {}) {
 function materiaDe(dir) {
   const cfg = yamlRaso(readFileSync(join(dir, 'materia.yaml'), 'utf8'));
   const tipo = TIPOS.includes(cfg.tipo) ? cfg.tipo : 'contencioso';
-  return { dir, slug: basename(dir), cfg, tipo, voc: VOCABULARIO[tipo] };
+  // Materia antiga nao tem os campos de resultado, e nao precisa ter: `valor`
+  // devolve string vazia, que e o mesmo que "em curso". Sem migracao forcada.
+  return {
+    dir, slug: basename(dir), cfg, tipo, voc: VOCABULARIO[tipo],
+    resultado: valor(cfg.resultado),
+    fechada: RESULTADOS.includes(valor(cfg.resultado)),
+  };
 }
 
 /** Todas as materias da carteira, em ordem de slug. */
@@ -203,6 +220,25 @@ export function template(nome, subs = {}) {
   let t = readFileSync(join(TEMPLATES, nome), 'utf8');
   for (const [k, v] of Object.entries(subs)) t = t.replaceAll(`{{${k}}}`, v);
   return t;
+}
+
+/**
+ * Grava `chave: valor` num YAML raso, reescrevendo a chave inteira e nao so o
+ * valor. Duas armadilhas moram aqui, e as duas ja custaram correcao:
+ *
+ * 1. **`[ \t]*`, nunca `\s*`.** `\s` casa quebra de linha, e a substituicao
+ *    apagaria o campo seguinte.
+ * 2. **Reescrever a chave toda.** O template traz `resultado:` sem espaco;
+ *    preservar o que veio produziria `resultado:ganho`, que em YAML de verdade
+ *    e uma string solta e nao um par.
+ *
+ * Chave ausente e acrescentada no fim — materia criada por versao anterior nao
+ * precisa de migracao para receber um campo novo.
+ */
+export function gravarCampoYaml(raw, chave, val) {
+  const re = new RegExp(`^${chave}:[ \\t]*.*$`, 'm');
+  const linha = `${chave}: ${val}`;
+  return re.test(raw) ? raw.replace(re, linha) : `${raw.replace(/\n*$/, '')}\n${linha}\n`;
 }
 
 export function escrever(caminho, conteudo) {
@@ -380,6 +416,14 @@ export function contarPrazo({
 }
 
 /** Dias uteis entre duas datas, contando o dia final. Negativo quando ja venceu. */
+/**
+ * Dias corridos entre duas datas. Nao serve para contar prazo — para isso ha o
+ * `contarPrazo`, com regime e feriado. Serve para medir quanto tempo faz, que e
+ * outra pergunta e nao pode usar a mesma funcao: confundir as duas foi como o
+ * prazo material passou a errar para mais.
+ */
+export const diasCorridosAte = (de, ate) => Math.round((dt(ate) - dt(de)) / DIA);
+
 export function diasUteisAte(de, ate, fer = new Set(), recesso = true) {
   const util = fabricaUtil(fer, recesso);
   const inicio = dt(de);

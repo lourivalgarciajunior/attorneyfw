@@ -49,3 +49,16 @@ O caminho que ele nao pensou e que custa menos risco.
 
 O que este trabalho **nao** cobre — materia, jurisdicao, periodo. E a parte que
 protege o escritorio.
+
+## Amostra jurisprudencial
+
+Julgados conferidos, com o **n** a vista. Amostra, nunca censo: dez a quinze
+lidos valem mais que cinquenta classificados por ementa. Julgado que ninguem
+abriu entra como `pendente` e assim aparece — a mesma disciplina do
+`[CONFERIR NA FONTE]`.
+
+Nenhuma porcentagem sai daqui. Ver o ADR sobre prognostico.
+
+| Julgado | Tribunal | Data | Resultado | Lido | Razao | Fonte |
+|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |

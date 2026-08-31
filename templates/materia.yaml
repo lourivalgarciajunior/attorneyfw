@@ -23,3 +23,18 @@ sigilo: false
 
 # Governanca — quantas entregas podem estar em minuta ao mesmo tempo
 wip_limit: 2
+
+# Desfecho. Preenchido por `attorneyfw materia fechar`, e nao a mao — o
+# vocabulario e fechado (ganho, ganho_parcial, perda, acordo, extinto) para que
+# a carteira consiga responder "quantas vezes ja perdemos esta tese?".
+#
+# Entrega protocolada nao e desfecho: ela registra que a peca saiu, nao o que
+# aconteceu depois. Materia sem resultado esta em curso.
+valor_pedido: {{valor_pedido}}
+# Data a que o valor pedido se refere. Com ela, o relatorio corrige; sem ela,
+# sai nominal e diz que saiu.
+valor_pedido_em:
+resultado:
+resultado_em:
+resultado_valor:
+resultado_nota:

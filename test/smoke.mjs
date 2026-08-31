@@ -4,7 +4,7 @@
  *
  *   npm test
  */
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -329,6 +329,394 @@ ok('build consultivo nao usa enderecamento judicial', (() => {
   emBeta('build', '1');
   const t = readFileSync(join(beta, 'saida', 'ent-01-minuta-do-contrato.md'), 'utf8');
   return !t.includes('EXCELENTISSIMO') && t.includes('Consulente');
+})());
+
+// ------------------------------------------------------------------ diagramas
+console.log('\nvisual law');
+
+ok('diagrama inexistente e recusado', emAcme('diagrama', 'zebra').codigo === 1);
+ok('linha do tempo sem cronologia preenchida e recusada com instrucao', (() => {
+  const r = emAcme('diagrama', 'linha-do-tempo');
+  return r.codigo === 1 && r.saida.includes('cronologia');
+})());
+
+// A cronologia e a fonte. D1 esta no canon; D9 nao, e o marco sem documento
+// tem de sair marcado — figura que esconde o nao provado mente com mais
+// autoridade que o paragrafo.
+const cronoArq = join(acme, 'docs', 'canon', 'cronologia.md');
+writeFileSync(cronoArq, lerLF(cronoArq).replace(
+  '|  |  |  |  |',
+  ['| 2024-03-14 | Cobranca indevida na fatura | D1 | autos |',
+   '| 2024-04-02 | Reclamacao no SAC | D9 | autos |',
+   '| 2024-05-10 | Negativacao | | autos |'].join('\n'),
+), 'utf8');
+
+const lt = emAcme('diagrama', 'linha-do-tempo');
+ok('linha do tempo sai em mermaid', lt.saida.includes('```mermaid') && lt.saida.includes('flowchart TD'));
+ok('marco provado carrega o documento', lt.saida.includes('Cobranca indevida') && lt.saida.includes('<i>D1</i>'));
+ok('marco sem documento sai marcado', lt.saida.includes('NAO PROVADO'));
+ok('documento fora do canon nao passa por provado', lt.saida.includes('fora do canon'));
+ok('a saida avisa quantos sairao nao provados', lt.saida.includes('nao provado'));
+ok('a ordem da cronologia vira a ordem do grafo', lt.saida.includes('M0 --> M1'));
+
+// Leitura por NOME de coluna, nao por posicao: escritorio troca a ordem sem avisar.
+ok('tabela lida por nome de coluna', (() => {
+  writeFileSync(cronoArq, lerLF(cronoArq)
+    .replace('| Data | Fato | Documento | Fonte |', '| Fonte | Documento | Fato | Data |')
+    .replace('| 2024-03-14 | Cobranca indevida na fatura | D1 | autos |',
+      '| autos | D1 | Cobranca indevida na fatura | 2024-03-14 |'), 'utf8');
+  const r = emAcme('diagrama', 'linha-do-tempo');
+  return r.saida.includes('2024-03-14') && r.saida.includes('<i>D1</i>');
+})());
+
+ok('organograma de partes sai do canon', (() => {
+  const r = emAcme('diagrama', 'partes');
+  return r.saida.includes('Acme Ltda') && r.saida.includes('autor');
+})());
+ok('fato-prova liga F ao D que o paga', (() => {
+  const r = emAcme('diagrama', 'fato-prova');
+  return r.saida.includes('F1') && r.saida.includes('D1') && r.saida.includes('Fatura contestada');
+})());
+ok('--salvar grava a fonte em texto, versionavel', (() => {
+  emAcme('diagrama', 'partes', '--salvar');
+  return existsSync(join(acme, 'docs', 'diagramas', 'partes.mmd'));
+})());
+
+// O build embute onde a peca pedir, e nao adivinha.
+writeFileSync(entPath, ent.replace('texto '.repeat(200),
+  ['```diagrama', 'linha-do-tempo', '```', '', 'texto '.repeat(50)].join('\n')), 'utf8');
+const comFig = emAcme('build', '1');
+ok('build embute o diagrama pedido', comFig.saida.includes('1 diagrama'));
+ok('o mermaid entra no markdown da saida',
+  readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8').includes('```mermaid'));
+
+// Falta de figura nao pode impedir protocolo.
+writeFileSync(entPath, ent.replace('texto '.repeat(200), ['```diagrama', 'zebra', '```'].join('\n')), 'utf8');
+const semFig = emAcme('build', '1');
+ok('diagrama que falha nao derruba o build', semFig.codigo === 0);
+ok('a peca sai com aviso no lugar da figura',
+  readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8').includes('NAO GERADO'));
+
+// Comentario HTML nesta ferramenta ja quer dizer nota de trabalho, e o
+// `textoDe` o remove antes de a peca sair. Usa-lo de marca pediria uma figura
+// que desaparece antes de o build ver, em silencio.
+ok('comentario HTML nao serve de marca — ele e nota de trabalho', (() => {
+  writeFileSync(entPath, ent.replace('texto '.repeat(200), '<!-- diagrama: linha-do-tempo -->'), 'utf8');
+  const r = emAcme('build', '1');
+  const md = readFileSync(join(acme, 'saida', 'ent-01-peticao-inicial.md'), 'utf8');
+  return r.codigo === 0 && !md.includes('mermaid') && !md.includes('diagrama:');
+})());
+
+writeFileSync(entPath, ent, 'utf8');
+emAcme('build', '1');
+
+// ------------------------------------------------------- memoria da carteira
+console.log('\nmemoria da carteira');
+
+ok('resultado fora do vocabulario e recusado', emAcme('materia', 'fechar', 'quase').codigo === 1);
+ok('materia fechar grava o desfecho',
+  emAcme('materia', 'fechar', 'perda', '--em', '2026-08-20', '--valor', '0',
+    '--nota', 'improcedencia mantida em segundo grau').codigo === 0);
+
+// `resultado:ganho` sem espaco nao e YAML: e string solta. O gravador reescreve
+// a chave inteira, e nao so o valor, exatamente para nao produzir isso.
+ok('o campo sai como par YAML de verdade', (() => {
+  const y = lerLF(acme, 'materia.yaml');
+  return y.includes('resultado: perda') && y.includes('resultado_em: 2026-08-20');
+})());
+ok('materia list mostra o desfecho', run('materia', 'list').saida.includes('perda'));
+ok('status na raiz mostra o placar', run('status').saida.includes('encerradas 1/2'));
+
+// A busca le a tese; nao le o corpo da minuta. Um termo que so existe no corpo
+// nao pode aparecer, senao a busca casa com o que foi CITADO em vez do que foi
+// SUSTENTADO — e ruido treina a ignorar o resultado.
+writeFileSync(join(acme, 'docs', 'tese', teseArq),
+  lerLF(acme, 'docs', 'tese', teseArq).replace('## Fundamento', '## Fundamento\n\nSumula zebrafundamento do STJ.'), 'utf8');
+writeFileSync(entPath, ent.replace('texto '.repeat(200), 'zebraminuta '.repeat(50)), 'utf8');
+
+ok('buscar acha na tese', run('buscar', 'zebrafundamento').saida.includes('acme'));
+ok('buscar devolve materia com desfecho', run('buscar', 'zebrafundamento').saida.includes('perda'));
+ok('buscar nao le corpo de minuta', (() => {
+  const r = run('buscar', 'zebraminuta');
+  return !r.saida.includes('acme') && r.saida.includes('nada');
+})());
+ok('buscar diz o que varreu', run('buscar', 'zebraminuta').saida.includes('corpo de minuta'));
+ok('buscar filtra por resultado',
+  run('buscar', 'zebrafundamento', '--resultado', 'ganho').saida.includes('0 de'));
+ok('buscar avisa quando a tese ja foi perdida',
+  run('buscar', 'zebrafundamento').saida.includes('terminaram em perda'));
+ok('buscar --json declara o que nao varre', (() => {
+  const r = run('buscar', 'zebrafundamento', '--json');
+  try { return JSON.parse(r.saida).naoVarrido.includes('minuta'); } catch { return false; }
+})());
+ok('buscar sem termo e recusado', run('buscar').codigo === 1);
+
+// Materia irma encerrada tem de chegar a quem redige sem ninguem pedir.
+ok('context empurra as materias ja encerradas',
+  emBeta('context').saida.includes('Materias ja encerradas') && emBeta('context').saida.includes('acme'));
+ok('context traz o desfecho da propria materia', emBeta('context').saida.includes('desfecho em curso'));
+
+writeFileSync(entPath, ent, 'utf8');
+
+// ------------------------------------------------------------------- dinheiro
+console.log('\ncorrecao monetaria');
+
+// Serie sintetica, com a aritmetica conferida a mao antes de escrever o teste:
+//   indice(2024-01) = 100      x 1,01  = 101
+//   indice(2024-02) = 101      x 1,02  = 103,02
+//   indice(2024-03) = 103,02   x 1,005 = 103,5351
+// Corrigir de 2024-01 para 2024-03 e 103,5351 / 101 = 1,02 x 1,005 = 1,0251 exato.
+// R$ 1.000,00 x 1,0251 = R$ 1.025,10.
+const SERIE_BOA = [
+  '# serie: inpc', '# unidade: variacao-mensal-pct', '# fonte: IBGE (sintetica, smoke)',
+  '# coletada_em: 2024-04-01', 'mes,valor',
+  '2024-01,1.00', '2024-02,2.00', '2024-03,0.50', '',
+].join('\n');
+mkdirSync(join(raiz, 'tabelas', 'indices'), { recursive: true });
+const serieArq = join(raiz, 'tabelas', 'indices', 'inpc.csv');
+writeFileSync(serieArq, SERIE_BOA);
+
+const corr = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20');
+ok('correcao bate com a conta feita a mao', corr.saida.includes('1.025,10'));
+ok('fator acumulado exato', corr.saida.includes('1.02510000'));
+ok('memoria sai sempre', corr.saida.includes('memoria de calculo') && corr.saida.includes('2024-03'));
+ok('mes do termo inicial e base, e nao linha da memoria',
+  corr.saida.split('memoria de calculo')[1].includes('2024-02')
+  && !corr.saida.split('memoria de calculo')[1].includes('2024-01  '));
+ok('procedencia sai junto', corr.saida.includes('procedencia') && corr.saida.includes('coletada'));
+ok('ressalva de conferencia na saida', corr.saida.includes('nao calculo oficial'));
+
+// 65 dias corridos de 15.01 a 20.03.2024 (ano bissexto) = 2,1666667 meses.
+// 1% ao mes sobre R$ 1.025,10 = R$ 22,21. Total R$ 1.047,31.
+const comJuros = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20', '--juros', '1');
+ok('juros simples pro rata die', comJuros.saida.includes('1.047,31'));
+
+ok('--json devolve o total em centavos', (() => {
+  const r = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20', '--juros', '1', '--json');
+  try { return JSON.parse(r.saida).total === 104731; } catch { return false; }
+})());
+
+// Estimar fora da cobertura e a forma mais facil de produzir numero errado com
+// aparencia de certo. O comando tem de parar, e dizer ate onde a serie vai.
+const foraDaSerie = run('atualizar', '1000,00', '--de', '2023-01-15', '--ate', '2024-03-20');
+ok('fora da cobertura falha', foraDaSerie.codigo === 1 && foraDaSerie.saida.includes('2024-01'));
+ok('a falha diz o que rodar', foraDaSerie.saida.includes('indice atualizar'));
+
+// Buraco no meio e pior que serie curta: a razao entre dois pontos passaria por
+// cima do mes faltante e devolveria fator menor, sem nenhum sinal.
+writeFileSync(serieArq, SERIE_BOA.replace('2024-02,2.00\n', ''));
+const comBuraco = run('atualizar', '1000,00', '--de', '2024-01-15', '--ate', '2024-03-20');
+ok('buraco na serie falha em vez de silenciar', comBuraco.codigo === 1 && comBuraco.saida.includes('buraco'));
+writeFileSync(serieArq, SERIE_BOA);
+
+// Serie sem procedencia nao vai para peca.
+writeFileSync(serieArq, 'mes,valor\n2024-01,1.00\n2024-02,2.00\n2024-03,0.50\n');
+ok('serie sem fonte e sem data e recusada',
+  run('atualizar', '1000,00', '--de', '2024-01-15').codigo === 1);
+writeFileSync(serieArq, SERIE_BOA);
+
+ok('indice lista o que a carteira tem', run('indice').saida.includes('2024-01'));
+ok('serie desconhecida nao e adivinhada', run('atualizar', '10', '--de', '2024-01-15', '--serie', 'xpto').codigo === 1);
+
+// ------------------------------------------- amostra jurisprudencial e semaforo
+console.log('\namostra e prognostico');
+
+ok('julgado sem identificador e recusado', emAcme('jurisprudencia', 'add').codigo === 1);
+ok('resultado fora do vocabulario e recusado',
+  emAcme('jurisprudencia', 'add', 'X-1', '--resultado', 'talvez').codigo === 1);
+ok('identificador com barra vertical e recusado — quebraria a tabela',
+  emAcme('jurisprudencia', 'add', 'A | B').codigo === 1);
+
+// Classificar sem ter lido e o defeito que esta amostra existe para evitar.
+const semLer = emAcme('jurisprudencia', 'add', '0002079-26.2017.8.16.0004',
+  '--tribunal', 'TJPR', '--data', '2018-08-16', '--resultado', 'favoravel');
+ok('classificado sem --lido avisa', semLer.saida.includes('PENDENTE DE LEITURA'));
+ok('e entra como pendente, nao como favoravel',
+  emAcme('jurisprudencia').saida.includes('pendente'));
+
+ok('com --lido entra classificado', (() => {
+  emAcme('jurisprudencia', 'add', '1514292-8', '--tribunal', 'TJPR',
+    '--data', '2016-11-22', '--resultado', 'favoravel', '--lido', '--razao', 'enfrenta a objecao pelo nome');
+  const r = emAcme('jurisprudencia');
+  return r.saida.includes('favoravel') && r.saida.includes('enfrenta a objecao');
+})());
+ok('a saida declara o n da amostra', emAcme('jurisprudencia').saida.includes('amostra de 2'));
+ok('e diz que nao e censo', emAcme('jurisprudencia').saida.includes('nao censo'));
+ok('nenhuma porcentagem sai da amostra', !/\d+([.,]\d+)?%/.test(emAcme('jurisprudencia').saida));
+ok('--json nao traz universo', (() => {
+  const r = emAcme('jurisprudencia', '--json');
+  try { const j = JSON.parse(r.saida); return j.n === 2 && j.universo === null && j.lidos === 1; }
+  catch { return false; }
+})());
+
+// O semaforo se testa pela transicao, e nao pela luz num instante: a luz depende
+// de todo o estado da materia, e um teste que a fixa quebra a cada regra nova
+// sem nada de errado ter acontecido. O que tem de valer e a regra.
+const antes = JSON.parse(emAcme('prognostico', '--json').saida);
+ok('julgado nao lido e reserva, e nao impeditivo',
+  antes.reservas.some((x) => x.razao.includes('nao lidos')));
+ok('cada reserva tem endereco', antes.reservas.every((x) => x.onde && x.razao));
+
+// Julgado contrario lido e nao distinguido e impeditivo.
+ok('julgado contrario lido acrescenta um impeditivo e pinta de vermelho', (() => {
+  emAcme('jurisprudencia', 'add', 'CONTRA-1', '--tribunal', 'TJPR', '--resultado', 'contrario', '--lido');
+  const r = emAcme('prognostico');
+  const dep = JSON.parse(emAcme('prognostico', '--json').saida);
+  return dep.semaforo === 'vermelho'
+    && dep.impeditivos.length === antes.impeditivos.length + 1
+    && dep.impeditivos.some((x) => x.razao.includes('CONTRA-1'))
+    && r.codigo === 1;
+})());
+
+ok('a recusa da porcentagem sai na propria saida',
+  emAcme('prognostico').saida.includes('NAO e probabilidade de exito'));
+ok('nenhuma porcentagem sai do prognostico', !/\d+([.,]\d+)?%/.test(emAcme('prognostico').saida));
+ok('--json declara probabilidadeDeExito null', (() => {
+  const r = emAcme('prognostico', '--json');
+  try { const j = JSON.parse(r.saida); return j.probabilidadeDeExito === null && j.semaforo === 'vermelho'; }
+  catch { return false; }
+})());
+ok('cada impeditivo tem endereco', (() => {
+  const r = emAcme('prognostico', '--json');
+  try { return JSON.parse(r.saida).impeditivos.every((x) => x.onde && x.razao); } catch { return false; }
+})());
+
+// ----------------------------------------------------------------- relatorio
+console.log('\nrelatorio ao cliente');
+
+// A regra inteira deste comando esta no sinal: os mesmos dois numeros sao ganho
+// para o reu e perda parcial para o autor. Por isso os dois casos sao testados
+// com os MESMOS valores, e o que muda e so o papel.
+const matAcme = join(acme, 'materia.yaml');
+const yamlBase = lerLF(matAcme)
+  .replace(/^valor_pedido:.*$/m, 'valor_pedido: 50000,00')
+  .replace(/^resultado_valor:.*$/m, 'resultado_valor: 20000,00');
+writeFileSync(matAcme, yamlBase, 'utf8');
+
+// A ficha do canon diz "autor" — o cliente pediu 50 mil e obteve 20 mil.
+const comoAutor = emAcme('relatorio');
+ok('polo ativo: ganho e o que entrou', comoAutor.saida.includes('20.000,00'));
+ok('polo ativo: a proporcao e do que se pediu', comoAutor.saida.includes('40.0%'));
+ok('relatorio grava o markdown', existsSync(join(acme, 'saida', 'relatorio-acme.md')));
+ok('sem data de referencia, avisa que o valor e nominal', comoAutor.saida.includes('NOMINAIS'));
+
+// Mesmos numeros, papel trocado: o ganho passa a ser o que se deixou de pagar.
+const fichaParte = join(acme, 'docs', 'canon', 'partes', 'acme-ltda.md');
+writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: reu'), 'utf8');
+const comoReu = emAcme('relatorio');
+ok('polo passivo: ganho e o que se deixou de pagar', comoReu.saida.includes('30.000,00'));
+ok('polo passivo: 60% do que era exigido', comoReu.saida.includes('60.0%'));
+ok('o texto diz "deixou de pagar" so no polo passivo',
+  readFileSync(join(acme, 'saida', 'relatorio-acme.md'), 'utf8').includes('deixou de pagar'));
+
+// O polo nao se infere. Papel fora do vocabulario tem de parar o comando.
+ok('papel desconhecido para o relatorio', (() => {
+  writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: interessado'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(fichaParte, lerLF(fichaParte).replace(/^papel: .*$/m, 'papel: autor'), 'utf8');
+  return r.codigo === 1 && r.saida.includes('de que lado');
+})());
+
+// Com data de referencia, corrige pela serie da onda 1.
+ok('com valor_pedido_em, corrige e mostra o fator', (() => {
+  writeFileSync(matAcme, yamlBase
+    .replace(/^valor_pedido_em:.*$/m, 'valor_pedido_em: 2024-01-15')
+    .replace(/^resultado_em:.*$/m, 'resultado_em: 2024-03-20'), 'utf8');
+  const r = emAcme('relatorio');
+  // 50.000,00 x 1,0251 = 51.255,00, pela mesma serie sintetica da correcao.
+  return r.saida.includes('51.255,00') && r.saida.includes('pedido corrigido');
+})());
+
+ok('sem valor_pedido o comando falha em vez de deduzir', (() => {
+  writeFileSync(matAcme, yamlBase.replace(/^valor_pedido:.*$/m, 'valor_pedido:'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(matAcme, yamlBase, 'utf8');
+  return r.codigo === 1 && r.saida.includes('valor_pedido');
+})());
+
+ok('consultivo nao tem polo, e o comando diz isso', (() => {
+  const r = emBeta('relatorio');
+  return r.codigo === 1 && r.saida.includes('contenciosa');
+})());
+
+ok('materia sem resultado nao gera relatorio', (() => {
+  const bom = lerLF(matAcme);
+  writeFileSync(matAcme, bom.replace(/^resultado: .*$/m, 'resultado:'), 'utf8');
+  const r = emAcme('relatorio');
+  writeFileSync(matAcme, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('materia fechar');
+})());
+
+// --------------------------------------------------------------------- custas
+console.log('\ncustas');
+
+ok('sem tribunal e recusado', run('custas', '1000').codigo === 1);
+ok('tabela ausente diz qual arquivo criar', (() => {
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.codigo === 1 && r.saida.includes('custas init');
+})());
+ok('custas init cria a tabela', run('custas', 'init', '--tribunal', 'tjxx', '--ano', '2026').codigo === 0);
+ok('init nao sobrescreve', run('custas', 'init', '--tribunal', 'tjxx', '--ano', '2026').codigo === 1);
+
+const tabCustas = join(raiz, 'tabelas', 'custas', 'tjxx-2026.yaml');
+
+// A semente traz valores de exemplo. Se ela orcasse em silencio, o exemplo
+// viraria o orcamento de alguem.
+const naoConferida = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026');
+ok('tabela nao conferida nao orca', naoConferida.codigo === 1 && naoConferida.saida.includes('conferido_em'));
+ok('--provisorio mostra, e marca como provisorio', (() => {
+  const r = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026', '--provisorio');
+  return r.codigo === 0 && r.saida.includes('PROVISORIO');
+})());
+
+// Procedencia nao e opcional.
+ok('tabela sem norma nao carrega', (() => {
+  const bom = lerLF(tabCustas);
+  writeFileSync(tabCustas, bom.replace(/^norma:.*$/m, 'norma:'), 'utf8');
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026', '--provisorio');
+  writeFileSync(tabCustas, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('procedencia');
+})());
+
+// Conta conferida a mao sobre a semente, com valor da causa de R$ 85.000,00:
+//   custas-iniciais   1% de 85.000,00 = 850,00 (entre o piso 100 e o teto 10.000)
+//   taxa-diligencia   fixo             =  50,00
+//   fundo             faixa ate 100.000 = 120,00
+//   TOTAL                              = 1.020,00
+writeFileSync(tabCustas, lerLF(tabCustas).replace(/^conferido_em:.*$/m, 'conferido_em: 2026-08-31'), 'utf8');
+const orc = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026');
+ok('tabela conferida orca sem --provisorio', orc.codigo === 0 && !orc.saida.includes('PROVISORIO'));
+ok('o total bate com a conta feita a mao', orc.saida.includes('1.020,00'));
+ok('a memoria diz como cada componente saiu', orc.saida.includes('1% sobre') && orc.saida.includes('faixa ate'));
+ok('a saida traz norma e data', orc.saida.includes('procedencia') && orc.saida.includes('2026-01-01'));
+ok('ressalva de conferencia na saida', orc.saida.includes('guia emitida pelo tribunal'));
+
+// Piso e teto sao a parte que erra em silencio se ninguem olhar.
+ok('piso eleva a causa pequena', (() => {
+  const r = run('custas', '1000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('elevado ao piso') && r.saida.includes('180,00');
+})());
+ok('teto limita a causa grande', (() => {
+  const r = run('custas', '5000000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('limitado ao teto') && r.saida.includes('10.000,00');
+})());
+ok('faixa final vale para o que passa de todas', (() => {
+  const r = run('custas', '5000000,00', '--tribunal', 'tjxx', '--ano', '2026');
+  return r.saida.includes('acima da ultima') && r.saida.includes('300,00');
+})());
+ok('--json traz o total em centavos', (() => {
+  const r = run('custas', '85000,00', '--tribunal', 'tjxx', '--ano', '2026', '--json');
+  try { return JSON.parse(r.saida).total === 102000; } catch { return false; }
+})());
+ok('componente com tipo desconhecido e recusado', (() => {
+  const bom = lerLF(tabCustas);
+  // Ancorado na linha, e nao no primeiro "tipo: fixo" do arquivo: o template
+  // documenta cada tipo num comentario, e a troca ingenua acertava o comentario
+  // — o teste passava a exercitar nada e a devolver verde.
+  writeFileSync(tabCustas, bom.replace(/^(\s+)tipo: fixo$/m, '$1tipo: chute'), 'utf8');
+  const r = run('custas', '1000', '--tribunal', 'tjxx', '--ano', '2026');
+  writeFileSync(tabCustas, bom, 'utf8');
+  return r.codigo === 1 && r.saida.includes('chute');
 })());
 
 // --------------------------------------------------------------- gate da carteira

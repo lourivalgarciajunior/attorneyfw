@@ -1,0 +1,9 @@
+node_modules/
+saida/*.docx
+saida/*.pdf
+.attorneyfw-cache/
+
+# Material de cliente nao vai para o repositorio do CLI. Um escritorio de
+# verdade mora no proprio repositorio, privado — este aqui e a ferramenta.
+/escritorio.yaml
+/materias/

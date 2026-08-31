@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+/**
+ * attorneyfw — governanca de trabalho juridico.
+ * DEC -> tese/mapa de risco -> plano de entregas -> kanban -> protocolo.
+ */
+import { readFileSync } from 'node:fs';
+import { Erro, c } from '../src/core.mjs';
+import { init, materiaNew, materiaList } from '../src/init.mjs';
+import { dec, estrategiaNew, plano, entregaNew } from '../src/novo.mjs';
+import { entregaMove, entregaRenumber, entregaRetitle } from '../src/entrega.mjs';
+import { topicoAdd } from '../src/topico.mjs';
+import { canonNew } from '../src/canon.mjs';
+import { prazoSet, prazoLista } from '../src/prazo.mjs';
+import { brief } from '../src/brief.mjs';
+import { status, context } from '../src/status.mjs';
+import { validate } from '../src/validate.mjs';
+import { build } from '../src/build.mjs';
+import { docx } from '../src/docx.mjs';
+
+// fonte unica: duplicar a versao aqui deixaria o CLI dizendo uma e o pacote outra
+const VERSAO = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+).version;
+
+const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
+
+  attorneyfw init "Escritorio"          cria a carteira
+  attorneyfw materia new "Cliente — X"  nova materia (--tipo contencioso|consultivo)
+  attorneyfw materia list               as materias da carteira
+  attorneyfw dec "Decisao"              decisao de estrategia da materia
+  attorneyfw tese ["Titulo"]            contencioso: fatos F1..Fn e pedidos P1..Pn
+  attorneyfw mapa ["Titulo"]            consultivo: riscos R1..Rn
+  attorneyfw plano ["Titulo"]           plano de entregas
+  attorneyfw plano --materializar       a tabela do plano vira kanban
+  attorneyfw entrega new "Titulo"       nova entrega em backlog/
+  attorneyfw entrega move <e|3..7> <es> move no kanban, uma ou varias (--forcar)
+  attorneyfw entrega renumber <e> <n>   troca o numero, arquivo e frontmatter juntos
+  attorneyfw entrega retitle <e> "T"    troca o titulo, arquivo e frontmatter juntos
+  attorneyfw topico add <entrega>       novo contrato de topico ou clausula
+  attorneyfw canon new <tipo> "Nome"    ficha de parte ou documento
+  attorneyfw prazo set <e> --intimacao AAAA-MM-DD --dias N [--corridos] [--fatal]
+  attorneyfw prazo [--dias N]           agenda; na raiz, a carteira inteira
+  attorneyfw brief <entrega> [--topico N]  o pacote de quem redige
+  attorneyfw status                     kanban da materia, ou a carteira na raiz
+  attorneyfw context                    dump da governanca para LLM
+  attorneyfw validate [--json]          gate — zero violacoes antes de protocolar
+  attorneyfw build <entrega>            costura a entrega em markdown
+  attorneyfw docx <entrega>             a versao de protocolo (pede o pacote docx)
+
+estados: backlog pesquisa minuta revisao entregue bloqueado abandonado
+--materia <slug> roda o comando numa materia sem entrar na pasta dela
+
+A contagem de prazo e CONFERENCIA, nao a contagem oficial: feriado do foro e
+suspensao de expediente entram a mao em docs/feriados.md. O prazo que vale e o
+dos autos.`;
+
+function parse(argv) {
+  const args = { _: [] };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const [k, v] = a.slice(2).split('=');
+      args[k] = v ?? (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true);
+    } else args._.push(a);
+  }
+  return args;
+}
+
+const [, , cmd, ...resto] = process.argv;
+const args = parse(resto);
+
+try {
+  switch (cmd) {
+    case 'init': init(args); break;
+    case 'materia': {
+      const sub = args._.shift();
+      if (sub === 'new') materiaNew(args);
+      else if (sub === 'list') materiaList(args);
+      else throw new Erro('Uso: attorneyfw materia new|list');
+      break;
+    }
+    case 'dec': dec(args); break;
+    case 'tese': estrategiaNew(args, 'tese'); break;
+    case 'mapa': estrategiaNew(args, 'mapa'); break;
+    case 'plano': plano(args); break;
+    case 'entrega': {
+      const sub = args._.shift();
+      if (sub === 'new') entregaNew(args);
+      else if (sub === 'move') entregaMove(args);
+      else if (sub === 'renumber') entregaRenumber(args);
+      else if (sub === 'retitle') entregaRetitle(args);
+      else throw new Erro('Uso: attorneyfw entrega new|move|renumber|retitle');
+      break;
+    }
+    case 'topico': {
+      const sub = args._.shift();
+      if (sub === 'add') topicoAdd(args);
+      else throw new Erro('Uso: attorneyfw topico add <entrega>');
+      break;
+    }
+    case 'canon': {
+      const sub = args._.shift();
+      if (sub === 'new') canonNew(args);
+      else throw new Erro('Uso: attorneyfw canon new parte|documento "Nome"');
+      break;
+    }
+    case 'prazo': {
+      if (args._[0] === 'set') { args._.shift(); prazoSet(args); }
+      else process.exitCode = prazoLista(args);
+      break;
+    }
+    case 'brief': brief(args); break;
+    case 'status': status(args); break;
+    case 'context': context(args); break;
+    case 'validate': process.exitCode = validate(args); break;
+    case 'build': build(args); break;
+    case 'docx': await docx(args); break;
+    case 'version': case '--version': case '-v': console.log(VERSAO); break;
+    case undefined: case 'help': case '--help': case '-h': console.log(AJUDA); break;
+    default:
+      console.error(`${c.red('comando desconhecido')} "${cmd}"\n`);
+      console.log(AJUDA);
+      process.exitCode = 1;
+  }
+} catch (e) {
+  if (e instanceof Erro) {
+    console.error(`${c.red('erro')} ${e.message}`);
+    process.exitCode = 1;
+  } else throw e;
+}

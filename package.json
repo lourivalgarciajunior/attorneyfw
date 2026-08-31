@@ -1,0 +1,29 @@
+{
+  "name": "attorneyfw",
+  "version": "0.1.0",
+  "description": "Governanca de trabalho juridico — DEC -> tese/mapa de risco -> plano de entregas -> kanban -> peca protocolada.",
+  "type": "module",
+  "bin": {
+    "attorneyfw": "bin/attorneyfw.mjs"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "lint": "node tools/lint.mjs",
+    "check": "npm run lint && npm test"
+  },
+  "optionalDependencies": {
+    "docx": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "author": "Lourival Garcia <lourival.garcia@indieexpert.com.br>",
+  "license": "UNLICENSED",
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "README.md",
+    "CHANGELOG.md"
+  ]
+}

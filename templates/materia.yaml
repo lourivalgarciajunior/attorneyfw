@@ -1,0 +1,25 @@
+# {{titulo}}
+# Criado por attorneyfw em {{data}}. Mudar o que esta aqui exige DEC.
+
+titulo: {{titulo}}
+slug: {{slug}}
+tipo: {{tipo}}
+
+cliente: {{cliente}}
+papel: {{papel}}
+adverso: {{adverso}}
+
+# Contencioso — sai no cabecalho da peca. Digitado a mao em cada peca, e o
+# campo que protocola no processo do outro cliente.
+processo: {{processo}}
+juizo: {{juizo}}
+comarca:
+vara:
+rito: comum
+valor_causa:
+
+# Segredo de justica: o gate avisa antes de gerar saida ou dump de contexto.
+sigilo: false
+
+# Governanca — quantas entregas podem estar em minuta ao mesmo tempo
+wip_limit: 2

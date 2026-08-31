@@ -1,0 +1,16 @@
+# {{nome}} — configuracao da carteira
+# Criado por attorneyfw em {{data}}.
+
+nome: {{nome}}
+slug: {{slug}}
+advogado: {{advogado}}
+oab: {{oab}}
+comarca: a definir
+
+# Contagem de prazo — o que vale aqui e conferencia, nao o oficial.
+# uteis segue o art. 219 do CPC; o recesso do art. 220 suspende de 20/12 a 20/01.
+# Feriado do foro e suspensao de expediente entram a mao em docs/feriados.md.
+prazo_suspensao_recesso: true
+
+# Governanca
+wip_limit: 2

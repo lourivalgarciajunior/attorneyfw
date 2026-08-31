@@ -1,5 +1,70 @@
 # Changelog
 
+## 0.7.0 — 2026-08-31
+
+### Acrescentado
+
+- **O briefing passou a carregar a voz do escritorio e o que falta do checklist
+  do tipo de acao.**
+
+  As duas coisas foram construidas nas versoes anteriores — o style card na
+  0.5.0, o modelo por tipo de acao na 0.4.0 — e **nenhuma das duas era lida no
+  unico momento em que serviria**. O `brief` montava contrato, canon,
+  cronologia e estrategia, e nao abria `estilo.yaml` nem
+  `docs/checklist-<tipo>.md`.
+
+  O ADR do style card tinha aberto dizendo qual era o problema: *"o `adv-gaio`
+  redigia com a voz que o modelo tem"*. A ferramenta media a voz do escritorio e
+  guardava o resultado num arquivo que ninguem abria na hora de escrever.
+
+- **A secao de voz fica FORA de `## Instrucoes`**, e ha teste comparando os
+  indices no texto de saida.
+
+  Um traco que diz `em 6/8` colocado dentro de um pacote de instrucoes deixa de
+  ser descricao no instante em que e lido: quem redige trata a frequencia como
+  norma, e a peca passa a imitar tique em vez de escrever com a voz da casa.
+  Seria desfazer, numa linha, o ADR que decidiu que o card **descreve, e nao
+  prescreve**.
+
+  Em `## Instrucoes` entram so as tres linhas negativas: nao force traco, nao
+  afirme item da lista, e escreva a pendencia quando o item importar e nao
+  estiver provado.
+
+- **Piso do traco: `n >= 3` e presenca em mais da metade das pecas.** Traco visto
+  em 2 de 8 e ruido; carregado para todo briefing, ruido vira estilo da casa em
+  duas semanas — e ninguem lembra que era ruido. Metade exata tambem nao passa.
+
+- **O checklist entra como diferenca**, e nao repetido inteiro: fundamento que o
+  contrato deste topico nao declara, objecao que o `risco` nao previu, documento
+  que o canon nao tem. So itens ainda em `- [ ]`.
+
+  A comparacao de fundamento reusa o extrator da 0.6.0, entao
+  `art. 300, II, do CPC` na lista nao reaparece quando o contrato ja declara
+  `art. 300 do CPC`.
+
+### Decidido, e nao esquecido
+
+- **Enfase em caixa alta nao chega ao briefing.** E o unico traco medido que se
+  imita em excesso sem esforco, e excesso de caixa alta e defeito de peca, nao
+  voz de escritorio. Ha teste negativo, para nao ser acrescentado depois como
+  "faltava".
+
+- **O rotulo das partes sai da peca antes de sair do card.** Se os topicos ja
+  escritos usam um par, o briefing diz esse: o gate cobra consistencia dentro da
+  peca, e nao a escolha do par.
+
+- **Nenhuma regra de gate nova, e nenhuma cobranca de aderencia a voz.** O card
+  continua habilitando uma so, a de rotulos misturados. Regra 14 do lint reprova
+  o build se essa recusa sumir de `README`, `src/brief.mjs` ou `src/estilo.mjs`.
+
+- **O briefing e leitura.** Nao marca item, nao altera o checklist, nao completa
+  o contrato. Marcar item por conta seria decidir pelo advogado exatamente onde
+  a decisao e dele.
+
+- **Card ausente e checklist ausente nao viram cobranca.** Sem card, uma linha
+  diz que a voz nao foi derivada e que o texto vai sair com a voz do modelo. Sem
+  checklist, a secao nao aparece.
+
 ## 0.6.0 — 2026-08-31
 
 ### Acrescentado

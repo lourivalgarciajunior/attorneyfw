@@ -222,6 +222,49 @@ export function modeloAplicar(args) {
   console.log(c.dim(`  Nada foi dado por provado — a ${m.voc.artefato} e o gate seguem cobrando o que cobram.`));
 }
 
+/**
+ * O checklist da materia, reduzido ao que ainda esta em aberto.
+ *
+ * Item marcado `- [x]` ja foi confirmado ou descartado por quem assina, e
+ * relembra-lo no briefing seguinte e a forma mais rapida de ensinar a pular a
+ * lista inteira.
+ *
+ * **Nao escreve nada.** O briefing e leitura: marcar item por conta seria decidir
+ * pelo advogado exatamente onde a decisao e dele.
+ */
+const RE_ABERTO = /^- \[ \] (.+?)(?:\s+_\((.+?)\)_)?[ \t]*$/gm;
+
+export function checklistAberto(m) {
+  const dir = join(m.dir, 'docs');
+  if (!existsSync(dir)) return null;
+  const arqs = readdirSync(dir).filter((f) => /^checklist-.+\.md$/.test(f)).sort();
+  if (!arqs.length) return null;
+
+  const blocos = { documentos: [], fundamentos: [], objecoes: [] };
+  const tipos = [];
+  for (const f of arqs) {
+    tipos.push(f.replace(/^checklist-|\.md$/g, ''));
+    const bruto = readFileSync(join(dir, f), 'utf8');
+    // O bloco e identificado pelo cabecalho que o `modelo aplicar` escreve.
+    const seccoes = [
+      ['documentos', '## Documentos'],
+      ['fundamentos', '## Fundamentos'],
+      ['objecoes', '## Objecoes'],
+    ];
+    for (const [chave, titulo] of seccoes) {
+      const i = bruto.indexOf(titulo);
+      if (i < 0) continue;
+      const resto = bruto.slice(i + titulo.length);
+      const fim = resto.indexOf('\n## ');
+      RE_ABERTO.lastIndex = 0;
+      for (const x of (fim < 0 ? resto : resto.slice(0, fim)).matchAll(RE_ABERTO)) {
+        blocos[chave].push({ texto: x[1].trim(), procedencia: (x[2] || '').trim() });
+      }
+    }
+  }
+  return { tipos, ...blocos };
+}
+
 export function modeloLista() {
   const raiz = acharEscritorio();
   const dir = dirModelos(raiz);

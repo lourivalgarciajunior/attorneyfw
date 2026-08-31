@@ -53,7 +53,7 @@ a armadilha que reorganizou o roadmap anterior no meio da execucao.
 
 ### ML-1A — `vozDoEscritorio` em `src/estilo.mjs`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/estilo.mjs`
 **Acoes:**
 1. Ler `estilo.yaml` da raiz da carteira. Sem arquivo, devolver `null` — o
@@ -72,7 +72,7 @@ com `n: 2` devolve `tracos: []` e `amostraFina: true`.
 
 ### ML-1B — `checklistAberto` em `src/modelo.mjs`
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/modelo.mjs`
 **Acoes:**
 1. Localizar `docs/checklist-*.md` na materia; sem arquivo, devolver `null`.
@@ -86,7 +86,7 @@ junto do texto.
 
 ### ML-1C — Testes dos dois leitores
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Piso do traco: 2/8 fora, 6/8 dentro, `n: 2` cala.

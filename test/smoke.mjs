@@ -754,6 +754,66 @@ ok('peca com um rotulo so nao gera aviso', (() => {
 writeFileSync(entPath, ent, 'utf8');
 emAcme('build', '1');
 
+// --- conferir --arquivo: peca do arquivo, sem virar materia
+const arqDir = mkdtempSync(join(tmpdir(), 'arq-'));
+const arqSujo = join(arqDir, 'suja.txt');
+const arqLimpo = join(arqDir, 'limpa.txt');
+writeFileSync(arqSujo, 'Pagou-se R$ 108.084,82 (cento e oito mil cento e oitenta e quatro reais e oitenta e dois centavos) pelo imovel.', 'utf8');
+writeFileSync(arqLimpo, 'Pagou-se R$ 100,00 (cem reais) pelo servico prestado.', 'utf8');
+
+// Roda FORA de carteira: peca do arquivo se confere de qualquer diretorio.
+const foraDaCarteira = rodarEm(arqDir);
+
+ok('conferir --arquivo roda fora de carteira e acha a divergencia', (() => {
+  const r = foraDaCarteira('conferir', '--arquivo', arqSujo);
+  return r.codigo === 1 && r.saida.includes('108.084,82') && r.saida.includes('108.184,82');
+})());
+
+ok('peca limpa sai com 0', foraDaCarteira('conferir', '--arquivo', arqLimpo).codigo === 0);
+
+// A decisao central: o modo arquivo nunca AFIRMA as seis.
+// "tres das seis" e a forma certa; "nas seis conferencias" e a que mentiria.
+ok('o modo arquivo nao afirma ter rodado as seis', (() => {
+  const r = foraDaCarteira('conferir', '--arquivo', arqLimpo).saida;
+  return r.includes('tres das seis')
+    && !/nas seis conferencias/.test(r)
+    && r.includes('TRES que rodaram');
+})());
+
+// E nomeia as tres ausentes, com achado e sem achado.
+ok('o relatorio nomeia as tres que nao rodaram, com o que falta', (() => {
+  const r = foraDaCarteira('conferir', '--arquivo', arqLimpo).saida;
+  return r.includes('transcricao x ficha') && r.includes('texto x contrato do topico')
+    && r.includes('continuidade de fato') && r.includes('canon')
+    && r.includes('nao e peca conferida');
+})());
+
+ok('dois arquivos dao dois relatorios, sem comparar um com o outro', (() => {
+  const r = foraDaCarteira('conferir', '--arquivo', arqSujo, arqLimpo).saida;
+  return r.split('conferencia de arquivo').length - 1 === 2;
+})());
+
+// Listar nao e conferir: fundamento dentro de um relatorio de conferencia seria
+// lido como fundamento conferido.
+ok('o modo arquivo nao lista o fundamento invocado', (() => {
+  const p = join(arqDir, 'comlei.txt');
+  writeFileSync(p, 'Nos termos do art. 373, II, do CPC e da Lei 9.279/96, requer.', 'utf8');
+  const r = foraDaCarteira('conferir', '--arquivo', p).saida;
+  return !r.includes('9.279') && !r.includes('373');
+})());
+
+ok('arquivo inexistente falha com mensagem, e nao com stack', (() => {
+  const r = foraDaCarteira('conferir', '--arquivo', join(arqDir, 'nao-existe.docx'));
+  return r.codigo === 1 && r.saida.includes('nao achei o arquivo') && !r.saida.includes('at ');
+})());
+
+ok('--json declara o modo e as duas listas', (() => {
+  const j = JSON.parse(foraDaCarteira('conferir', '--arquivo', arqSujo, '--json').saida);
+  return j.modo === 'arquivo' && j.conferencias.length === 3
+    && j.naoRodaram.length === 3 && j.naoRodaram.every((x) => x.precisa)
+    && j.relatorios[0].achados.length === 1;
+})());
+
 // --- a guarda do comparador de itens
 // Os dois casos vieram da varredura sobre as nove pecas reais em 2026-08-31.
 const soItens = (t) => conferirTexto(t, []).filter((x) => x.tipo === 'item');

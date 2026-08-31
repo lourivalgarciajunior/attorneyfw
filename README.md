@@ -617,6 +617,34 @@ Nada dentro de bloco de transcrição é conferido: o que está entre aspas é d
 
 Cronologia vazia desliga a comparação, e isso **sai dito**: uma linha informa quantas datas a peça cita e que nenhuma foi conferida contra ela. Não é cobrança — é a mesma disciplina do `importar`, que sempre termina dizendo o que não extraiu.
 
+### Peça do arquivo, sem virar matéria
+
+```bash
+attorneyfw conferir --arquivo "peca.docx"
+attorneyfw conferir --arquivo "a.docx" "b.docx" "c.docx" --json
+```
+
+As seis conferências rodam sobre entrega de matéria. Peça já arquivada não passava por nenhuma delas — e um escritório com quinhentas peças no disco não transforma cada uma em matéria para conferir um extenso.
+
+Rodam **três das seis**, e a divisão não é arbitrária:
+
+| Conferência | Compara contra | Sobre arquivo solto |
+|---|---|---|
+| extenso × algarismo | a própria peça | **roda** |
+| soma × total | a própria peça | **roda** |
+| item × pedido | a própria peça | **roda** |
+| transcrição × ficha | a ficha do documento no canon | não |
+| texto × contrato do tópico | o contrato de tópico | não |
+| continuidade de fato | a cronologia e o canon | não |
+
+**O relatório nunca diz "seis".** O modo de matéria termina com *"nenhuma divergência nas seis conferências"*; dizer isso depois de rodar três mentiria na direção que causa dano, porque quem lê entende "peça conferida" e protocola. Meia conferência apresentada como conferência é pior que nenhuma.
+
+Por isso o rodapé **nomeia as três que não rodaram e o que cada uma precisaria** — ficha de documento no canon, contrato de tópico, cronologia — e fecha com *"verde aqui não é peça conferida: é um terço da conferência"*. Quem quiser as outras três vê o caminho para a matéria, em vez de um muro.
+
+Não cria matéria, não escreve, não altera o arquivo lido. Vários arquivos numa chamada dão um relatório cada, e **nenhuma comparação entre eles**: dizer que duas peças divergem entre si exigiria saber que falam do mesmo fato, que é a inferência recusada na sexta conferência.
+
+E **não lista o fundamento que a peça invoca**. O extrator de citação existe e a tentação é óbvia — foi lendo a lista de citações que apareceu, numa varredura, uma peça invocando lei de direito autoral em ação de marca. Mas listar não é conferir, e uma seção de fundamento dentro de um relatório chamado conferência seria lida como fundamento conferido. Isso é trabalho do agente de fundamento.
+
 ### O que a conferência não confere
 
 Fora do alcance, e declarado: número dentro de imagem anexada. E, no fundamento:

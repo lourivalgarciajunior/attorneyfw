@@ -83,6 +83,11 @@ const AJUDA = `attorneyfw ${VERSAO} — governanca de trabalho juridico
   attorneyfw conferir <entrega>         extenso x algarismo, soma x total, item x pedido,
                             transcricao x ficha, texto x contrato do topico e
                             continuidade de fato contra a cronologia e o canon.
+  attorneyfw conferir --arquivo <peca.docx> [<peca>...]
+                            peca do arquivo, sem virar materia: roda TRES das seis
+                            — as que comparam a peca com ela mesma — e declara
+                            quais tres nao rodaram e o que cada uma precisaria.
+                            Verde ali nao e peca conferida.
                             Nao confere se o dispositivo existe, se esta em vigor,
                             se foi superado nem se sustenta o que o topico afirma,
                             e nao infere que dois fatos sao o mesmo fato

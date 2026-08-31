@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.11.0 — 2026-08-31
+
+### Acrescentado
+
+- **`attorneyfw conferir --arquivo <peca.docx>`** — confere peca que ja esta no
+  arquivo do escritorio, **sem virar materia**.
+
+  As seis conferencias rodavam so sobre entrega de materia, e o `importar`
+  produz relatorio de pendencias — nao materia pronta. Para conferir nove pecas
+  reais de um escritorio foi preciso **escrever um script** chamando os modulos
+  direto, porque nao havia comando. Esse script achou divergencia em cinco das
+  nove.
+
+  Rodam **tres das seis**: extenso x algarismo, soma x total e item x pedido — as
+  que comparam a peca com ela mesma. As outras tres comparam contra algo
+  declarado (ficha de documento, contrato de topico, cronologia), e peca de
+  arquivo nao declara nada. Inventar a declaracao e o que o `importar` recusa
+  desde a 0.5.0.
+
+  Aceita `.docx`, `.txt` e `.md` pelo mesmo `lerTexto` do `importar`, roda de
+  qualquer diretorio, e aceita varios arquivos numa chamada.
+
+### A decisao que da forma ao relatorio
+
+**Ele nunca diz "seis".** O modo de materia termina com *"nenhuma divergencia nas
+seis conferencias"*; dizer isso depois de rodar tres mentiria na direcao que causa
+dano, porque quem le entende "peca conferida" e protocola. **Meia conferencia
+apresentada como conferencia e pior que nenhuma.**
+
+Entao o cabecalho abre com *"tres das seis"*, o verde diz *"nenhuma divergencia nas
+TRES que rodaram"*, e o rodape **nomeia as tres ausentes com o que cada uma
+precisaria**, fechando com *"verde aqui nao e peca conferida: e um terco da
+conferencia"*. Quem quiser as outras tres ve o caminho para a materia, e nao um
+muro.
+
+**Regra 17 do lint** reprova o build se essa declaracao sumir de `README.md` ou de
+`src/conferir.mjs`.
+
+### O que ele nao faz, por decisao
+
+- **Nao cria materia**, nao escreve e nao altera o arquivo lido.
+- **Nao compara um arquivo com o outro** — seria continuidade sem ancora
+  declarada, que a sexta conferencia recusa por principio.
+- **Nao lista o fundamento invocado.** O extrator existe e a tentacao e obvia, mas
+  listar nao e conferir, e a secao seria lida como fundamento conferido. Ha teste
+  negativo.
+- **Nao le PDF.**
+
+### Corrigido durante a execucao
+
+- `--arquivo <caminho>` deixa o caminho em `args.arquivo`, e nao em `args._`: o
+  parser consome o valor seguinte. A primeira versao recusava todo caminho com o
+  proprio texto de uso.
+
 ## 0.10.0 — 2026-08-31
 
 Tudo nesta versao veio de **rodar** a ferramenta contra as nove pecas reais de um

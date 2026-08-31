@@ -143,7 +143,7 @@ No corpus: de 9 achados de item (1 ementa + 6 titulos + 2 reais) para os 2 reais
 
 ### ML-3A — README, cabecalho e CHANGELOG
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `README.md`, `src/citacao.mjs`, `CHANGELOG.md`, `package.json`
 **Acoes:**
 1. README: o que o extrator passou a reconhecer, e a guarda do comparador.

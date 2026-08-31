@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.10.0 — 2026-08-31
+
+Tudo nesta versao veio de **rodar** a ferramenta contra as nove pecas reais de um
+escritorio, e nada de le-la.
+
+### Corrigido — o extrator inventava
+
+O cabecalho de `src/citacao.mjs` declara, desde a 0.6.0: *"forma que ele nao
+reconhece nao vira citacao. Silencio, e nao palpite."* Dois dos tres defeitos
+eram palpite.
+
+- **`art. 1.048` virava dois artigos que nao existem.** O tokenizer quebrava no
+  separador de milhar, em `1` e `048`. Pega a familia inteira — 1.015 (agravo),
+  1.022 (embargos), 1.048 (prioridade).
+
+  Na quinta conferencia isso saia como *"citacao fora do contrato"* de um
+  `art. 048`, e aviso falso e o que ensina a ignorar o aviso verdadeiro. Numa
+  peca de divorcio o fundamento inteiro estava mutilado: os arts. 1.571, 1.583,
+  1.694 e 1.710 do CC saiam como `art. 1`, `571`, `583`, `694` e `710`.
+
+- **`Lei nº 10.741 de 01 de Outubro de 2003` levava o dia como ano.** A lei de
+  2003 virava `lei-10741-2001`.
+
+- **`Lei nº X, de DD de mes de AAAA` nao era reconhecida.** E a forma canonica de
+  citar lei em peca — 7 ocorrencias nas nove — e a virgula fazia o casamento
+  falhar inteiro. Esta era a direcao certa do erro, e mesmo assim precisava sair:
+  extrator que ignora a forma mais comum nao esta calando por prudencia.
+
+### Corrigido — o comparador de itens inventava lista
+
+- **A guarda passou para antes das tres checagens.** Ela existia — forma
+  dominante em 70% dos itens — mas ficava depois da checagem de buraco. Qualquer
+  sequencia numerada virava lista: a ementa numerada de um acordao do STJ colada
+  numa anulatoria fiscal saia como *"lista de 1 a 10, falta o item 2"*.
+
+- **Divergente so e item malformado se ainda for majoritariamente digito.** Sem
+  isso, titulo de secao varrido para dentro da lista saia como item: numa
+  telefonia eram 7 achados, 6 deles `4. DOS DANOS MORAIS` e afins, com o unico
+  defeito real (`98841;1749`) enterrado no meio.
+
+  Sobre o corpus inteiro: **de 9 achados de item para os 2 reais.**
+
+### Acrescentado
+
+- **Corpus de formas como teste.** A causa dos tres defeitos do extrator era uma
+  so: ele foi medido contra as formas curtas que eu tinha em mente ao escreve-lo.
+  A tabela em `test/smoke.mjs` carrega as formas reais do arquivo — **so numero
+  de lei e de artigo**, que sao direito publico. Nenhum dado de cliente entra no
+  repositorio.
+
+- `MESES` subiu de `src/conferir.mjs` para `src/citacao.mjs`, exportada.
+
+### O que nao mudou
+
+Nenhuma correcao afrouxa nada — todas apertam. Sigla fora da tabela continua nao
+virando citacao; a comparacao continua por artigo, ignorando inciso e paragrafo;
+nenhuma regra de gate nova; e `item x pedido` continua rodando sobre texto nao
+declarado, por decisao registrada no ADR — exigir bloco declarado mataria o unico
+comparador que funciona sobre peca importada.
+
 ## 0.9.0 — 2026-08-31
 
 ### Acrescentado

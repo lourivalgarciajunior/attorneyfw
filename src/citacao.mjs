@@ -27,6 +27,16 @@
  * vira citacao**. Silencio, e nao palpite — a mesma disciplina do extenso, que
  * devolve `null` diante de palavra desconhecida. Fundamento "conferido" errado e
  * pior que fundamento nao conferido.
+ *
+ * **Essa regra tem corpus de teste desde a 0.10.0, e o motivo importa.** Rodando
+ * contra as nove pecas reais do escritorio, o extrator a violava em dois lugares:
+ * `art. 1.048` virava dois artigos que nao existem, e `Lei nº 10.741 de 01 de
+ * Outubro de 2003` levava o **dia** como ano. Os dois inventavam.
+ *
+ * A causa era uma so: ele tinha sido medido contra as formas curtas que eu tinha
+ * em mente ao escreve-lo — `art. 373 do CPC` —, e as pecas usam as longas —
+ * `Art. 1.048, II, do Codigo de Processo Civil`. Por isso o teste hoje carrega as
+ * formas do arquivo real, e nao as da minha intencao.
  */
 
 const sa = (s) => String(s).normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();

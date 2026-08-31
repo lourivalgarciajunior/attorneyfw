@@ -104,7 +104,7 @@ junto do texto.
 
 ### ML-2A — As duas secoes, fora das instrucoes
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/brief.mjs`
 **Acoes:**
 1. `## Voz do escritorio (observacao, nao instrucao)` — tracos com o `em N/M`,
@@ -126,7 +126,7 @@ declarado no contrato nao aparece na lista; documento ja no canon nao aparece.
 
 ### ML-2B — Testes do briefing
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Materia propria, criada no proprio teste.

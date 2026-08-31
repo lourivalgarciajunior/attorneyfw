@@ -769,6 +769,102 @@ ok('item ja marcado nao volta ao briefing', (() => {
   return r.documentos.length === 0;
 })());
 
+// --- o briefing costurando as duas
+run('materia', 'new', 'Epsilon — Briefing', '--tipo', 'contencioso',
+  '--cliente', 'Epsilon Ltda', '--juizo', '1a Vara Civel', '--slug', 'epsilon');
+const eps = join(raiz, 'materias', 'epsilon');
+const emEps = rodarEm(eps);
+emEps('tese');
+emEps('plano');
+emEps('entrega', 'new', 'Peticao inicial');
+emEps('entrega', 'move', '1', 'minuta');
+const epsEnt = join(eps, 'entregas', 'minuta', 'ent-01-peticao-inicial.md');
+writeFileSync(epsEnt, lerLF(epsEnt)
+  .replace('sustenta:', 'sustenta: a cobranca e inexigivel')
+  .replace('fundamento: []', 'fundamento: [art. 300 do CPC]')
+  .replace('risco:', 'risco: o banco vai alegar contrato verbal'), 'utf8');
+
+const epsCheck = join(eps, 'docs', 'checklist-cobranca.md');
+writeFileSync(epsCheck, [
+  '## Documentos que apareceram neste tipo de acao', '',
+  '- [ ] contrato assinado  _(3/5 — alfa, beta)_',
+  '- [x] comprovante de pagamento  _(2/5 — alfa)_',
+  '', '## Fundamentos que sustentaram o pedido', '',
+  '- [ ] art. 373 do CPC  _(4/5 — alfa, beta)_',
+  '- [ ] art. 300, II, do CPC  _(2/5 — alfa)_',
+  '', '## Objecoes que a outra parte levantou', '',
+  '- [ ] alega prescricao  _(2/5 — beta)_', '',
+].join('\n'), 'utf8');
+
+ok('sem card, o briefing diz que a voz nao foi derivada', (() => {
+  const original = lerLF(raiz, 'estilo.yaml');
+  rmSync(join(raiz, 'estilo.yaml'));
+  const saida = emEps('brief', '1').saida;
+  writeFileSync(join(raiz, 'estilo.yaml'), original, 'utf8');
+  return saida.includes('voz do escritorio nao foi derivada')
+    && saida.includes('voz do modelo');
+})());
+
+// Card sintetico na raiz, restaurado ao fim: os outros blocos leem este arquivo.
+const cardOriginal = lerLF(raiz, 'estilo.yaml');
+writeFileSync(join(raiz, 'estilo.yaml'), [
+  'derivado_em: 2026-08-30', 'n: 8', '', 'tracos:',
+  '  - traco: "trata o juizo por Excelencia"', '    chave: tratamento_excelencia',
+  '    em: 6/8', '    ocorrencias: 40',
+  '  - traco: "convida com vejamos"', '    chave: convite_vejamos',
+  '    em: 2/8', '    ocorrencias: 3',
+  '', 'rotulo_das_partes:',
+  '  - par: Requerente/Requerida', '    em: 6/8', '    ocorrencias: 90',
+  '  - par: Autor/Ré', '    em: 2/8', '    ocorrencias: 10',
+  '', 'ritmo:', '  paragrafos_medidos: 300', '  palavras_por_paragrafo_mediana: 47',
+  '', 'enfase:', '  trechos_em_caixa_alta: 21', '',
+].join('\n'), 'utf8');
+
+const brf = emEps('brief', '1').saida;
+
+ok('o traco acima do piso entra com o em', brf.includes('trata o juizo por Excelencia — em 6/8'));
+ok('o traco em 2 de 8 nao entra no briefing', !brf.includes('vejamos'));
+// Decisao do ADR: e o unico traco medido que se imita em excesso sem esforco.
+ok('a caixa alta nao chega ao briefing',
+  !/caixa alta|trechos_em_caixa/i.test(brf) && !brf.includes('trechos_em_caixa_alta: 21'));
+ok('o ritmo entra', brf.includes('mediana de 47 palavras'));
+
+// A decisao que da forma a tudo: um traco dentro de `## Instrucoes` deixa de ser
+// descricao no instante em que e lido.
+ok('nenhuma linha de traco cai dentro de Instrucoes',
+  brf.indexOf('## Voz do escritorio') < brf.indexOf('## Instrucoes')
+  && brf.indexOf('em 6/8') < brf.indexOf('## Instrucoes'));
+
+ok('o briefing diz que a voz e observacao, e nao instrucao',
+  brf.includes('observacao, e nao instrucao') && brf.includes('Nenhuma diz "escreva assim"'));
+
+// O checklist entra como diferenca. `art. 300, II` esta coberto por `art. 300`
+// declarado no contrato — a comparacao e por artigo.
+ok('fundamento ja declarado no contrato nao repete no briefing', !brf.includes('art. 300, II'));
+ok('fundamento que o contrato nao declara aparece', brf.includes('art. 373 do CPC  (4/5'));
+ok('item ja marcado no checklist nao aparece', !brf.includes('comprovante de pagamento'));
+ok('a lista sai rotulada como pendencia', brf.includes('Sao pendencias, e nao verdades'));
+
+ok('as tres instrucoes negativas estao la',
+  brf.includes('Nao force traco de estilo')
+  && brf.includes('Nao afirme item da lista')
+  && brf.includes('escreva a pendencia ao final'));
+
+// O briefing e leitura: marcar item por conta seria decidir pelo advogado
+// exatamente onde a decisao e dele.
+ok('o briefing nao altera o checklist da materia', (() => {
+  const antes = lerLF(epsCheck);
+  emEps('brief', '1');
+  return lerLF(epsCheck) === antes;
+})());
+
+ok('documento ja no canon nao aparece na lista', (() => {
+  emEps('canon', 'new', 'documento', 'contrato assinado');
+  return !emEps('brief', '1').saida.includes('contrato assinado  (3/5');
+})());
+
+writeFileSync(join(raiz, 'estilo.yaml'), cardOriginal, 'utf8');
+
 // ---------------------------------------------------------------- importar
 console.log('\nimportar peca arquivada');
 

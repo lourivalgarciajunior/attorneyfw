@@ -240,7 +240,22 @@ export function vozDoEscritorio(raiz) {
  * diferentes.
  */
 export function rotulosMisturados(texto) {
-  const req = (texto.match(ROTULOS.requerente) || []).length;
-  const aut = (texto.match(ROTULOS.autor) || []).length;
-  return req && aut ? { requerente: req, autor: aut } : null;
+  const { requerente, autor } = contarRotulos(texto);
+  return requerente && autor ? { requerente, autor } : null;
+}
+
+/**
+ * Quantas vezes cada par de rotulo aparece num texto.
+ *
+ * O `brief` usa isto para dizer qual par a **propria peca** ja adotou. Esse dado
+ * pesa mais que o do card: o gate cobra consistencia dentro da peca, e nao a
+ * escolha do par — entao o que importa e o que ela ja fez, e nao o que o
+ * escritorio costuma fazer.
+ */
+export function contarRotulos(texto) {
+  const t = String(texto || '');
+  return {
+    requerente: (t.match(ROTULOS.requerente) || []).length,
+    autor: (t.match(ROTULOS.autor) || []).length,
+  };
 }

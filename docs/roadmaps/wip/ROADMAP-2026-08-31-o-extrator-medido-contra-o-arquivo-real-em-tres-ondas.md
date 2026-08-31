@@ -101,7 +101,7 @@ continua `lef`.
 
 ### ML-2A — A guarda passa a valer para as tres checagens
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `src/conferir.mjs`
 **Acoes:**
 1. Mover a apuracao da forma dominante para **antes** da checagem de buraco na
@@ -115,9 +115,19 @@ continua `lef`.
 homogenea continua produzindo os tres de antes.
 **Validacao:** `npm run check`
 
+**Escopo acrescentado durante a execucao, e por que.** So mover a guarda nao
+bastava. Na telefonia o comparador dava 7 itens malformados, e 6 eram titulos de
+secao varridos para dentro da lista — "4. DOS DANOS MORAIS", "7. DOS PEDIDOS" —
+com o unico defeito real, `98841;1749`, enterrado no meio. Divergente passou a
+so contar como malformado quando ainda e **majoritariamente digito**, ou seja,
+deformacao da forma dominante. Cabe na decisao 5 do ADR: a direcao do erro.
+
+No corpus: de 9 achados de item (1 ementa + 6 titulos + 2 reais) para os 2 reais.
+
+
 ### ML-2B — Testes da guarda
 
-**Status:** ⬜ Pendente
+**Status:** ✅ Concluído
 **Files affected:** `test/smoke.mjs`
 **Acoes:**
 1. Ementa numerada com buraco na sequencia: **nenhum** achado.

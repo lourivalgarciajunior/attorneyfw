@@ -195,6 +195,26 @@ function confereItens(texto) {
 
   const out = [];
 
+  // A guarda vem ANTES de tudo, e nao no meio.
+  //
+  // Ela ja existia — a forma dominante tem de cobrir 70% dos itens —, mas ficava
+  // depois da checagem de buraco na sequencia. Com isso qualquer sequencia
+  // numerada produzia "falta o item N", e na varredura do arquivo real isso
+  // aconteceu duas vezes: a **ementa numerada de um acordao do STJ** colada numa
+  // anulatoria fiscal virou "lista de 1 a 10, falta o 2", e um titulo de secao
+  // virou item noutra peca.
+  //
+  // Prosa numerada nao e inventario, e nao se confere contra pedido. Este e o
+  // unico dos seis comparadores que roda sobre texto que ninguem declarou como
+  // lista — e vai continuar sendo, porque o defeito que ele acha so aparece em
+  // peca importada, onde nao ha declaracao nenhuma (ver ADR). O que muda e a
+  // direcao do erro: diante do que nao tem forma de inventario, ele cala.
+  const forma = (v) => `${/^\d+$/.test(v) ? 'd' : 'x'}${v.length}`;
+  const contagem = {};
+  for (const x of itens) contagem[forma(x.valor)] = (contagem[forma(x.valor)] || 0) + 1;
+  const dominante = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0];
+  if (!dominante || dominante[1] < itens.length * 0.7) return [];
+
   // 1. buraco na sequencia
   const max = Math.max(...itens.map((x) => x.idx));
   const presentes = new Set(itens.map((x) => x.idx));
@@ -210,15 +230,20 @@ function confereItens(texto) {
   }
 
   // 2. forma divergente: a maioria manda, e quem foge dela e o suspeito
-  const forma = (v) => `${/^\d+$/.test(v) ? 'd' : 'x'}${v.length}`;
-  const contagem = {};
-  for (const x of itens) contagem[forma(x.valor)] = (contagem[forma(x.valor)] || 0) + 1;
-  const dominante = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0];
-  if (!dominante || dominante[1] < itens.length * 0.7) return out;
-
   const bons = itens.filter((y) => forma(y.valor) === dominante[0]);
   const digitos = dominante[0][0] === 'd' ? Number(dominante[0].slice(1)) : 0;
-  for (const x of itens.filter((y) => forma(y.valor) !== dominante[0])) {
+
+  // Divergente so e item malformado se for **deformacao** da forma dominante —
+  // isto e, se ainda for majoritariamente digito.
+  //
+  // Sem isto, titulo de secao numerado entra na lista e sai como item
+  // malformado. Na telefonia do arquivo real eram 7 achados, e 6 deles eram
+  // "4. DOS DANOS MORAIS", "7. DOS PEDIDOS" e afins — com o unico defeito de
+  // verdade, `98841;1749`, enterrado no meio. Achado que dispara seis vezes para
+  // acertar uma e achado que ninguem le.
+  const deformado = (v) => (v.replace(/\D/g, '').length) * 2 > v.length;
+
+  for (const x of itens.filter((y) => forma(y.valor) !== dominante[0] && deformado(y.valor))) {
     out.push({
       tipo: 'item',
       esquerda: { rotulo: `item ${x.idx}`, valor: x.valor },
